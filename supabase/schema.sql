@@ -417,6 +417,33 @@ comment on function public.is_username_available(text) is 'true, wenn der Nutzer
 revoke execute on function public.is_username_available(text) from public;
 grant execute on function public.is_username_available(text) to anon, authenticated;
 
+-- Konto loeschen aus der App (Entscheidung 6): loescht ausschliesslich das
+-- Konto von auth.uid(); alle Nutzerdaten fallen per ON DELETE CASCADE weg,
+-- price_feedback_reports.user_id wird NULL. Der optionale Loeschgrund wird
+-- ohne Personenbezug in account_deletion_feedback gespeichert. Nur fuer
+-- authenticated (Advisor-Warnung 0029 ist gewollt), nicht fuer anon.
+create function public.delete_my_account(p_reason text default null, p_note text default null)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_reason text := case when p_reason in ('unused','not-found','missing-features','not-as-expected','technical-issue','offer-volume','privacy','other') then p_reason end;
+begin
+  if v_uid is null then
+    raise exception 'not authenticated' using errcode = '42501';
+  end if;
+  if v_reason is not null then
+    insert into public.account_deletion_feedback (reason, note)
+    values (v_reason, case when v_reason = 'other' then nullif(left(btrim(coalesce(p_note, '')), 500), '') end);
+  end if;
+  delete from auth.users where id = v_uid;
+end;
+$$;
+revoke execute on function public.delete_my_account(text, text) from public, anon;
+grant execute on function public.delete_my_account(text, text) to authenticated;
+
 
 -- ----------------------------------------------------------------------------
 -- 7. ÖFFENTLICHES BEWERTUNGS-AGGREGAT
