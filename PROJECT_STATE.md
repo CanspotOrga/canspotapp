@@ -4,6 +4,19 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-10-03 (2) — Produktbilder einheitlich im Hochformat 3:4
+
+**Was**: Alle Produktbilder nutzen jetzt das Seitenverhältnis 3:4 (per `aspect-ratio`, nur die Breite ist gesetzt), weil Dosen und Flaschen hoch und schmal sind.
+- **Größen:** Angebotskarte und Neuheiten/Alarme `.thumb` 72×96, Produktdetail `.detail-img` 150×200, Favoritenzeilen `.fav-emoji` 36×48, Neuigkeit-Detail `.news-detail-img` 100×133, Suchvorschläge 32×43, „Ähnliche Produkte“ 72×96, „Bester Deal der Woche“ 72×96.
+- **Platzhalter:** `FALLBACK_IMG` ist jetzt ebenfalls hochformatig (viewBox 60×80), Lade-Skeleton zeigt einen Hochformat-Block.
+- **Sonst:** Die überschreibende Regel `.card-main .thumb` (58×72) entfällt, die Basisregel `.thumb` gilt direkt. `CACHE_NAME` steht auf `canspot-cache-v152`, `www/` ist synchron, `npx cap copy ios` ist gelaufen.
+
+**Getestet**: Im Browser (Mobilbreite) mit Live-Daten: Karte 72×96, Detailbild 150×200, „Ähnliche Produkte“ 72×96. Echte Produktfotos gibt es aktuell nicht (`image_url` leer), geprüft wurde mit dem Platzhalter.
+
+**Offen**: Mit echten Fotos (Open Food Facts bzw. eigene) prüfen, ob 3:4 bei breiten Packshots (Mehrpacks, `bundle_image_url`) gut aussieht. Die toten Regeln `.card-top .thumb` (100×100 / 72×72) sind weiter quadratisch, werden aber nirgends benutzt.
+
+---
+
 ## 2026-10-03 (1) — Bereinigter Neustart des Repos
 
 **Was**: Das Repo startet mit einer neuen, bereinigten Historie.
