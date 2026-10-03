@@ -815,3 +815,28 @@ create policy "avatars_update_own" on storage.objects
 create policy "avatars_delete_own" on storage.objects
   for delete to authenticated
   using (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
+
+-- Konto nie loeschen, solange noch ein Profilbild existiert, egal auf welchem
+-- Weg (App, Dashboard, Admin-API). Im Dashboard erscheint dann ein Fehler;
+-- zuerst die Datei in Storage > avatars loeschen, dann das Konto.
+create function public.prevent_user_delete_with_avatar()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if exists (
+    select 1 from storage.objects
+    where bucket_id = 'avatars' and name = old.id::text || '/avatar.jpg'
+  ) then
+    raise exception 'Profilbild zuerst loeschen: Storage > avatars > %/avatar.jpg', old.id
+      using errcode = '55000';
+  end if;
+  return old;
+end;
+$$;
+revoke execute on function public.prevent_user_delete_with_avatar() from public, anon, authenticated;
+
+create trigger trg_users_avatar_guard
+  before delete on auth.users
+  for each row execute function public.prevent_user_delete_with_avatar();
