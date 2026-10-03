@@ -4,6 +4,16 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-10-03 (7) — Demo-Hinweis wieder aktiv
+
+**Was**: `app_settings.demo_notice` ist live wieder gesetzt: „Demo: Alle Preise und Angebote sind Beispieldaten und keine echten Angebote der genannten Händler.“ Grund: Die Testseite auf GitHub Pages ist öffentlich und zeigt erfundene Preise unter echten Händlernamen. Ohne Hinweis droht eine erneute Betrugsmarkierung und ein Verstoß gegen Regel 4 in DATENQUELLEN.md. `seed.sql`, `data/app_settings.csv` und `README.md` sind angepasst. An der App hat sich nichts geändert (kein Cache-Bump nötig), das Banner kommt direkt aus Supabase.
+
+**Getestet**: Die Live-Seite zeigt das Banner mit diesem Text über den 4 Angeboten.
+
+**Offen**: Sobald echte Daten da sind, `demo_notice` auf `null` setzen. Die Alternative wären fiktive Testmärkte statt echter Händlernamen in den Testdaten.
+
+---
+
 ## 2026-10-03 (6) — Beispieldaten-Hinweise entfernt (echte Daten folgen)
 
 **Was** (auf Wunsch des Projektinhabers, weil künftig echte Daten kommen):
