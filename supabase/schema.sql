@@ -225,6 +225,7 @@ create trigger trg_app_settings_updated_at
 -- von Supabase Auth (auth.users) verwaltet.
 create table public.profiles (
   id           uuid primary key references auth.users(id) on delete cascade,
+  username     text,
   first_name   text,
   last_name    text,
   birthdate    date,
@@ -234,8 +235,16 @@ create table public.profiles (
   country      text default 'Deutschland',
   avatar_url   text,
   created_at   timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
+  updated_at   timestamptz not null default now(),
+  constraint profiles_username_format check (
+    username is null or (
+      username ~ '^[A-Za-z0-9_]{3,20}$'
+      and lower(username) not in ('admin','administrator','canspot','support','moderator','root','system')
+    )
+  )
 );
+create unique index profiles_username_lower_key on public.profiles (lower(username));
+comment on column public.profiles.username is 'Nutzername, 3-20 Zeichen (A-Z, a-z, 0-9, _), eindeutig ohne Ruecksicht auf Gross-/Kleinschreibung. Wird bei der Registrierung aus raw_user_meta_data.username gesetzt (handle_new_user). NULL nur bei Konten von vor dieser Spalte; die App fordert dann einen an.';
 comment on table public.profiles is 'Persoenliche Profildaten (Name/Geburtsdatum/Adresse/Avatar), 1:1 zu auth.users. Entspricht canspot-firstname/-lastname/-birthdate/-address/-avatar in localStorage.';
 
 create trigger trg_profiles_updated_at
@@ -357,17 +366,24 @@ comment on table public.account_deletion_feedback is 'Entspricht canspot-delete-
 -- 6. AUTH-TRIGGER: profiles/notification_settings automatisch anlegen
 -- ----------------------------------------------------------------------------
 -- Standard-Supabase-Muster: sobald sich jemand ueber Supabase Auth
--- registriert (auth.users-Insert), werden automatisch eine leere profiles-
--- und notification_settings-Zeile angelegt, damit die App nie gegen eine
--- fehlende 1:1-Zeile pruefen muss.
+-- registriert (auth.users-Insert), werden automatisch eine profiles-Zeile
+-- (mit dem Nutzernamen aus raw_user_meta_data.username) und eine
+-- notification_settings-Zeile angelegt, damit die App nie gegen eine
+-- fehlende 1:1-Zeile pruefen muss. Ohne Nutzernamen wird die Registrierung
+-- abgelehnt (Pflichtfeld, auch bei direktem API-Aufruf).
 
 create function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = ''
 as $$
+declare
+  v_username text := nullif(btrim(new.raw_user_meta_data->>'username'), '');
 begin
-  insert into public.profiles (id) values (new.id);
+  if v_username is null then
+    raise exception 'username required' using errcode = '23502';
+  end if;
+  insert into public.profiles (id, username) values (new.id, v_username);
   insert into public.notification_settings (user_id) values (new.id);
   return new;
 end;
@@ -383,6 +399,23 @@ create trigger on_auth_user_created
 -- EXECUTE-Recht der ausloesenden Rolle) - daher hier explizit von PUBLIC
 -- entziehen, damit die Funktion nicht zusaetzlich direkt aufrufbar ist.
 revoke execute on function public.handle_new_user() from public;
+
+-- Verfuegbarkeit eines Nutzernamens vor der Registrierung pruefen. Bewusst
+-- fuer anon freigegeben (Advisor-Warnung 0028 ist gewollt); liefert nur
+-- true/false, keine Profildaten.
+create function public.is_username_available(p_username text)
+returns boolean
+language sql
+stable
+security definer set search_path = ''
+as $$
+  select coalesce(p_username, '') ~ '^[A-Za-z0-9_]{3,20}$'
+     and lower(p_username) not in ('admin','administrator','canspot','support','moderator','root','system')
+     and not exists (select 1 from public.profiles where lower(username) = lower(p_username));
+$$;
+comment on function public.is_username_available(text) is 'true, wenn der Nutzername gueltig und frei ist. Fuer anon freigegeben, damit die Registrierung vorab pruefen kann; liefert keine Profildaten.';
+revoke execute on function public.is_username_available(text) from public;
+grant execute on function public.is_username_available(text) to anon, authenticated;
 
 
 -- ----------------------------------------------------------------------------
