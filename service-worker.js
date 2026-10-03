@@ -1,8 +1,10 @@
-const CACHE_NAME = "canspot-cache-v153";
+const CACHE_NAME = "canspot-cache-v154";
 
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./impressum.html",
+  "./datenschutz.html",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

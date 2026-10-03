@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1b213f">
 <title>CanSpot</title>
+<meta name="description" content="CanSpot: unabhängiger Prototyp eines Preisvergleichs für Energy Drinks. Nicht mit den genannten Händlern oder Herstellern verbunden, alle Angebote sind Beispieldaten.">
 
 <!-- PWA: manifest -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -1219,6 +1220,19 @@ font-size:10.5px;
 line-height:1.45;
 color:var(--text-disabled);
 margin-top:16px
+}
+
+/* Pflicht-Hinweis auf Beispieldaten (DATENQUELLEN.md, Regel 4): bewusst
+   gut sichtbar über der Liste, nicht nur klein in .note darunter. */
+.demo-banner{
+font-size:12px;
+line-height:1.45;
+background:var(--status-info-bg);
+color:var(--status-info-text);
+border:1px solid var(--status-info-border);
+border-radius:var(--radius-md);
+padding:10px 12px;
+margin:4px 0 12px
 }
 
 /* ---------- SHEET / MODAL OVERLAY ---------- */
@@ -4154,6 +4168,8 @@ Du bist offline. Angebote werden möglicherweise nicht aktuell angezeigt.
 <button class="view-btn" data-view="map"><svg class="icon icon-md"><use href="#i-map"/></svg> Karte</button>
 </div>
 
+<div class="demo-banner" role="note"><b>Beispieldaten:</b> Alle Preise und Angebote in diesem Prototyp sind erfunden und keine echten Angebote der genannten Händler.</div>
+
 <div id="deals"></div>
 <div id="mapView" class="map-view" style="display:none"></div>
 <div id="alertsView" style="display:none"></div>
@@ -4474,9 +4490,9 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <button class="profile-action" id="logoutBtn"><svg class="icon icon-md"><use href="#i-logout"/></svg> Abmelden</button>
 
 <div class="profile-legal">
-<a href="#">Impressum</a>
-<a href="#">Datenschutz</a>
-<a href="#">Nutzungsbedingungen</a>
+<a href="impressum.html">Impressum</a>
+<a href="datenschutz.html">Datenschutz</a>
+<a href="impressum.html#nutzung">Nutzungsbedingungen</a>
 </div>
 
 <div class="profile-version">CanSpot Demo-Prototyp · Version 1.0.0</div>
@@ -4492,7 +4508,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <button class="sheet-close" data-close="accountManageOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
 <div class="handle"></div>
 <h2>Konto verwalten</h2>
-<div class="desc">Erweiterte Kontooptionen.</div>
+<div class="desc">Prototyp ohne Server: Deine Angaben werden nur auf diesem Gerät gespeichert und nicht übertragen.</div>
 
 <div class="field-label" style="margin-top:22px">Persönliche Daten</div>
 <div class="field-block" id="nameBlock">
@@ -5079,12 +5095,12 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="menu-acc-panel-inner">
 <div class="desc" style="margin-bottom:14px">Dein Energy. Dein bester Preis. CanSpot vergleicht Energy-Drink-Angebote in deiner Nähe.</div>
 <div class="profile-legal">
-<a href="#">Impressum</a>
-<a href="#">Datenschutz</a>
-<a href="#">Nutzungsbedingungen</a>
+<a href="impressum.html">Impressum</a>
+<a href="datenschutz.html">Datenschutz</a>
+<a href="impressum.html#nutzung">Nutzungsbedingungen</a>
 </div>
 <div class="profile-legal">
-<a href="mailto:kontakt@canspot.example">Kontakt</a>
+<a href="impressum.html#kontakt">Kontakt</a>
 </div>
 <div class="profile-version">CanSpot Demo-Prototyp · Version 1.0.0</div>
 </div>
@@ -7822,6 +7838,12 @@ document.getElementById("menuAboutRow").addEventListener("click",()=>{
   toggleMenuAccordion("menuAboutRow","menuAboutPanel");
 });
 
+/* Nur echte http(s)-Händlerlinks gelten als Link; offers.link ist bei den
+   Demodaten "#" und darf keinen Weiterleitungs-Button erzeugen. */
+function hasRealLink(link){
+  return typeof link === "string" && /^https?:\/\//i.test(link);
+}
+
 /* "Bewerte uns": Platzhalter-Struktur für die Store-Bewertungslinks, bis
    CanSpot tatsächlich veröffentlicht ist und echte IDs feststehen - dann
    hier nur die beiden Werte ersetzen, der Rest (Plattformerkennung,
@@ -7849,6 +7871,11 @@ function isIOSDevice(){
 }
 
 function openStoreRating(){
+  /* Solange die IDs Platzhalter sind, nicht auf erfundene Store-Seiten verlinken. */
+  if(/XXXX/.test(STORE_RATING_LINKS.ios)){
+    showToast("CanSpot ist noch nicht im App Store oder bei Google Play erhältlich.");
+    return;
+  }
   const url = isIOSDevice() ? STORE_RATING_LINKS.ios : STORE_RATING_LINKS.android;
   window.open(url, "_blank");
 }
@@ -9097,8 +9124,14 @@ function openHistory(dealId){
     ctaBtn.innerHTML = "Angebot abgelaufen";
     ctaBtn.classList.add("disabled-cta");
     ctaBtn.style.pointerEvents = "none";
+  } else if(!hasRealLink(bestDeal.link)){
+    /* Ohne echten Händlerlink kein Button, der nach Weiterleitung aussieht. */
+    ctaBtn.href = "#";
+    ctaBtn.innerHTML = `Bestes Angebot: ${bestDeal.store} · ${euro(bestDeal.offerPrice)} €`;
+    ctaBtn.classList.add("disabled-cta");
+    ctaBtn.style.pointerEvents = "none";
   } else {
-    ctaBtn.href = bestDeal.link || "#";
+    ctaBtn.href = bestDeal.link;
     ctaBtn.classList.remove("disabled-cta");
     ctaBtn.style.pointerEvents = "";
     ctaBtn.innerHTML = `Zum Angebot bei ${bestDeal.store} · ${euro(bestDeal.offerPrice)} € <svg class="icon icon-md"><use href="#i-external"/></svg>`;
@@ -9843,7 +9876,9 @@ function openStoreDetail(dealId){
     e.preventDefault();
     if(branch) openStoreRoute(branch.geo);
   };
-  document.getElementById("storeDetailOnlineBtn").href = deal.link || "#";
+  const onlineBtn = document.getElementById("storeDetailOnlineBtn");
+  onlineBtn.href = hasRealLink(deal.link) ? deal.link : "#";
+  onlineBtn.style.display = hasRealLink(deal.link) ? "flex" : "none";
 
   renderPriceFeedback(deal);
 

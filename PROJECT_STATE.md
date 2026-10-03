@@ -4,6 +4,28 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-10-03 (4) — Schutz vor erneuter Einstufung als Betrugsseite
+
+**Anlass**: Die alte Fassung unter einem früheren GitHub-Konto wurde als betrügerisch markiert. Auslöser waren Händlerlogos von fremden Servern, erfundene Rabattpreise, Kontofelder mit Passwort und Platzhalter-Links. Logos und Passwortfelder waren in der Vorlage schon entfernt.
+
+**Was**:
+- **Beispieldaten-Banner** (`.demo-banner`) gut sichtbar über der Angebotsliste. Damit ist Regel 4 aus DATENQUELLEN.md erfüllt.
+- **`<meta name="description">`** nennt den unabhängigen Prototyp und die Beispieldaten.
+- **Neue Seiten `impressum.html` und `datenschutz.html`**: Alle Rechtslinks (Mein Bereich, Burger-Menü) zeigen jetzt dorthin. „Nutzungsbedingungen“ führt zu `impressum.html#nutzung`, „Kontakt“ zu `impressum.html#kontakt`, der Platzhalter `kontakt@canspot.example` ist weg.
+- **„Zum Angebot“**: Ohne echten http(s)-Link (`hasRealLink()`) erscheint ein deaktivierter Button „Bestes Angebot: Händler · Preis“ statt eines Links ins Leere. „Angebot online öffnen“ in der Filialansicht ist dann ausgeblendet.
+- **„Bewerte uns“**: Solange die Store-IDs Platzhalter sind, erscheint ein Hinweis statt eines Links auf erfundene Store-Seiten.
+- **Konto verwalten**: Ein Hinweis sagt, dass die Angaben nur auf dem Gerät bleiben.
+- `CACHE_NAME` steht auf `canspot-cache-v154`, beide neuen Seiten sind in `APP_SHELL`. `www/` ist synchron, `npx cap copy ios` ist gelaufen.
+
+**Getestet**: Im Browser (375×812) mit Live-Daten: Banner sichtbar, 4 Karten, Rechtslinks korrekt, deaktivierter CTA, Online-Button ausgeblendet, Toast bei „Bewerte uns“, Impressum-Seite wird angezeigt. Der Service Worker ließ sich in der eingebetteten Vorschau nicht registrieren, auch nicht mit einer leeren Testdatei. Das liegt an der Umgebung, nicht an der App.
+
+**Offen**:
+- In `impressum.html` und `datenschutz.html` müssen die Platzhalter **[Vorname Nachname], [Straße Hausnummer], [PLZ Ort], [E-Mail-Adresse]** vor dem Push ausgefüllt werden.
+- Die Datenschutzerklärung ist ein Entwurf und vor dem Start rechtlich prüfen lassen.
+- Altes Repo unter dem früheren GitHub-Konto samt Pages-Seite löschen oder auf privat stellen.
+
+---
+
 ## 2026-10-03 (3) — Tab-Titel, Suchfeld-Text, Reihenfolge auf der Angebotskarte
 
 **Was**:
