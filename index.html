@@ -2028,6 +2028,74 @@ transition:background .15s
 .profile-action-danger{color:var(--status-error-text);border-color:var(--status-error-border)}
 .profile-action-danger:hover{background:var(--status-error-bg)}
 
+/* ---------- KONTO: ANMELDEN / REGISTRIEREN (authOverlay) ----------
+   Supabase Auth mit E-Mail + Passwort, siehe initAuth() im Script. */
+.auth-guest{
+background:var(--bg-surface-sunken);
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-lg);
+padding:16px 14px;
+margin-top:6px
+}
+.auth-guest b{display:block;font-size:15px;color:var(--text-primary)}
+.auth-guest p{margin:4px 0 0;font-size:12.5px;color:var(--text-muted)}
+.auth-guest .sheet-btn{margin-top:14px}
+.profile-head[hidden],.auth-guest[hidden],.auth-msg[hidden],.auth-field[hidden],.auth-link[hidden]{display:none}
+.profile-account-email{font-size:12.5px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.auth-tabs{display:flex;gap:8px;margin:6px 0 18px}
+.auth-tab{
+flex:1;
+border:1px solid var(--border-subtle);
+background:var(--bg-surface);
+color:var(--text-muted);
+padding:9px;
+border-radius:var(--radius-md);
+font-size:13px;
+font-weight:700;
+font-family:inherit;
+cursor:pointer;
+transition:background .15s,color .15s,border-color .15s
+}
+.auth-tab.on{background:var(--brand-primary-blue);border-color:var(--brand-primary-blue);color:#fff}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:5px}
+.auth-field .profile-input{padding:11px 12px}
+.auth-pw-row{position:relative}
+.auth-pw-row .profile-input{padding-right:84px}
+.auth-pw-toggle{
+position:absolute;
+right:6px;
+top:50%;
+transform:translateY(-50%);
+border:0;
+background:none;
+color:var(--brand-primary-blue);
+font-size:12px;
+font-weight:700;
+font-family:inherit;
+padding:6px 8px;
+cursor:pointer
+}
+.auth-hint{font-size:11.5px;color:var(--text-muted);margin-top:5px}
+.auth-msg{border-radius:var(--radius-md);padding:10px 12px;font-size:12.5px;margin-bottom:12px}
+.auth-msg.error{background:var(--status-error-bg);color:var(--status-error-text);border:1px solid var(--status-error-border)}
+.auth-msg.info{background:var(--bg-surface-sunken);color:var(--text-primary);border:1px solid var(--border-subtle)}
+#authForm .sheet-btn{margin-top:4px}
+#authForm .sheet-btn:disabled{opacity:.6;cursor:default}
+.auth-link{
+display:block;
+margin:14px auto 0;
+border:0;
+background:none;
+color:var(--brand-primary-blue);
+font-size:13px;
+font-weight:700;
+font-family:inherit;
+cursor:pointer
+}
+.auth-legal{font-size:11.5px;color:var(--text-muted);margin-top:14px;line-height:1.5}
+.auth-legal a{color:var(--brand-primary-blue)}
+
 .profile-legal{
 display:flex;
 flex-wrap:wrap;
@@ -4460,7 +4528,15 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="handle"></div>
 <h2>Mein Bereich</h2>
 
-<div class="profile-head">
+<!-- Nicht angemeldet: statt Profilkopf und Konto-Bereich nur der Einstieg
+     ins Anmeldefenster (authOverlay). Umschalten in applyAuthState(). -->
+<div class="auth-guest" id="authGuestBox" hidden>
+<b>Nicht angemeldet</b>
+<p>Melde dich mit deinem CanSpot-Konto an oder erstelle ein neues.</p>
+<button class="sheet-btn" id="authOpenBtn">Anmelden oder registrieren</button>
+</div>
+
+<div class="profile-head" id="profileHead" hidden>
 <div class="profile-avatar-wrap">
 <div class="profile-avatar" id="profileAvatar">?</div>
 <button class="avatar-edit-badge" id="avatarEditBtn" aria-label="Profilbild ändern"><svg class="icon icon-xs"><use href="#i-camera"/></svg></button>
@@ -4468,6 +4544,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 <div class="profile-fields">
 <div class="profile-name-display placeholder-text" id="profileNameText">Name eingeben</div>
+<div class="profile-account-email" id="profileAccountEmail"></div>
 <button class="avatar-remove-link" id="avatarRemoveBtn" style="display:none">Profilbild entfernen</button>
 </div>
 </div>
@@ -4479,6 +4556,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="profile-row-arrow">›</div>
 </button>
 
+<div id="accountSection" hidden>
 <div class="field-label" style="margin-top:22px">Konto</div>
 <button class="profile-row" id="accountManageRow" data-open="accountManageOverlay">
 <div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-user"/></svg></div>
@@ -4489,6 +4567,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="profile-row-arrow">›</div>
 </button>
 <button class="profile-action" id="logoutBtn"><svg class="icon icon-md"><use href="#i-logout"/></svg> Abmelden</button>
+</div>
 
 <div class="profile-legal">
 <a href="impressum.html">Impressum</a>
@@ -4509,7 +4588,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <button class="sheet-close" data-close="accountManageOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
 <div class="handle"></div>
 <h2>Konto verwalten</h2>
-<div class="desc">Deine Angaben werden nur auf diesem Gerät gespeichert und nicht übertragen.</div>
+<div class="desc">Deine E-Mail-Adresse gehört zu deinem Konto. Name und Geburtsdatum werden nur auf diesem Gerät gespeichert und nicht übertragen.</div>
 
 <div class="field-label" style="margin-top:22px">Persönliche Daten</div>
 <div class="field-block" id="nameBlock">
@@ -4528,13 +4607,9 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 <div class="field-block" id="emailBlock">
 <div class="field-mini-label">E-Mail-Adresse</div>
-<div class="field-view" data-edit="email">
-<span id="profileEmailText" class="placeholder-text">E-Mail-Adresse eingeben</span>
-<button class="field-edit-btn" data-edit="email" aria-label="E-Mail bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
-</div>
-<div class="field-edit-row" id="emailEditRow" style="display:none">
-<input class="profile-input" id="profileEmail" type="email" placeholder="E-Mail-Adresse eingeben">
-<button class="btn primary field-save-btn" data-save="email">Speichern</button>
+<!-- Nur Anzeige: kommt aus dem Supabase-Konto (applyAuthState()). -->
+<div class="field-view">
+<span id="profileEmailText"></span>
 </div>
 </div>
 <div class="field-block" id="birthdateBlock">
@@ -4579,6 +4654,44 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="desc" style="margin-bottom:10px">Dein Konto und deine gespeicherten Daten werden dauerhaft gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.</div>
 <button class="profile-action profile-action-danger" id="deleteAccountBtn"><svg class="icon icon-md"><use href="#i-trash"/></svg> Konto löschen</button>
 
+</div>
+</div>
+</div>
+
+<!-- ANMELDEN / REGISTRIEREN / PASSWORT (Supabase Auth, E-Mail + Passwort).
+     Ein Formular für vier Modi (login/signup/reset/newpw), umgeschaltet per
+     setAuthMode(). Echtes <form> mit autocomplete-Attributen, damit
+     Passwort-Manager funktionieren; abgeschickt wird nur per JS an Supabase. -->
+<div class="overlay" id="authOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="authOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2 id="authTitle">Anmelden</h2>
+<div class="auth-tabs" id="authTabs">
+<button type="button" class="auth-tab on" data-auth-mode="login">Anmelden</button>
+<button type="button" class="auth-tab" data-auth-mode="signup">Registrieren</button>
+</div>
+<div class="desc" id="authDesc" hidden></div>
+<form id="authForm" novalidate>
+<div class="auth-field" id="authEmailField">
+<label for="authEmail">E-Mail-Adresse</label>
+<input class="profile-input" id="authEmail" name="email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254" required>
+</div>
+<div class="auth-field" id="authPasswordField">
+<label for="authPassword">Passwort</label>
+<div class="auth-pw-row">
+<input class="profile-input" id="authPassword" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="72" required>
+<button type="button" class="auth-pw-toggle" id="authPwToggle" aria-controls="authPassword" aria-pressed="false">Anzeigen</button>
+</div>
+<div class="auth-hint" id="authPwHint" hidden>Mindestens 8 Zeichen.</div>
+</div>
+<div class="auth-msg" id="authMsg" role="alert" hidden></div>
+<button type="submit" class="sheet-btn" id="authSubmit">Anmelden</button>
+</form>
+<button type="button" class="auth-link" id="authForgotBtn">Passwort vergessen?</button>
+<button type="button" class="auth-link" id="authBackBtn" hidden>Zurück zur Anmeldung</button>
+<div class="auth-legal" id="authLegal" hidden>Mit der Registrierung legst du ein CanSpot-Konto an. Dafür speichern wir deine E-Mail-Adresse und dein Passwort (nie im Klartext). Mehr dazu in der <a href="datenschutz.html#konto">Datenschutzerklärung</a>. Es gelten die <a href="impressum.html#nutzung">Nutzungsbedingungen</a>.</div>
 </div>
 </div>
 </div>
@@ -5157,8 +5270,9 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 /* ---------------- SUPABASE: KONFIGURATION ----------------
    Einzige Datenquelle für die öffentlichen Stammdaten (Produkte/Händler/
    Filialen/Angebote/Preisverlauf/Nährwerte/Bewertungs-Aggregate), siehe
-   loadFromSupabase() weiter unten. Noch OHNE Auth/private Nutzerdaten
-   (Favoriten/eigene Bewertungen/Preisalarme/Konto) - späterer Schritt.
+   loadFromSupabase() weiter unten. Dazu das Nutzerkonto über Supabase Auth
+   (E-Mail + Passwort, siehe initAuth()). Favoriten/eigene Bewertungen/
+   Preisalarme liegen weiter nur lokal - späterer Schritt.
 
    Der "Publishable"/"anon"-Key ist bewusst ÖFFENTLICH in Client-Code
    aufrufbar - er dient nur der Projekt-Identifikation, der eigentliche
@@ -5175,6 +5289,15 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
    im Script. Alle übrigen Einstellungen kommen aus public.app_settings. */
 const SUPABASE_URL = "https://kyksbqrdtdusdbqwvazw.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_cIbIMqYWZ0qC2kDPRhAcnw_ijhPPPAm";
+/* Fehler aus einem Bestätigungs-/Passwort-Link (z. B. abgelaufen) stehen im
+   URL-Hash. Vor createClient() auslesen, weil supabase-js den Hash beim
+   Start selbst auswertet; angezeigt wird er in initAuth(). */
+const AUTH_LINK_ERROR = (()=>{
+  try{
+    const params = new URLSearchParams(location.hash.slice(1));
+    return params.get("error_code") || params.get("error") || null;
+  }catch(e){ return null; }
+})();
 const supabaseClient = (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
   : null;
@@ -7770,7 +7893,7 @@ function initSwipeToClose(overlayId){
    konzeptionell nicht zu einem seitlichen Drawer (schiebt sich nach rechts
    raus, nicht nach unten) und hätte per Inline-transform:translateY() mit
    der neuen translateX()-Animation des Menüs kollidiert. */
-["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","authOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
 
 /* Zusätzlich zu Pfeil/X und (bei Detail-/Preisverlauf-Fenster) der
    Wischgeste: Tippen auf den Handle-Balken oben mittig schließt das Sheet —
@@ -7784,7 +7907,7 @@ function initHandleTapToClose(overlayId){
    .handle-Balken mehr (macht bei seitlichem statt unterem Einschub keinen
    Sinn) - Schließen läuft dort über das X sowie Tippen auf den abgedunkelten
    Bereich (bestehender generischer Overlay-Klick-Handler weiter oben). */
-["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initHandleTapToClose);
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","authOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initHandleTapToClose);
 
 document.getElementById("locBtn").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("statusEdit").addEventListener("click",()=>openSheet("locOverlay"));
@@ -8022,9 +8145,241 @@ function showToast(msg){
   showToast._t = setTimeout(()=>toast.classList.remove("show"), duration);
 }
 
-document.getElementById("logoutBtn").addEventListener("click", ()=>{
-  showToast("Abmelden ist noch nicht verfügbar.");
+/* ---------------- KONTO (Supabase Auth, E-Mail + Passwort) ----------------
+   Die Sitzung speichert supabase-js selbst im localStorage
+   (sb-<projekt>-auth-token, technisch notwendig) und erneuert sie
+   automatisch. Alle Änderungen am Anmeldestatus laufen über
+   onAuthStateChange -> applyAuthState(); es gibt keinen zweiten Zustand.
+   Fehlermeldungen verraten bewusst nicht, ob eine E-Mail registriert ist
+   (siehe CLAUDE.md, Abschnitt "DSGVO & Sicherheit"). */
+let currentUser = null;
+let authMode = "login";
+const AUTH_MIN_PASSWORD = 8;
+
+const authEls = {
+  title: document.getElementById("authTitle"),
+  tabs: document.getElementById("authTabs"),
+  desc: document.getElementById("authDesc"),
+  form: document.getElementById("authForm"),
+  emailField: document.getElementById("authEmailField"),
+  email: document.getElementById("authEmail"),
+  passwordField: document.getElementById("authPasswordField"),
+  password: document.getElementById("authPassword"),
+  pwToggle: document.getElementById("authPwToggle"),
+  pwHint: document.getElementById("authPwHint"),
+  msg: document.getElementById("authMsg"),
+  submit: document.getElementById("authSubmit"),
+  forgot: document.getElementById("authForgotBtn"),
+  back: document.getElementById("authBackBtn"),
+  legal: document.getElementById("authLegal")
+};
+
+const AUTH_MODES = {
+  login:  {title:"Anmelden", submit:"Anmelden", tabs:true, email:true, password:true, pwAutocomplete:"current-password", hint:false, forgot:true, back:false, legal:false, desc:""},
+  signup: {title:"Registrieren", submit:"Konto erstellen", tabs:true, email:true, password:true, pwAutocomplete:"new-password", hint:true, forgot:false, back:false, legal:true, desc:""},
+  reset:  {title:"Passwort vergessen", submit:"Link senden", tabs:false, email:true, password:false, hint:false, forgot:false, back:true, legal:false, desc:"Gib die E-Mail-Adresse deines Kontos ein. Wir schicken dir einen Link, mit dem du ein neues Passwort festlegen kannst."},
+  newpw:  {title:"Neues Passwort", submit:"Passwort speichern", tabs:false, email:false, password:true, pwAutocomplete:"new-password", hint:true, forgot:false, back:false, legal:false, desc:"Lege ein neues Passwort für dein Konto fest."}
+};
+
+function showAuthMsg(text, kind){
+  authEls.msg.textContent = text || "";
+  authEls.msg.className = "auth-msg " + (kind || "error");
+  authEls.msg.hidden = !text;
+}
+
+function setAuthMode(mode){
+  const cfg = AUTH_MODES[mode];
+  authMode = mode;
+  authEls.title.textContent = cfg.title;
+  authEls.submit.textContent = cfg.submit;
+  authEls.tabs.hidden = !cfg.tabs;
+  authEls.tabs.style.display = cfg.tabs ? "" : "none";
+  authEls.tabs.querySelectorAll(".auth-tab").forEach(t=>t.classList.toggle("on", t.dataset.authMode===mode));
+  authEls.desc.textContent = cfg.desc;
+  authEls.desc.hidden = !cfg.desc;
+  authEls.emailField.hidden = !cfg.email;
+  authEls.passwordField.hidden = !cfg.password;
+  if(cfg.password) authEls.password.setAttribute("autocomplete", cfg.pwAutocomplete);
+  authEls.pwHint.hidden = !cfg.hint;
+  authEls.forgot.hidden = !cfg.forgot;
+  authEls.back.hidden = !cfg.back;
+  authEls.legal.hidden = !cfg.legal;
+  authEls.password.value = "";
+  setPasswordVisible(false);
+  showAuthMsg("");
+}
+
+function setPasswordVisible(visible){
+  authEls.password.type = visible ? "text" : "password";
+  authEls.pwToggle.textContent = visible ? "Verbergen" : "Anzeigen";
+  authEls.pwToggle.setAttribute("aria-pressed", String(visible));
+}
+
+function openAuthSheet(mode){
+  setAuthMode(mode || "login");
+  openSheet("authOverlay");
+}
+
+/* Ziel für Links in Bestätigungs-/Passwort-Mails: im Browser die aktuelle
+   Seite. In der iOS-App (capacitor://) gibt es keine aufrufbare Web-Adresse,
+   dann nimmt Supabase die "Site URL" aus dem Dashboard. Jede Adresse muss
+   dort unter Auth -> URL Configuration -> Redirect URLs freigegeben sein. */
+function authRedirectUrl(){
+  return /^https?:$/.test(location.protocol) ? location.origin + location.pathname : undefined;
+}
+
+/* Übersetzt Supabase-Fehler in neutrale deutsche Texte. Unbekannte Fehler
+   bekommen einen allgemeinen Text, nie die rohe Server-Meldung. */
+function authErrorText(error){
+  const code = (error && (error.code || error.name)) || "";
+  if(code==="invalid_credentials") return "E-Mail oder Passwort ist falsch.";
+  if(code==="email_not_confirmed") return "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in unserer Mail.";
+  if(code==="weak_password") return "Dieses Passwort ist zu schwach. Bitte wähle ein längeres Passwort mit Buchstaben und Zahlen.";
+  if(code==="same_password") return "Das neue Passwort muss sich vom alten unterscheiden.";
+  if(code==="validation_failed" || code==="email_address_invalid") return "Bitte eine gültige E-Mail-Adresse eingeben.";
+  if(code==="signup_disabled") return "Registrieren ist gerade nicht möglich.";
+  if(/rate_limit/.test(code) || (error && error.status===429)) return "Zu viele Versuche. Bitte warte ein paar Minuten.";
+  if(error && (error.name==="AuthRetryableFetchError" || error.status===0)) return "Keine Verbindung. Bitte prüfe dein Internet.";
+  return "Das hat nicht geklappt. Bitte versuche es später erneut.";
+}
+
+function applyAuthState(user){
+  currentUser = user || null;
+  const loggedIn = !!currentUser;
+  document.getElementById("authGuestBox").hidden = loggedIn;
+  document.getElementById("profileHead").hidden = !loggedIn;
+  document.getElementById("accountSection").hidden = !loggedIn;
+  const email = loggedIn ? (currentUser.email || "") : "";
+  document.getElementById("profileAccountEmail").textContent = email;
+  document.getElementById("profileEmailText").textContent = email;
+  /* Ohne Konto gibt es nichts zu verwalten: offene Konto-Fenster schließen. */
+  if(!loggedIn){
+    ["accountManageOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay"].forEach(id=>{
+      if(document.getElementById(id).classList.contains("open")) closeSheet(id);
+    });
+  }
+}
+
+authEls.tabs.querySelectorAll(".auth-tab").forEach(tab=>{
+  tab.addEventListener("click", ()=>{
+    const email = authEls.email.value;
+    setAuthMode(tab.dataset.authMode);
+    authEls.email.value = email;
+  });
 });
+authEls.pwToggle.addEventListener("click", ()=>setPasswordVisible(authEls.password.type==="password"));
+authEls.forgot.addEventListener("click", ()=>{
+  const email = authEls.email.value;
+  setAuthMode("reset");
+  authEls.email.value = email;
+});
+authEls.back.addEventListener("click", ()=>{
+  const email = authEls.email.value;
+  setAuthMode("login");
+  authEls.email.value = email;
+});
+document.getElementById("authOpenBtn").addEventListener("click", ()=>openAuthSheet("login"));
+
+authEls.form.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  if(!supabaseClient){
+    showAuthMsg("Die Anmeldung ist gerade nicht erreichbar. Bitte versuche es später erneut.");
+    return;
+  }
+  const cfg = AUTH_MODES[authMode];
+  const email = authEls.email.value.trim();
+  const password = authEls.password.value;
+  if(cfg.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    showAuthMsg("Bitte eine gültige E-Mail-Adresse eingeben.");
+    authEls.email.focus();
+    return;
+  }
+  if(cfg.password && !password){
+    showAuthMsg("Bitte gib dein Passwort ein.");
+    authEls.password.focus();
+    return;
+  }
+  if(cfg.hint && password.length < AUTH_MIN_PASSWORD){
+    showAuthMsg(`Das Passwort muss mindestens ${AUTH_MIN_PASSWORD} Zeichen lang sein.`);
+    authEls.password.focus();
+    return;
+  }
+
+  showAuthMsg("");
+  authEls.submit.disabled = true;
+  try{
+    if(authMode==="login"){
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if(error){ showAuthMsg(authErrorText(error)); return; }
+      closeSheet("authOverlay");
+      showToast("Du bist angemeldet.");
+    } else if(authMode==="signup"){
+      const { data, error } = await supabaseClient.auth.signUp({
+        email, password, options:{ emailRedirectTo: authRedirectUrl() }
+      });
+      if(error){ showAuthMsg(authErrorText(error)); return; }
+      if(data && data.session){
+        closeSheet("authOverlay");
+        showToast("Dein Konto ist erstellt.");
+      } else {
+        /* Gleicher Text, egal ob die Adresse schon registriert ist. */
+        setAuthMode("login");
+        authEls.email.value = email;
+        showAuthMsg("Fast geschafft: Bitte bestätige deine E-Mail-Adresse über den Link, den wir dir geschickt haben. Danach kannst du dich hier anmelden.", "info");
+      }
+    } else if(authMode==="reset"){
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: authRedirectUrl() });
+      if(error && (/rate_limit/.test(error.code || "") || error.status===429 || error.name==="AuthRetryableFetchError")){
+        showAuthMsg(authErrorText(error));
+        return;
+      }
+      setAuthMode("login");
+      authEls.email.value = email;
+      showAuthMsg("Falls zu dieser Adresse ein Konto existiert, haben wir dir einen Link zum Zurücksetzen geschickt.", "info");
+    } else if(authMode==="newpw"){
+      const { error } = await supabaseClient.auth.updateUser({ password });
+      if(error){ showAuthMsg(authErrorText(error)); return; }
+      closeSheet("authOverlay");
+      showToast("Dein neues Passwort ist gespeichert.");
+    }
+  } catch(err){
+    showAuthMsg(authErrorText(err));
+  } finally {
+    authEls.submit.disabled = false;
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+  if(!supabaseClient) return;
+  /* scope "local": beendet nur die Sitzung auf diesem Gerät (das
+     Refresh-Token wird serverseitig ungültig). supabase-js entfernt die
+     lokale Sitzung auch dann, wenn der Server nicht erreichbar ist. */
+  const { error } = await supabaseClient.auth.signOut({ scope:"local" });
+  applyAuthState(null);
+  closeSheet("profileOverlay");
+  showToast(error ? "Du bist auf diesem Gerät abgemeldet." : "Du bist abgemeldet.");
+});
+
+function initAuth(){
+  applyAuthState(null);
+  if(AUTH_LINK_ERROR){
+    showToast(AUTH_LINK_ERROR==="otp_expired"
+      ? "Der Link ist abgelaufen. Bitte fordere einen neuen an."
+      : "Der Link ist ungültig. Bitte fordere einen neuen an.");
+    try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+  }
+  if(!supabaseClient) return;
+  /* Der Callback darf keine weiteren supabase-Aufrufe direkt abwarten
+     (Hinweis aus der supabase-js-Doku), daher nur UI-Updates, das
+     Passwort-Fenster per setTimeout. */
+  supabaseClient.auth.onAuthStateChange((event, session)=>{
+    applyAuthState(session ? session.user : null);
+    if(event==="PASSWORD_RECOVERY"){
+      setTimeout(()=>openAuthSheet("newpw"), 0);
+    }
+  });
+}
+initAuth();
 /* Dreistufiges Löschen: der Button auf "Konto verwalten" öffnet nur die
    Bestätigung, löscht nichts direkt (verhindert einen versehentlichen Klick
    direkt zur Kontolöschung). "Abbrechen" nutzt den bereits bestehenden
@@ -8120,7 +8475,6 @@ function updateAvatarInitials(name){
 
 const profileFirstNameInput = document.getElementById("profileFirstName");
 const profileLastNameInput = document.getElementById("profileLastName");
-const profileEmailInput = document.getElementById("profileEmail");
 /* Der Name wird an zwei Stellen angezeigt: als reiner Anzeigetext direkt in
    "Mein Bereich" (profileNameText) und als aktueller Wert im bearbeitbaren
    Feld unter "Konto verwalten" (profileNameFieldText) - beide werden beim
@@ -8128,7 +8482,6 @@ const profileEmailInput = document.getElementById("profileEmail");
    Eingabefelder, aber weiterhin EIN gemeinsamer Anzeigewert (wie bisher). */
 const profileNameText = document.getElementById("profileNameText");
 const profileNameFieldText = document.getElementById("profileNameFieldText");
-const profileEmailText = document.getElementById("profileEmailText");
 
 function getFullName(){
   return [profileFirstNameInput.value.trim(), profileLastNameInput.value.trim()].filter(Boolean).join(" ");
@@ -8153,18 +8506,16 @@ function updateNameDisplays(){
 
 const savedFirstName = localStorage.getItem("canspot-firstname");
 const savedLastName = localStorage.getItem("canspot-lastname");
-const savedEmail = localStorage.getItem("canspot-email");
 const savedBirthdate = localStorage.getItem("canspot-birthdate");
 let savedAddress = null;
 try{ savedAddress = JSON.parse(localStorage.getItem("canspot-address") || "null"); }catch(e){ savedAddress = null; }
 if(savedFirstName) profileFirstNameInput.value = savedFirstName;
 if(savedLastName) profileLastNameInput.value = savedLastName;
 updateNameDisplays();
-if(savedEmail){
-  profileEmailInput.value = savedEmail;
-  profileEmailText.textContent = savedEmail;
-  profileEmailText.classList.remove("placeholder-text");
-}
+/* Die E-Mail-Adresse kommt jetzt aus dem Konto (applyAuthState()). Eine
+   früher nur lokal eingetragene Adresse wird nicht mehr gebraucht und
+   deshalb entfernt (Datenminimierung). */
+try{ localStorage.removeItem("canspot-email"); }catch(e){}
 if(savedBirthdate){
   document.getElementById("profileBirthdate").value = savedBirthdate;
   const profileBirthdateText = document.getElementById("profileBirthdateText");
@@ -8189,7 +8540,7 @@ function setFieldEditing(field, editing){
   document.getElementById(`${field}EditRow`).style.display = editing ? "flex" : "none";
 }
 
-const FIELD_FOCUS_TARGET = {name:"profileFirstName", email:"profileEmail", birthdate:"profileBirthdate", address:"profileStreet"};
+const FIELD_FOCUS_TARGET = {name:"profileFirstName", birthdate:"profileBirthdate", address:"profileStreet"};
 document.querySelectorAll("[data-edit]").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const field = btn.dataset.edit;
@@ -8198,7 +8549,7 @@ document.querySelectorAll("[data-edit]").forEach(btn=>{
   });
 });
 
-/* Ein aufgeklapptes Bearbeiten-Feld (Name/E-Mail/Geburtsdatum/Adresse)
+/* Ein aufgeklapptes Bearbeiten-Feld (Name/Geburtsdatum/Adresse)
    klappt automatisch wieder ein, sobald irgendwo anders im Fenster getippt wird. Klicks INNERHALB des jeweiligen
    .field-block (Stift, Eingabefelder, Speichern-Button) lösen das bewusst
    NICHT aus, deren eigene Handler (s.o./[data-save]) kümmern sich darum. */
@@ -8241,17 +8592,6 @@ document.querySelectorAll("[data-save]").forEach(btn=>{
       document.getElementById("profileAddressText").textContent = formatAddressSummary(address) || "Noch keine Adresse hinterlegt";
       localStorage.setItem("canspot-address", JSON.stringify(address));
       showToast("Adresse aktualisiert.");
-    } else {
-      const val = profileEmailInput.value.trim();
-      if(!val) return;
-      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)){
-        showToast("Bitte eine gültige E-Mail-Adresse eingeben.");
-        return;
-      }
-      profileEmailText.textContent = val;
-      profileEmailText.classList.remove("placeholder-text");
-      localStorage.setItem("canspot-email", val);
-      showToast("E-Mail-Adresse aktualisiert.");
     }
     setFieldEditing(field, false);
   });

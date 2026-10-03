@@ -14,6 +14,31 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-10-03 (7) — Echtes Konto: Anmelden, Registrieren, Abmelden (Supabase Auth)
+
+**Was**:
+- **Anmeldung per E-Mail + Passwort** über Supabase Auth (Entscheidung des Projektinhabers). Neues Fenster `#authOverlay` mit vier Modi: Anmelden, Registrieren, Passwort vergessen, neues Passwort (nach dem Link aus der Mail, Event `PASSWORD_RECOVERY`). Logik in `initAuth()`/`applyAuthState()`, Zustand nur über `onAuthStateChange`.
+- **Mein Bereich:** Ohne Anmeldung erscheint „Nicht angemeldet“ mit Button. Profilkopf und Konto-Bereich (Konto verwalten, Abmelden) sind nur angemeldet sichtbar. Unter dem Namen steht die Konto-E-Mail.
+- **Abmelden** beendet die Sitzung auf diesem Gerät (`signOut({scope:"local"})`).
+- **Konto verwalten:** Die E-Mail kommt aus dem Konto und ist nur noch Anzeige. Das alte lokale Feld `canspot-email` ist entfernt und wird beim Start gelöscht. Name und Geburtsdatum bleiben lokal (Datenminimierung).
+- **Sicherheit/DSGVO:** Fehlermeldungen verraten nicht, ob eine E-Mail registriert ist. Rohe Server-Meldungen werden nie angezeigt. Abgelaufene Links zeigen einen Hinweis. Neuer verbindlicher Abschnitt „DSGVO & Sicherheit“ in `CLAUDE.md`. `datenschutz.html` hat einen Abschnitt „Benutzerkonto“ (`#konto`).
+- **Datenbank:** keine Änderung. Tabellen, RLS und der Trigger `on_auth_user_created` waren schon vorhanden.
+- `CACHE_NAME` steht auf `canspot-cache-v157`, `www/` ist synchron, `npx cap copy ios` ist gelaufen. Ein Scan nach Geheimnissen im Code und in der Git-Historie hat nichts gefunden.
+
+**Getestet** (Browser, 375×812): Gast-Ansicht, Wechsel zwischen den Modi, Prüfung von E-Mail und Mindestlänge, angemeldete Ansicht (simuliert), Abmelden, Hinweis bei abgelaufenem Link, keine Konsolenfehler. Kein echtes Konto angelegt, das steht noch aus.
+
+**Offen (Supabase-Dashboard, nur dort einstellbar)**:
+- Auth → URL Configuration: **Site URL** auf die echte Web-Adresse setzen (Standard ist `localhost:3000`, sonst führen Bestätigungs-Links ins Leere) und unter **Redirect URLs** die Web-Adresse eintragen.
+- Auth → Providers → Email: „Confirm email“ an lassen, Mindestlänge des Passworts auf 8 setzen, möglichst Buchstaben und Ziffern verlangen.
+- Für den echten Betrieb einen eigenen SMTP-Versand mit Sitz in der EU einrichten. Der Standardversand von Supabase schickt nur wenige Mails pro Stunde.
+- In `datenschutz.html` die Region des Supabase-Projekts eintragen und den Auftragsverarbeitungsvertrag (DPA) mit Supabase abschließen.
+
+**Offen (App)**:
+- **Konto löschen** ist noch ein Hinweis. Die vorbereitete Funktion `delete_my_account()` wurde nicht angelegt (Datenbankänderung wurde abgelehnt). Bis dahin läuft die Löschung laut Datenschutzerklärung per E-Mail. Apple verlangt für Apps mit Konto eine Löschung in der App.
+- E-Mail-Adresse ändern, Favoriten und Preisalarme mit dem Konto abgleichen.
+
+---
+
 ## 2026-10-03 (6) — Beispieldaten-Hinweise entfernt (echte Daten folgen)
 
 **Was** (auf Wunsch des Projektinhabers, weil künftig echte Daten kommen):
