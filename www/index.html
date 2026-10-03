@@ -2084,7 +2084,7 @@ cursor:pointer
 .auth-msg.error{background:var(--status-error-bg);color:var(--status-error-text);border:1px solid var(--status-error-border)}
 .auth-msg.info{background:var(--bg-surface-sunken);color:var(--text-primary);border:1px solid var(--border-subtle)}
 #authForm .sheet-btn{margin-top:4px}
-#authForm .sheet-btn:disabled{opacity:.6;cursor:default}
+.sheet-btn:disabled{opacity:.6;cursor:default}
 .auth-link{
 display:block;
 margin:14px auto 0;
@@ -8535,37 +8535,67 @@ function resetDeleteFeedbackForm(){
   deleteFeedbackOtherText.value = "";
 }
 
-/* Einziger Ort, an dem die Löschung tatsächlich "ausgeführt" wird (im
-   Demo-Prototyp weiterhin nur ein Toast, siehe bisheriges Verhalten von
-   confirmDeleteAccountBtn) - von "Überspringen" wie vom Löschen-Button aus
-   identisch aufgerufen, nur mit/ohne reason. Die Löschung selbst hängt damit
-   nie davon ab, ob ein Feedback abgegeben wurde. */
-function finalizeAccountDeletion(reason){
-  let feedbackGiven = false;
-  if(reason){
-    const note = (reason==="other") ? deleteFeedbackOtherText.value.trim() : "";
-    /* Es gibt aktuell keinerlei Backend/Datenbank in diesem Prototyp - auch
-       die Kontolöschung selbst persistiert nichts echtes (siehe Toast unten).
-       localStorage ist aber bereits das etablierte Persistenzmuster der App
-       (canspot-firstname/-lastname/-email/-avatar/... usw.), daher hier im selben Muster
-       weiterverwendet statt einer neuen Struktur - rein als Demo-Beleg dafür,
-       dass ein Löschgrund grundsätzlich mitgegeben werden kann. */
-    try{
-      localStorage.setItem("canspot-delete-feedback", JSON.stringify({
-        reason,
-        reasonLabel: deleteFeedbackReasonLabels[reason] || reason,
-        note,
-        date: TODAY_STR
-      }));
-    }catch(e){}
-    feedbackGiven = true;
+/* Einziger Ort, an dem das Konto gelöscht wird - von "Überspringen" wie vom
+   Löschen-Button aus identisch aufgerufen, nur mit/ohne reason. Die Löschung
+   hängt nie davon ab, ob ein Feedback abgegeben wurde.
+   RPC delete_my_account() (SECURITY DEFINER, nur für authenticated) löscht
+   ausschließlich das Konto von auth.uid() samt aller Nutzerdaten per CASCADE
+   und speichert den Löschgrund ohne Personenbezug in
+   account_deletion_feedback. Danach werden auch die nur lokal gespeicherten
+   Profilangaben auf diesem Gerät entfernt. */
+const deleteFeedbackButtons = [document.getElementById("skipDeleteFeedbackBtn"), document.getElementById("confirmDeleteFeedbackBtn")];
+async function finalizeAccountDeletion(reason){
+  if(!supabaseClient || !currentUser){
+    closeSheet("deleteAccountFeedbackOverlay");
+    showToast("Bitte melde dich zuerst an.");
+    return;
   }
+  const note = (reason==="other") ? deleteFeedbackOtherText.value.trim().slice(0, 500) : null;
+  deleteFeedbackButtons.forEach(b=>b.disabled = true);
+  let error = null;
+  try{
+    ({ error } = await supabaseClient.rpc("delete_my_account", { p_reason: reason || null, p_note: note || null }));
+  }catch(err){
+    error = err;
+  }
+  deleteFeedbackButtons.forEach(b=>b.disabled = false);
+  if(error){
+    showToast("Dein Konto konnte gerade nicht gelöscht werden. Bitte versuche es später erneut.");
+    return;
+  }
+  /* Das Konto existiert nicht mehr; die Sitzung auf dem Gerät aufräumen
+     (ein Fehler beim Abmelden ist hier egal). */
+  try{ await supabaseClient.auth.signOut({ scope:"local" }); }catch(e){}
+  clearLocalProfileData();
+  applyAuthState(null);
   closeSheet("deleteAccountFeedbackOverlay");
   resetDeleteFeedbackForm();
-  showToast(feedbackGiven
-    ? "Danke für dein Feedback! Konto löschen ist noch nicht verfügbar."
-    : "Konto löschen ist noch nicht verfügbar.");
+  closeSheet("profileOverlay");
+  showToast(reason ? "Dein Konto ist gelöscht. Danke für dein Feedback!" : "Dein Konto ist gelöscht.");
 }
+
+/* Entfernt die nur lokal gespeicherten Profilangaben (Name, Geburtsdatum,
+   Adresse, Profilbild) und setzt ihre Anzeige zurück. Favoriten, Alarme,
+   Bewertungen und Einstellungen funktionieren auch ohne Konto und bleiben. */
+function clearLocalProfileData(){
+  ["canspot-firstname","canspot-lastname","canspot-birthdate","canspot-address","canspot-avatar"].forEach(key=>{
+    try{ localStorage.removeItem(key); }catch(e){}
+  });
+  profileFirstNameInput.value = "";
+  profileLastNameInput.value = "";
+  updateNameDisplays();
+  document.getElementById("profileBirthdate").value = "";
+  const profileBirthdateText = document.getElementById("profileBirthdateText");
+  profileBirthdateText.textContent = "TT.MM.JJJJ";
+  profileBirthdateText.classList.add("placeholder-text");
+  ["profileStreet","profileZip","profileCity"].forEach(id=>{ document.getElementById(id).value = ""; });
+  document.getElementById("profileCountry").value = "Deutschland";
+  document.getElementById("profileAddressText").textContent = "Noch keine Adresse hinterlegt";
+  applyAvatarPhoto(null);
+}
+
+/* Früher lag ein Löschgrund nur lokal als Demo; er wird nicht mehr gebraucht. */
+try{ localStorage.removeItem("canspot-delete-feedback"); }catch(e){}
 
 document.getElementById("skipDeleteFeedbackBtn").addEventListener("click", ()=>{
   finalizeAccountDeletion(null);
