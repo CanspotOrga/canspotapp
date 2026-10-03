@@ -3281,6 +3281,7 @@ margin-top:6px;
 font-family:inherit
 }
 .avatar-remove-link:hover{color:var(--status-error-text)}
+.avatar-edit-badge:disabled,.avatar-remove-link:disabled{opacity:.5;cursor:default}
 
 .notif-hint{
 margin-top:14px;
@@ -4636,7 +4637,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <button class="sheet-close" data-close="accountManageOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
 <div class="handle"></div>
 <h2>Konto verwalten</h2>
-<div class="desc">Deine E-Mail-Adresse gehört zu deinem Konto. Name und Geburtsdatum werden nur auf diesem Gerät gespeichert und nicht übertragen.</div>
+<div class="desc">Deine E-Mail-Adresse und dein Profilbild gehören zu deinem Konto. Das Profilbild kannst nur du sehen. Name und Geburtsdatum werden nur auf diesem Gerät gespeichert und nicht übertragen.</div>
 
 <div class="field-label" style="margin-top:22px">Persönliche Daten</div>
 <div class="field-block" id="nameBlock">
@@ -8378,6 +8379,11 @@ let currentUser = null;
 let authMode = "login";
 let currentUsername = null;
 let profileLoadedFor = null;
+/* Profilbild (siehe Abschnitt PROFILBILD): Konto, zu dem das angezeigte Bild
+   gehört, und dessen Object-URL. Hier deklariert, weil initAuth() schon vor
+   dem Abschnitt läuft. */
+let avatarUser = null;
+let avatarObjectUrl = null;
 const AUTH_MIN_PASSWORD = 8;
 
 const authEls = {
@@ -8523,6 +8529,7 @@ function applyAuthState(user){
   if(!loggedIn) currentUsername = null;
   applyUsername(currentUsername);
   syncRecentWithAuth();
+  syncAvatarWithAuth();
   /* Ohne Konto gibt es nichts zu verwalten: offene Konto-Fenster schließen. */
   if(!loggedIn){
     ["accountManageOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay"].forEach(id=>{
@@ -8823,8 +8830,11 @@ function resetDeleteFeedbackForm(){
    RPC delete_my_account() (SECURITY DEFINER, nur für authenticated) löscht
    ausschließlich das Konto von auth.uid() samt aller Nutzerdaten per CASCADE
    und speichert den Löschgrund ohne Personenbezug in
-   account_deletion_feedback. Danach werden auch die nur lokal gespeicherten
-   Profilangaben auf diesem Gerät entfernt. */
+   account_deletion_feedback. Das Profilbild liegt in Storage, hängt nicht
+   per CASCADE am Konto und wird deshalb vorher über die Storage-API
+   entfernt (ein fehlendes Bild ist kein Fehler); delete_my_account() bricht
+   ab, solange es noch existiert. Danach werden auch die nur lokal
+   gespeicherten Profilangaben auf diesem Gerät entfernt. */
 const deleteFeedbackButtons = [document.getElementById("skipDeleteFeedbackBtn"), document.getElementById("confirmDeleteFeedbackBtn")];
 async function finalizeAccountDeletion(reason){
   if(!supabaseClient || !currentUser){
@@ -8836,7 +8846,10 @@ async function finalizeAccountDeletion(reason){
   deleteFeedbackButtons.forEach(b=>b.disabled = true);
   let error = null;
   try{
-    ({ error } = await supabaseClient.rpc("delete_my_account", { p_reason: reason || null, p_note: note || null }));
+    ({ error } = await supabaseClient.storage.from(AVATAR_BUCKET).remove([avatarPath(currentUser.id)]));
+    if(!error){
+      ({ error } = await supabaseClient.rpc("delete_my_account", { p_reason: reason || null, p_note: note || null }));
+    }
   }catch(err){
     error = err;
   }
@@ -8857,10 +8870,12 @@ async function finalizeAccountDeletion(reason){
 }
 
 /* Entfernt die nur lokal gespeicherten Profilangaben (Name, Geburtsdatum,
-   Adresse, Profilbild) und setzt ihre Anzeige zurück. Favoriten, Alarme,
-   Bewertungen und Einstellungen funktionieren auch ohne Konto und bleiben. */
+   Adresse) und setzt ihre Anzeige zurück. Das Profilbild gehört zum Konto
+   (siehe PROFILBILD) und verschwindet mit applyAuthState(null). Favoriten,
+   Alarme, Bewertungen und Einstellungen funktionieren auch ohne Konto und
+   bleiben. */
 function clearLocalProfileData(){
-  ["canspot-firstname","canspot-lastname","canspot-birthdate","canspot-address","canspot-avatar"].forEach(key=>{
+  ["canspot-firstname","canspot-lastname","canspot-birthdate","canspot-address"].forEach(key=>{
     try{ localStorage.removeItem(key); }catch(e){}
   });
   profileFirstNameInput.value = "";
@@ -8873,7 +8888,6 @@ function clearLocalProfileData(){
   ["profileStreet","profileZip","profileCity"].forEach(id=>{ document.getElementById(id).value = ""; });
   document.getElementById("profileCountry").value = "Deutschland";
   document.getElementById("profileAddressText").textContent = "Noch keine Adresse hinterlegt";
-  applyAvatarPhoto(null);
 }
 
 /* Früher lag ein Löschgrund nur lokal als Demo; er wird nicht mehr gebraucht. */
@@ -8887,6 +8901,8 @@ document.getElementById("confirmDeleteFeedbackBtn").addEventListener("click", ()
 });
 
 function updateAvatarInitials(name){
+  /* Über einem Profilbild keine Initialen einblenden. */
+  if(avatarObjectUrl) return;
   const initials = name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("") || "?";
   document.getElementById("profileAvatar").textContent = initials;
 }
@@ -9015,16 +9031,34 @@ document.querySelectorAll("[data-save]").forEach(btn=>{
   });
 });
 
-/* ---------------- PROFILBILD ---------------- */
+/* ---------------- PROFILBILD ----------------
+   Das Profilbild gehört zum Konto: privater Storage-Bucket "avatars", genau
+   eine Datei <user_id>/avatar.jpg, lesen/schreiben/löschen darf nur der
+   Besitzer (RLS). Die App verkleinert jedes Bild auf 160x160 Pixel und
+   speichert es neu als JPEG; dabei fallen Metadaten wie Aufnahmeort, Datum
+   und Kamera weg. Auf dem Gerät liegt es nur im Arbeitsspeicher
+   (Object-URL), nicht im lokalen Speicher. */
 
+const AVATAR_BUCKET = "avatars";
+const AVATAR_SIZE = 160;
 const avatarEditBtn = document.getElementById("avatarEditBtn");
 const avatarFileInput = document.getElementById("avatarFileInput");
 const avatarRemoveBtn = document.getElementById("avatarRemoveBtn");
 const profileAvatarEl = document.getElementById("profileAvatar");
 
-function applyAvatarPhoto(dataUrl){
-  if(dataUrl){
-    profileAvatarEl.style.backgroundImage = `url(${dataUrl})`;
+function avatarPath(uid){
+  return uid + "/avatar.jpg";
+}
+
+/* Zeigt ein Bild (Blob) an oder, mit null, wieder die Initialen. */
+function applyAvatarPhoto(blob){
+  if(avatarObjectUrl){
+    URL.revokeObjectURL(avatarObjectUrl);
+    avatarObjectUrl = null;
+  }
+  if(blob){
+    avatarObjectUrl = URL.createObjectURL(blob);
+    profileAvatarEl.style.backgroundImage = `url(${avatarObjectUrl})`;
     profileAvatarEl.textContent = "";
     avatarRemoveBtn.style.display = "block";
   } else {
@@ -9034,43 +9068,119 @@ function applyAvatarPhoto(dataUrl){
   }
 }
 
-avatarEditBtn.addEventListener("click", ()=> avatarFileInput.click());
+/* Aufruf aus applyAuthState(): Bei Ab- oder Ummeldung wird das angezeigte
+   Bild verworfen, nach der Anmeldung das eigene aus Storage geladen. */
+function syncAvatarWithAuth(){
+  const uid = currentUser ? currentUser.id : null;
+  if(uid === avatarUser) return;
+  avatarUser = uid;
+  applyAvatarPhoto(null);
+  /* nicht direkt im onAuthStateChange-Callback auf Supabase warten */
+  if(uid) setTimeout(loadAvatar, 0);
+}
 
-avatarFileInput.addEventListener("change", ()=>{
-  const file = avatarFileInput.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ()=>{
+async function loadAvatar(){
+  if(!supabaseClient || !currentUser) return;
+  const uid = currentUser.id;
+  let result = null;
+  try{
+    result = await supabaseClient.storage.from(AVATAR_BUCKET).download(avatarPath(uid));
+  }catch(e){
+    return;
+  }
+  /* Kein Bild hochgeladen oder keine Verbindung: Initialen bleiben. */
+  if(avatarUser !== uid || result.error || !result.data) return;
+  applyAvatarPhoto(result.data);
+}
+
+/* Schneidet das Bild quadratisch zu, verkleinert es auf 160x160 Pixel und
+   kodiert es neu als JPEG (ohne Metadaten). Transparente Flächen werden
+   weiß statt schwarz. */
+function resizeAvatarImage(file){
+  return new Promise((resolve, reject)=>{
+    const srcUrl = URL.createObjectURL(file);
     const img = new Image();
     img.onload = ()=>{
-      const size = 160;
+      URL.revokeObjectURL(srcUrl);
       const canvas = document.createElement("canvas");
-      canvas.width = size; canvas.height = size;
+      canvas.width = AVATAR_SIZE; canvas.height = AVATAR_SIZE;
       const ctx = canvas.getContext("2d");
-      const scale = Math.max(size/img.width, size/img.height);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, AVATAR_SIZE, AVATAR_SIZE);
+      const scale = Math.max(AVATAR_SIZE/img.width, AVATAR_SIZE/img.height);
       const w = img.width*scale, h = img.height*scale;
-      ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-      try{
-        localStorage.setItem("canspot-avatar", dataUrl);
-        applyAvatarPhoto(dataUrl);
-        showToast("Profilbild aktualisiert.");
-      }catch(e){
-        showToast("Bild konnte nicht gespeichert werden (zu groß).");
-      }
+      ctx.drawImage(img, (AVATAR_SIZE-w)/2, (AVATAR_SIZE-h)/2, w, h);
+      canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error("encode")), "image/jpeg", 0.85);
     };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
+    img.onerror = ()=>{
+      URL.revokeObjectURL(srcUrl);
+      reject(new Error("decode"));
+    };
+    img.src = srcUrl;
+  });
+}
+
+avatarEditBtn.addEventListener("click", ()=> avatarFileInput.click());
+
+avatarFileInput.addEventListener("change", async ()=>{
+  const file = avatarFileInput.files[0];
+  /* zurücksetzen, damit dieselbe Datei erneut gewählt werden kann */
+  avatarFileInput.value = "";
+  if(!file) return;
+  if(!supabaseClient || !currentUser){
+    showToast("Bitte melde dich zuerst an.");
+    return;
+  }
+  const uid = currentUser.id;
+  let blob;
+  try{
+    blob = await resizeAvatarImage(file);
+  }catch(e){
+    showToast("Dieses Bild kann nicht gelesen werden. Bitte wähle ein anderes.");
+    return;
+  }
+  avatarEditBtn.disabled = true;
+  let error = null;
+  try{
+    /* cacheControl "0": nach einem Wechsel nie ein altes Bild aus dem
+       Browser-Cache zeigen */
+    ({ error } = await supabaseClient.storage.from(AVATAR_BUCKET)
+      .upload(avatarPath(uid), blob, { upsert:true, contentType:"image/jpeg", cacheControl:"0" }));
+  }catch(e){
+    error = e;
+  }
+  avatarEditBtn.disabled = false;
+  if(error){
+    showToast("Profilbild konnte nicht gespeichert werden. Bitte versuche es später erneut.");
+    return;
+  }
+  if(avatarUser !== uid) return;
+  applyAvatarPhoto(blob);
+  showToast("Profilbild gespeichert. Nur du kannst es sehen.");
 });
 
-avatarRemoveBtn.addEventListener("click", ()=>{
-  localStorage.removeItem("canspot-avatar");
-  applyAvatarPhoto(null);
+avatarRemoveBtn.addEventListener("click", async ()=>{
+  if(!supabaseClient || !currentUser) return;
+  const uid = currentUser.id;
+  avatarRemoveBtn.disabled = true;
+  let error = null;
+  try{
+    ({ error } = await supabaseClient.storage.from(AVATAR_BUCKET).remove([avatarPath(uid)]));
+  }catch(e){
+    error = e;
+  }
+  avatarRemoveBtn.disabled = false;
+  if(error){
+    showToast("Profilbild konnte nicht entfernt werden. Bitte versuche es später erneut.");
+    return;
+  }
+  if(avatarUser === uid) applyAvatarPhoto(null);
+  showToast("Profilbild entfernt.");
 });
 
-const savedAvatar = localStorage.getItem("canspot-avatar");
-if(savedAvatar) applyAvatarPhoto(savedAvatar);
+/* Früher lag das Profilbild nur lokal auf dem Gerät. Es wird nicht
+   ungefragt hochgeladen, sondern entfernt; bei Bedarf neu wählen. */
+try{ localStorage.removeItem("canspot-avatar"); }catch(e){}
 
 /* ---------------- THEME (Hell / Dunkel / System) ---------------- */
 

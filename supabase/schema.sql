@@ -2,7 +2,8 @@
 -- CanSpot — Supabase-Datenbankschema
 -- ============================================================================
 -- Stand: entspricht dem Live-Projekt am 03.10.2026 (Tabellen, Constraints,
--- Indizes, Funktionen, Trigger, RLS-Policies, Grants).
+-- Indizes, Funktionen, Trigger, RLS-Policies, Grants, Storage-Bucket für
+-- Profilbilder).
 --
 -- Nur für ein LEERES Supabase-Projekt: legt alle Tabellen neu an und bricht
 -- ab, wenn sie schon existieren. Inhalte stehen in seed.sql.
@@ -462,6 +463,8 @@ grant execute on function public.is_username_available(text) to anon, authentica
 -- price_feedback_reports.user_id wird NULL. Der optionale Loeschgrund wird
 -- ohne Personenbezug in account_deletion_feedback gespeichert. Nur fuer
 -- authenticated (Advisor-Warnung 0029 ist gewollt), nicht fuer anon.
+-- Das Profilbild (Bucket avatars, Abschnitt 10) muss die App vorher ueber
+-- die Storage-API entfernen; liegt es noch da, bricht die Funktion ab.
 create function public.delete_my_account(p_reason text default null, p_note text default null)
 returns void
 language plpgsql
@@ -473,6 +476,15 @@ declare
 begin
   if v_uid is null then
     raise exception 'not authenticated' using errcode = '42501';
+  end if;
+  -- Dateien in Storage haengen nicht per CASCADE am Konto und lassen sich
+  -- nur ueber die Storage-API loeschen. Die App entfernt das Profilbild
+  -- vorher; liegt es noch da, wird nichts geloescht.
+  if exists (
+    select 1 from storage.objects
+    where bucket_id = 'avatars' and name = v_uid::text || '/avatar.jpg'
+  ) then
+    raise exception 'avatar still present' using errcode = '55000';
   end if;
   if v_reason is not null then
     insert into public.account_deletion_feedback (reason, note)
@@ -767,3 +779,39 @@ grant usage, select on sequence public.price_feedback_reports_id_seq to anon, au
 
 grant all privileges on all tables in schema public to service_role;
 grant all privileges on all sequences in schema public to service_role;
+
+
+-- ============================================================================
+-- 10. STORAGE: PROFILBILDER (Bucket avatars, privat)
+-- ============================================================================
+-- Je Konto genau eine Datei <user_id>/avatar.jpg. Die App verkleinert das
+-- Bild vorher auf 160x160 Pixel und speichert es neu als JPEG (ohne
+-- Metadaten wie Aufnahmeort). Der Bucket ist nicht oeffentlich; lesen,
+-- schreiben und loeschen darf nur der Besitzer. Der feste Dateiname
+-- begrenzt den Speicher auf eine Datei pro Konto (hoechstens 50 KB).
+-- Loeschen geht nur ueber die Storage-API (Trigger storage.protect_delete),
+-- deshalb entfernt die App das Bild vor delete_my_account() (Abschnitt 6).
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', false, 51200, array['image/jpeg'])
+on conflict (id) do update
+  set public = false,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+create policy "avatars_select_own" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
+
+create policy "avatars_insert_own" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
+
+create policy "avatars_update_own" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg')
+  with check (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
+
+create policy "avatars_delete_own" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
