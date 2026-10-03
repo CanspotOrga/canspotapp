@@ -14,7 +14,7 @@ in `index.html`). Stand: 03.10.2026.
 
 2 Marken mit je 2 Produkten, 4 Filialen in Arnsberg, 4 Angebote.
 Dazu eine Zeile in `app_settings`: Startstandort „59821 Arnsberg“ (51.4013, 8.0658),
-Umkreis 10 km, Beispieldaten-Hinweis und Versionstext. Store-Links sind leer.
+Umkreis 10 km und Versionstext. Beispieldaten-Hinweis (`demo_notice`) und Store-Links sind leer.
 
 | Produkt | Händler | Angebot |
 |---|---|---|

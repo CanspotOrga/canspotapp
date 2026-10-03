@@ -4,6 +4,19 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-10-03 (6) — Beispieldaten-Hinweise entfernt (echte Daten folgen)
+
+**Was** (auf Wunsch des Projektinhabers, weil künftig echte Daten kommen):
+- **Supabase:** `app_settings.demo_notice` ist live auf `null` gesetzt, das Banner `#demoBanner` bleibt dadurch ausgeblendet. Die Logik dafür bleibt, ein Text in `demo_notice` blendet es wieder ein. `seed.sql`, `data/app_settings.csv` und `README.md` sind angepasst.
+- **App:** Die Seitenbeschreibung (`<meta name="description">`) erwähnt keine Beispieldaten mehr. Die Hinweise „Demo-Prototyp: …“ bei „Zuletzt angesehen“, „Abmelden“ und „Konto löschen“ lauten jetzt „… ist noch nicht verfügbar.“ In „Konto verwalten“ entfällt „Prototyp ohne Server:“.
+- **Impressum:** Der Punkt „Beispieldaten“ unter Nutzungshinweise ist gestrichen.
+- **Bleibt:** Der Hinweis, dass CanSpot nicht mit Händlern oder Herstellern verbunden ist (App und Impressum).
+- `CACHE_NAME` steht auf `canspot-cache-v156`, `www/` ist synchron, `npx cap copy ios` ist gelaufen.
+
+**Achtung**: Die 4 Angebote in Supabase sind weiterhin erfundene Demodaten und erscheinen jetzt ohne Kennzeichnung. Laut DATENQUELLEN.md (Regel 4) müssen Demodaten klar erkennbar sein. Bis echte Daten da sind, also entweder die Demo-Angebote löschen oder `demo_notice` wieder füllen.
+
+---
+
 ## 2026-10-03 (5) — Letzte feste Demowerte aus der App in die Datenbank verlegt
 
 **Was**:

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1b213f">
 <title>CanSpot</title>
-<meta name="description" content="CanSpot: unabhängiger Prototyp eines Preisvergleichs für Energy Drinks. Nicht mit den genannten Händlern oder Herstellern verbunden, alle Angebote sind Beispieldaten.">
+<meta name="description" content="CanSpot: unabhängiger Preisvergleich für Energy-Drink-Angebote in deiner Nähe. Nicht mit den genannten Händlern oder Herstellern verbunden.">
 
 <!-- PWA: manifest -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -4509,7 +4509,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <button class="sheet-close" data-close="accountManageOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
 <div class="handle"></div>
 <h2>Konto verwalten</h2>
-<div class="desc">Prototyp ohne Server: Deine Angaben werden nur auf diesem Gerät gespeichert und nicht übertragen.</div>
+<div class="desc">Deine Angaben werden nur auf diesem Gerät gespeichert und nicht übertragen.</div>
 
 <div class="field-label" style="margin-top:22px">Persönliche Daten</div>
 <div class="field-block" id="nameBlock">
@@ -7987,7 +7987,7 @@ function openProfile(){
    Platzhalter vorbereitet (gleiches Muster wie #logoutBtn/#deleteAccountBtn:
    Demo-Hinweis statt echter Funktion). */
 document.getElementById("profileRecentRow").addEventListener("click", ()=>{
-  showToast("Demo-Prototyp: \"Zuletzt angesehen\" ist hier noch nicht aktiv.");
+  showToast("„Zuletzt angesehen“ ist noch nicht verfügbar.");
 });
 
 /* Push-Benachrichtigungen sind aus "Mein Bereich" entfernt und leben jetzt
@@ -8023,7 +8023,7 @@ function showToast(msg){
 }
 
 document.getElementById("logoutBtn").addEventListener("click", ()=>{
-  showToast("Demo-Prototyp: Abmelden ist hier nicht aktiv.");
+  showToast("Abmelden ist noch nicht verfügbar.");
 });
 /* Dreistufiges Löschen: der Button auf "Konto verwalten" öffnet nur die
    Bestätigung, löscht nichts direkt (verhindert einen versehentlichen Klick
@@ -8102,8 +8102,8 @@ function finalizeAccountDeletion(reason){
   closeSheet("deleteAccountFeedbackOverlay");
   resetDeleteFeedbackForm();
   showToast(feedbackGiven
-    ? "Danke für dein Feedback! Demo-Prototyp: Konto löschen ist hier nicht aktiv."
-    : "Demo-Prototyp: Konto löschen ist hier nicht aktiv.");
+    ? "Danke für dein Feedback! Konto löschen ist noch nicht verfügbar."
+    : "Konto löschen ist noch nicht verfügbar.");
 }
 
 document.getElementById("skipDeleteFeedbackBtn").addEventListener("click", ()=>{

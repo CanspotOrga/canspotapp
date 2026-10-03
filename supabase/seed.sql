@@ -6,7 +6,7 @@
 -- Voraussetzung: schema.sql wurde ausgeführt. Anleitung: supabase/README.md.
 --
 -- Inhalt: 2 Marken mit je 2 Produkten, 4 Filialen in Arnsberg, 4 Angebote,
--- dazu app_settings (Startstandort Arnsberg, Beispieldaten-Hinweis, Version).
+-- dazu app_settings (Startstandort Arnsberg, Version; kein Beispieldaten-Hinweis).
 -- Preise, Zeiträume und Filialangaben sind DEMODATEN, keine erhobenen Preise.
 -- Bilder und Logos sind bewusst leer (Regel 5 in DATENQUELLEN.md).
 -- Neue Daten nur aus Quellen, die DATENQUELLEN.md erlaubt.
@@ -114,7 +114,7 @@ on conflict (id) do update set
 -- app_settings (1) — genau eine Zeile, id = 1
 insert into public.app_settings (id, default_location_label, default_latitude, default_longitude, default_radius_km, demo_notice, app_version, ios_rating_url, android_rating_url) values
   (1, '59821 Arnsberg', 51.4013, 8.0658, 10,
-   'Beispieldaten: Alle Preise und Angebote in diesem Prototyp sind erfunden und keine echten Angebote der genannten Händler.',
+   null,
    'CanSpot Prototyp · Version 1.0.0', null, null)
 on conflict (id) do update set
   default_location_label = excluded.default_location_label,
