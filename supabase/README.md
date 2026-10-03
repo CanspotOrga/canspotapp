@@ -13,6 +13,8 @@ in `index.html`). Stand: 03.10.2026.
 ## Aktueller Inhalt
 
 2 Marken mit je 2 Produkten, 4 Filialen in Arnsberg, 4 Angebote.
+Dazu eine Zeile in `app_settings`: Startstandort „59821 Arnsberg“ (51.4013, 8.0658),
+Umkreis 10 km, Beispieldaten-Hinweis und Versionstext. Store-Links sind leer.
 
 | Produkt | Händler | Angebot |
 |---|---|---|
@@ -38,7 +40,12 @@ einfügen, **Run**.
 - **CSV statt SQL:** Im **Table Editor** je Tabelle „Insert → Import data from CSV“.
   Reihenfolge wegen Fremdschlüsseln: `retailers` → `brands` →
   `brand_nutrition_defaults` → `branches` → `products` → `product_nutrition` →
-  `offers` → `price_history`.
+  `offers` → `price_history`. `app_settings` hat keine Abhängigkeiten.
+- **App-Einstellungen ändern:** Zeile `id = 1` in `app_settings` bearbeiten. Die App
+  liest sie beim Start: `demo_notice` leer = kein Beispieldaten-Hinweis,
+  `default_location_*` leer = kein Startstandort (Entfernungen erst nach GPS),
+  `ios_rating_url`/`android_rating_url` leer = „noch nicht im Store“.
+  `reset_inhalte.sql` lässt `app_settings` unverändert.
 
 ## Regeln
 

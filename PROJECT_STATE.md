@@ -4,6 +4,21 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-10-03 (5) — Letzte feste Demowerte aus der App in die Datenbank verlegt
+
+**Was**:
+- **Neue Tabelle `public.app_settings`** (genau eine Zeile, `id = 1`, öffentlich lesbar, RLS aktiv), live angelegt und in `supabase/schema.sql`, `seed.sql`, `data/app_settings.csv` und `README.md` nachgezogen. Inhalt: Startstandort „59821 Arnsberg“ (51.4013, 8.0658), Umkreis 10 km, Beispieldaten-Hinweis, Versionstext „CanSpot Prototyp · Version 1.0.0“. Die Store-Links sind leer.
+- **App liest sie in `loadFromSupabase()`** über `applyAppSettings()`, bevor die Angebote zugeordnet werden. Entfernt wurden aus `index.html`: `DEFAULT_LOCATION_LABEL`/`DEFAULT_LOCATION_GEO`, die Arnsberg-Koordinaten der Karten, die Vorbelegung „59821 Arnsberg“, der feste Hinweistext, der feste Versionstext, `STORE_RATING_LINKS` mit Platzhalter-IDs, „Max Mustermann“/„MM“ und der Beispielpreis „1,09“.
+- **Ohne Daten** zeigt die App neutrale Texte: „Standort wählen“, „Name eingeben“, „?“. Im Feld „Preis melden“ steht der aktuelle Angebotspreis. Ohne Startstandort ist `distanceKm` `null` (`hasDistance()`/`kmSuffix()`), der Umkreisfilter lässt solche Angebote durch, die Sortierung „Nächster Händler“ stellt sie ans Ende und die Karte startet auf Deutschland.
+- Ein selbst gewählter Ort wird weiter lokal gespeichert, der Startstandort aus der Datenbank nicht.
+- `CACHE_NAME` steht auf `canspot-cache-v155`, `www/` ist synchron, `npx cap copy ios` ist gelaufen.
+
+**Getestet**: Im Browser (375×812) mit Live-Daten: Hinweis, „Arnsberg · 10 km“, Entfernungen und Version kommen aus `app_settings`. Mit simuliertem Fehler beim Laden von `app_settings` erscheinen kein Hinweis, „Standort wählen“, keine Entfernungsangaben und eine leere Version. Die 4 Angebote werden trotzdem angezeigt. Produktdetail, Filialdetail, „Bewerte uns“ und der Preisplatzhalter funktionieren.
+
+**Offen**: Profil, Favoriten, Preisalarme, Bewertungen und Benachrichtigungen liegen weiter nur im `localStorage`. Die Tabellen dafür gibt es schon (`profiles`, `favorites`, …), sie brauchen aber eine Anmeldung über Supabase Auth.
+
+---
+
 ## 2026-10-03 (4) — Schutz vor erneuter Einstufung als Betrugsseite
 
 **Anlass**: Die alte Fassung unter einem früheren GitHub-Konto wurde als betrügerisch markiert. Auslöser waren Händlerlogos von fremden Servern, erfundene Rabattpreise, Kontofelder mit Passwort und Platzhalter-Links. Logos und Passwortfelder waren in der Vorlage schon entfernt.

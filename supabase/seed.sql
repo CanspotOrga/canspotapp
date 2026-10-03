@@ -5,7 +5,8 @@
 -- vorhandene (gleiche id) auf die Werte unten. Löscht nichts.
 -- Voraussetzung: schema.sql wurde ausgeführt. Anleitung: supabase/README.md.
 --
--- Inhalt: 2 Marken mit je 2 Produkten, 4 Filialen in Arnsberg, 4 Angebote.
+-- Inhalt: 2 Marken mit je 2 Produkten, 4 Filialen in Arnsberg, 4 Angebote,
+-- dazu app_settings (Startstandort Arnsberg, Beispieldaten-Hinweis, Version).
 -- Preise, Zeiträume und Filialangaben sind DEMODATEN, keine erhobenen Preise.
 -- Bilder und Logos sind bewusst leer (Regel 5 in DATENQUELLEN.md).
 -- Neue Daten nur aus Quellen, die DATENQUELLEN.md erlaubt.
@@ -110,6 +111,21 @@ on conflict (id) do update set
   bundle_image_url = excluded.bundle_image_url,
   last_checked_at = excluded.last_checked_at;
 
+-- app_settings (1) — genau eine Zeile, id = 1
+insert into public.app_settings (id, default_location_label, default_latitude, default_longitude, default_radius_km, demo_notice, app_version, ios_rating_url, android_rating_url) values
+  (1, '59821 Arnsberg', 51.4013, 8.0658, 10,
+   'Beispieldaten: Alle Preise und Angebote in diesem Prototyp sind erfunden und keine echten Angebote der genannten Händler.',
+   'CanSpot Prototyp · Version 1.0.0', null, null)
+on conflict (id) do update set
+  default_location_label = excluded.default_location_label,
+  default_latitude = excluded.default_latitude,
+  default_longitude = excluded.default_longitude,
+  default_radius_km = excluded.default_radius_km,
+  demo_notice = excluded.demo_notice,
+  app_version = excluded.app_version,
+  ios_rating_url = excluded.ios_rating_url,
+  android_rating_url = excluded.android_rating_url;
+
 commit;
 
 -- Kontrolle: erwartete Zeilenzahlen
@@ -121,4 +137,5 @@ select
   (select count(*) from public.products) as products,
   (select count(*) from public.product_nutrition) as product_nutrition,
   (select count(*) from public.offers) as offers,
-  (select count(*) from public.price_history) as price_history;
+  (select count(*) from public.price_history) as price_history,
+  (select count(*) from public.app_settings) as app_settings;

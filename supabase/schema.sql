@@ -196,6 +196,28 @@ create table public.price_history (
 comment on table public.price_history is 'Echtes Preis-Zeitreihen-Log, entkoppelt von offers (Entscheidung 2). Nur echte, zulaessig erhobene Preise.';
 
 
+-- App-weite Einstellungen, die die App beim Start liest (statt sie fest in
+-- index.html zu halten): Startstandort, Standard-Umkreis, Beispieldaten-
+-- Hinweis, Versionstext, Store-Bewertungslinks. Genau eine Zeile (id = 1).
+create table public.app_settings (
+  id                      smallint primary key default 1 check (id = 1),
+  default_location_label  text,
+  default_latitude        double precision check (default_latitude between -90 and 90),
+  default_longitude       double precision check (default_longitude between -180 and 180),
+  default_radius_km       integer not null default 10 check (default_radius_km between 1 and 200),
+  demo_notice             text,
+  app_version             text,
+  ios_rating_url          text,
+  android_rating_url      text,
+  updated_at              timestamptz not null default now()
+);
+comment on table public.app_settings is 'App-weite Einstellungen (genau eine Zeile, id = 1). demo_notice null = kein Beispieldaten-Hinweis. Rating-URLs null = App noch nicht im Store.';
+
+create trigger trg_app_settings_updated_at
+  before update on public.app_settings
+  for each row execute function public.set_updated_at();
+
+
 -- ----------------------------------------------------------------------------
 -- 3. PROFIL (1:1 zu auth.users)
 -- ----------------------------------------------------------------------------
@@ -493,6 +515,10 @@ alter table public.price_history enable row level security;
 create policy "price_history_public_read" on public.price_history
   for select to anon, authenticated using (true);
 
+alter table public.app_settings enable row level security;
+create policy "app_settings_public_read" on public.app_settings
+  for select to anon, authenticated using (true);
+
 
 -- ---- profiles: nur die eigene Zeile ----
 
@@ -588,6 +614,7 @@ grant select on public.retailers               to anon, authenticated;
 grant select on public.branches                to anon, authenticated;
 grant select on public.offers                  to anon, authenticated;
 grant select on public.price_history           to anon, authenticated;
+grant select on public.app_settings            to anon, authenticated;
 
 
 -- ---- Private Nutzerdaten: exakt die Operationen, die die jeweilige

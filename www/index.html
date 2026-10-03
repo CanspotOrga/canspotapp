@@ -4089,7 +4089,7 @@ gap:6px
 <div class="top-actions">
 <button class="iconbtn" id="notifBtn" aria-label="Benachrichtigungen"><svg class="icon icon-lg"><use href="#i-bell"/></svg><span class="dot" id="notifDot"></span></button>
 <button class="iconbtn iconbtn-menu" id="menuBtn" aria-label="Menü"><svg class="icon icon-lg"><use href="#i-menu"/></svg><span class="dot" id="menuDot"></span></button>
-<button class="loc" id="locBtn" style="display:none"><svg class="icon icon-sm"><use href="#i-pin"/></svg> <span id="locLabel">59821 · 10 km</span></button>
+<button class="loc" id="locBtn" style="display:none"><svg class="icon icon-sm"><use href="#i-pin"/></svg> <span id="locLabel">Standort</span></button>
 </div>
 </div>
 
@@ -4108,7 +4108,7 @@ Nicht der Preis.
 <div class="search">
 <svg class="icon icon-lg"><use href="#i-search"/></svg>
 <input type="search" id="search" placeholder="Suchen" autocomplete="off">
-<button type="button" class="search-loc" id="statusEdit" aria-label="Standort und Umkreis ändern"><svg class="icon icon-sm"><use href="#i-pin"/></svg><span id="statusText">Arnsberg · 10 km</span></button>
+<button type="button" class="search-loc" id="statusEdit" aria-label="Standort und Umkreis ändern"><svg class="icon icon-sm"><use href="#i-pin"/></svg><span id="statusText">Standort wählen</span></button>
 <div class="search-suggestions" id="searchSuggestions"></div>
 </div>
 </div>
@@ -4168,7 +4168,8 @@ Du bist offline. Angebote werden möglicherweise nicht aktuell angezeigt.
 <button class="view-btn" data-view="map"><svg class="icon icon-md"><use href="#i-map"/></svg> Karte</button>
 </div>
 
-<div class="demo-banner" role="note"><b>Beispieldaten:</b> Alle Preise und Angebote in diesem Prototyp sind erfunden und keine echten Angebote der genannten Händler.</div>
+<!-- Text kommt aus app_settings.demo_notice (Supabase); ohne Wert bleibt der Hinweis ausgeblendet. -->
+<div class="demo-banner" id="demoBanner" role="note" hidden></div>
 
 <div id="deals"></div>
 <div id="mapView" class="map-view" style="display:none"></div>
@@ -4214,7 +4215,7 @@ CanSpot ist ein unabhängiger Preisvergleich und nicht mit den genannten Händle
 <div class="desc">Lege fest, wo nach Angeboten gesucht werden soll.</div>
 
 <div class="field-label">PLZ oder Ort</div>
-<input class="plz-input" id="plzInput" type="text" value="59821 Arnsberg" placeholder="z. B. 59821 Arnsberg">
+<input class="plz-input" id="plzInput" type="text" value="" placeholder="PLZ und Ort">
 
 <button class="geo-btn" id="useGeoBtn">
 <svg class="icon icon-md"><use href="#i-pin"/></svg> Aktuellen Standort verwenden
@@ -4461,12 +4462,12 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 
 <div class="profile-head">
 <div class="profile-avatar-wrap">
-<div class="profile-avatar" id="profileAvatar">MM</div>
+<div class="profile-avatar" id="profileAvatar">?</div>
 <button class="avatar-edit-badge" id="avatarEditBtn" aria-label="Profilbild ändern"><svg class="icon icon-xs"><use href="#i-camera"/></svg></button>
 <input type="file" accept="image/*" id="avatarFileInput" style="display:none">
 </div>
 <div class="profile-fields">
-<div class="profile-name-display" id="profileNameText">Max Mustermann</div>
+<div class="profile-name-display placeholder-text" id="profileNameText">Name eingeben</div>
 <button class="avatar-remove-link" id="avatarRemoveBtn" style="display:none">Profilbild entfernen</button>
 </div>
 </div>
@@ -4495,7 +4496,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <a href="impressum.html#nutzung">Nutzungsbedingungen</a>
 </div>
 
-<div class="profile-version">CanSpot Demo-Prototyp · Version 1.0.0</div>
+<div class="profile-version" data-app-version></div>
 
 </div>
 </div>
@@ -4948,7 +4949,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="alert-box" id="priceFeedbackReportBox" style="display:none">
 <div class="desc" style="margin-bottom:0">Welchen Preis hast du gesehen?</div>
 <div class="alert-input-row">
-<input type="text" inputmode="decimal" id="priceFeedbackInput" placeholder="1,09">
+<input type="text" inputmode="decimal" id="priceFeedbackInput" placeholder="Preis">
 <span>€</span>
 <button class="btn primary" id="priceFeedbackSubmitBtn">Preis melden</button>
 </div>
@@ -5102,7 +5103,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="profile-legal">
 <a href="impressum.html#kontakt">Kontakt</a>
 </div>
-<div class="profile-version">CanSpot Demo-Prototyp · Version 1.0.0</div>
+<div class="profile-version" data-app-version></div>
 </div>
 </div>
 </div>
@@ -5115,8 +5116,8 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
      #menuNewsRow/#menuNotifRow ein einfacher .profile-row-Link mit
      ›-Pfeil, der nach außen führt (App Store/Play Store) statt etwas im
      Menü selbst zu öffnen. Öffnet plattformabhängig den jeweiligen Store -
-     siehe openStoreRating()/STORE_RATING_LINKS im Script (dort auch die
-     Platzhalter-Links, echte IDs folgen erst nach Store-Veröffentlichung). -->
+     siehe openStoreRating() im Script. Die Links kommen aus
+     app_settings.ios_rating_url/android_rating_url (Supabase). -->
 <button class="profile-row" id="menuRateRow">
 <div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-star"/></svg></div>
 <div class="profile-row-txt"><b>Bewerte uns</b></div>
@@ -5171,7 +5172,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
    Es gibt in diesem bundlerfreien Projekt keine Build-Zeit-Umgebungsvariablen
    (kein .env/process.env möglich, siehe restliche App-Architektur) - die
    zentrale, saubere Konfigurationsstelle ist daher genau diese eine Stelle
-   im Script, analog zu z.B. DEFAULT_LOCATION_LABEL weiter unten. */
+   im Script. Alle übrigen Einstellungen kommen aus public.app_settings. */
 const SUPABASE_URL = "https://kyksbqrdtdusdbqwvazw.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_cIbIMqYWZ0qC2kDPRhAcnw_ijhPPPAm";
 const supabaseClient = (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && window.supabase)
@@ -5226,8 +5227,8 @@ function isStoreOpenNow(b){
   return hour >= b.open && hour < b.close;
 }
 
-/* branch.geo liegt in deals.json als "lat,lon"-String vor (siehe _meta.fields
-   in deals.json) - z.B. "51.4013,8.0658". */
+/* branch.geo ist ein "lat,lon"-String, gebildet in loadFromSupabase() aus
+   branches.latitude/longitude. */
 function parseGeo(geoStr){
   if(!geoStr) return null;
   const [lat, lng] = geoStr.split(",").map(Number);
@@ -5289,6 +5290,21 @@ async function reverseGeocodeToPlaceLabel(lat, lng){
 
 function routeMinutes(km){
   return Math.max(1, Math.round(km * 2.3));
+}
+
+/* Startausschnitt der Karten: Startstandort aus app_settings, sonst ganz
+   Deutschland, bis Filial-Marker bzw. GPS den Ausschnitt festlegen. */
+function mapStartView(){
+  return defaultLocationGeo
+    ? [[defaultLocationGeo.lat, defaultLocationGeo.lng], 13]
+    : [[51.1657, 10.4515], 6];
+}
+
+/* distanceKm ist null, solange weder GPS-Standort noch ein Startstandort
+   aus app_settings bekannt ist. */
+function hasDistance(d){ return !!d && typeof d.distanceKm === "number"; }
+function kmSuffix(km, after = ""){
+  return typeof km === "number" ? ` · ${km} km${after}` : "";
 }
 
 /* Pfand/Verpackung: Fallback-Defaults, falls ein Angebot in deals.json diese
@@ -5517,31 +5533,33 @@ function favProductId(key){ return key.split(":")[0]; }
 function favUnitsFromKey(key){ return +key.split(":")[1]; }
 function isProductFavoritedAtAll(productId){ return [...favorites].some(k=>favProductId(k)===productId); }
 
-const DEFAULT_LOCATION_LABEL = "59821 Arnsberg";
-/* Referenzpunkt (Zentrum Arnsberg, passend zu DEFAULT_LOCATION_LABEL), NUR
-   verwendet, um bei aus Supabase geladenen Angeboten einen anfänglichen
-   deal.distanceKm zu berechnen, solange der echte Nutzerstandort noch nicht
-   bekannt ist (siehe loadFromSupabase() weiter unten) - genau wie bei
-   deals.json wird dieser Wert sofort durch applyRealDistances() mit dem
-   echten Standort überschrieben, sobald GPS verfügbar ist. Bei deals.json
-   bleibt distanceKm weiterhin der dort hinterlegte feste Demo-Wert
-   (unverändert) - Supabase speichert distanceKm bewusst gar nicht erst
-   (siehe supabase/schema.sql), daher muss hier stattdessen aus echten
-   Filial-Koordinaten gerechnet werden. */
-const DEFAULT_LOCATION_GEO = {lat: 51.4013, lng: 8.0658};
-let locationLabel = DEFAULT_LOCATION_LABEL;
+/* Startstandort, Standard-Umkreis, Beispieldaten-Hinweis, Version und
+   Store-Bewertungslinks kommen aus public.app_settings (Supabase), siehe
+   applyAppSettings(). Ohne Eintrag: kein Startstandort (Entfernungen erst
+   nach GPS-Freigabe), kein Hinweis, keine Store-Links. */
+let appSettings = null;
+let defaultLocationGeo = null;
+let defaultRadiusKm = 10;
+let locationLabel = "";
+let locationLabelFromUser = false;
+let radiusKmFromStorage = false;
 let searchWide = false;
 let radiusKm = 10;
 try{
   const storedLocation = JSON.parse(localStorage.getItem("canspot-location") || "null");
   if(storedLocation){
-    if(typeof storedLocation.label==="string" && storedLocation.label.trim()) locationLabel = storedLocation.label.trim();
-    if(typeof storedLocation.radiusKm==="number") radiusKm = storedLocation.radiusKm;
+    if(typeof storedLocation.label==="string" && storedLocation.label.trim()){
+      locationLabel = storedLocation.label.trim();
+      locationLabelFromUser = true;
+    }
+    if(typeof storedLocation.radiusKm==="number"){ radiusKm = storedLocation.radiusKm; radiusKmFromStorage = true; }
     if(typeof storedLocation.searchWide==="boolean") searchWide = storedLocation.searchWide;
   }
 }catch(e){}
 function saveLocation(){
-  localStorage.setItem("canspot-location", JSON.stringify({label: locationLabel, radiusKm, searchWide}));
+  /* Nur ein selbst gewählter Ort wird gespeichert, nicht der Startstandort
+     aus app_settings (sonst würde eine spätere Änderung dort ignoriert). */
+  localStorage.setItem("canspot-location", JSON.stringify({label: locationLabelFromUser ? locationLabel : "", radiusKm, searchWide}));
 }
 
 let viewFavoritesOnly = false;
@@ -5980,7 +5998,7 @@ function render(){
         );
   }
   if(!searchWide){
-    filtered = filtered.filter(d=>d.distanceKm <= radiusKm);
+    filtered = filtered.filter(d=>!hasDistance(d) || d.distanceKm <= radiusKm);
   }
   if(hideExpired){
     filtered = filtered.filter(d=>daysUntil(d.validUntil) >= 0);
@@ -6010,7 +6028,7 @@ function render(){
   if(sort.value==="price"){
     filtered.sort((a,b)=>a.offerPrice-b.offerPrice);
   } else if(sort.value==="distance"){
-    filtered.sort((a,b)=>a.distanceKm-b.distanceKm);
+    filtered.sort((a,b)=>(hasDistance(a) ? a.distanceKm : Infinity) - (hasDistance(b) ? b.distanceKm : Infinity) || 0);
   } else if(sort.value==="saving"){
     filtered.sort((a,b)=>
       (1 - b.offerPrice/b.regularPrice) - (1 - a.offerPrice/a.regularPrice)
@@ -6286,7 +6304,7 @@ function buildDealCardEl(deal, isBest, favLiterMin){
         </div>
         <div class="card-store">
           <img class="store-logo" src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="" loading="lazy" referrerpolicy="no-referrer">
-          <span class="store-name">${deal.store} <span class="distance">· ${deal.distanceKm} km</span></span>
+          <span class="store-name">${deal.store}${hasDistance(deal) ? ` <span class="distance">· ${deal.distanceKm} km</span>` : ""}</span>
         </div>
       </div>
     </div>
@@ -6319,6 +6337,9 @@ function updateStatus(){
   if(searchWide){
     statusText.textContent = "Ganz Deutschland";
     locLabel.textContent = "Deutschland";
+  } else if(!locationLabel){
+    statusText.textContent = "Standort wählen";
+    locLabel.textContent = "Standort";
   } else {
     const cityOnly = locationLabel.replace(/^\d{4,5}\s+/, "");
     statusText.textContent = `${cityOnly} · ${radiusKm} km`;
@@ -6690,7 +6711,7 @@ function ensureLeafletMap(){
   /* Arnsberg (Demo-Gebiet, siehe deals.json) als Startausschnitt, bis ein
      echter Standort vorliegt bzw. bis die Filial-Marker unten per
      fitBounds() den tatsächlichen Ausschnitt festlegen. */
-  leafletMap = L.map("leafletMapEl").setView([51.4013, 8.0658], 13);
+  leafletMap = L.map("leafletMapEl").setView(...mapStartView());
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende'
@@ -7007,7 +7028,7 @@ function renderMapDesktop(filtered){
   });
 
   const stores = Object.values(byStore);
-  const maxDist = Math.max(...stores.map(s=>s.distanceKm), radiusKm, 1);
+  const maxDist = Math.max(...stores.map(s=>s.distanceKm || 0), radiusKm, 1);
 
   const rings = [0.25,0.5,0.75,1].map(f=>
     `<div class="map-ring" style="width:${f*90}%;height:${f*90}%"></div>`
@@ -7015,7 +7036,7 @@ function renderMapDesktop(filtered){
 
   const pinPositions = stores.map(s=>{
     const angle = (hashStr(s.store) % 360) * Math.PI/180;
-    const r = Math.min(s.distanceKm/maxDist, 0.92) * 45;
+    const r = Math.min((s.distanceKm || 0)/maxDist, 0.92) * 45;
     return {store:s.store, x: 50 + r*Math.cos(angle), y: 50 + r*Math.sin(angle)};
   });
 
@@ -7090,7 +7111,7 @@ function showMapPopoverDesktop(storeInfo){
       <img class="store-row-logo" src="${storeLogos[storeInfo.store] || STORE_FALLBACK_IMG}" alt="${storeInfo.store}" referrerpolicy="no-referrer">
       <div class="map-popover-txt">
         <b>${storeInfo.store}</b>
-        <span>${storeInfo.count} Angebot${storeInfo.count===1?"":"e"} · ab ${euro(storeInfo.minPrice)} € · ${storeInfo.distanceKm} km entfernt</span>
+        <span>${storeInfo.count} Angebot${storeInfo.count===1?"":"e"} · ab ${euro(storeInfo.minPrice)} €${kmSuffix(storeInfo.distanceKm, " entfernt")}</span>
       </div>
       <button class="btn primary" data-jump-store="${storeInfo.store}">Ansehen</button>
     </div>
@@ -7178,8 +7199,8 @@ function resetExtraFilters(){
   document.querySelectorAll(".chip[data-size]").forEach(b=>b.classList.toggle("on", b.dataset.size==="Alle"));
   document.querySelectorAll(".chip[data-units]").forEach(b=>b.classList.toggle("on", b.dataset.units==="Alle"));
   germanyToggle.checked = false;
-  radiusSlider.value = 10;
-  radiusValue.textContent = 10;
+  radiusSlider.value = defaultRadiusKm;
+  radiusValue.textContent = defaultRadiusKm;
   radiusBox.classList.remove("disabled");
   syncRadiusChips();
   syncStoreChips();
@@ -7851,10 +7872,12 @@ function hasRealLink(link){
    "showAllReviews=true" (Android) sind die jeweils üblichen Deep-Link-
    Parameter, die die Store-App möglichst direkt zum Bewertungsdialog statt
    nur zur allgemeinen Produktseite springen lassen. */
-const STORE_RATING_LINKS = {
-  ios: "https://apps.apple.com/app/idXXXXXXXXXX?action=write-review",
-  android: "https://play.google.com/store/apps/details?id=com.canspot.app&showAllReviews=true"
-};
+function storeRatingLinks(){
+  return {
+    ios: appSettings && appSettings.ios_rating_url,
+    android: appSettings && appSettings.android_rating_url
+  };
+}
 
 function isIOSDevice(){
   const ua = navigator.userAgent || "";
@@ -7871,12 +7894,13 @@ function isIOSDevice(){
 }
 
 function openStoreRating(){
-  /* Solange die IDs Platzhalter sind, nicht auf erfundene Store-Seiten verlinken. */
-  if(/XXXX/.test(STORE_RATING_LINKS.ios)){
+  /* Links kommen aus app_settings; ohne Eintrag ist die App noch nicht im Store. */
+  const links = storeRatingLinks();
+  const url = isIOSDevice() ? links.ios : links.android;
+  if(!url){
     showToast("CanSpot ist noch nicht im App Store oder bei Google Play erhältlich.");
     return;
   }
-  const url = isIOSDevice() ? STORE_RATING_LINKS.ios : STORE_RATING_LINKS.android;
   window.open(url, "_blank");
 }
 
@@ -8355,7 +8379,7 @@ germanyToggle.addEventListener("change",()=>{
 
 document.querySelector('[data-close="locOverlay"].sheet-btn').addEventListener("click",()=>{
   const val = plzInput.value.trim();
-  if(val) locationLabel = val;
+  if(val){ locationLabel = val; locationLabelFromUser = true; }
   render();
   updateStatus();
   updateFilterCount();
@@ -9250,7 +9274,7 @@ function renderOtherStores(deal){
       <img class="store-row-logo" src="${storeLogos[d.store] || STORE_FALLBACK_IMG}" alt="${d.store}" loading="lazy" referrerpolicy="no-referrer">
       <div class="store-row-txt">
         <b>${d.store}</b>
-        <span>${d.distanceKm} km · ${formatDateRange(d.validFrom, d.validUntil)}</span>
+        <span>${hasDistance(d) ? `${d.distanceKm} km · ` : ""}${formatDateRange(d.validFrom, d.validUntil)}</span>
       </div>
       <div class="store-row-price">${euro(d.offerPrice)} €</div>
       <button class="store-row-link" data-store-detail="${d.id}">Zum Angebot</button>
@@ -9373,9 +9397,9 @@ function renderProductOffer(deal){
   logo.src = storeLogos[deal.store] || STORE_FALLBACK_IMG;
   logo.alt = deal.store;
   logo.onerror = function(){ this.src = STORE_FALLBACK_IMG; };
-  document.getElementById("pdStoreName").textContent = `${deal.store} · ${deal.distanceKm} km`;
+  document.getElementById("pdStoreName").textContent = `${deal.store}${kmSuffix(deal.distanceKm)}`;
   document.getElementById("pdStoreSub").innerHTML =
-    `${routeMinutes(deal.distanceKm)} Min. Route` +
+    (hasDistance(deal) ? `${routeMinutes(deal.distanceKm)} Min. Route` : "Route") +
     (openNow===null ? "" : ` · <span class="open-dot ${openNow?"open":""}"></span>${openNow?"Jetzt geöffnet":"Geschlossen"}`);
   document.getElementById("pdStoreRow").onclick = ()=> openStoreDetail(deal.id);
 
@@ -9386,7 +9410,7 @@ function renderProductOffer(deal){
   document.getElementById("pdHistRow").onclick = ()=> openHistory(deal.id);
   storeEl.style.display = "";
 
-  document.getElementById("pdFooterSub").textContent = `${deal.store} · ${deal.distanceKm} km · ${routeMinutes(deal.distanceKm)} Min.`;
+  document.getElementById("pdFooterSub").textContent = `${deal.store}${hasDistance(deal) ? ` · ${deal.distanceKm} km · ${routeMinutes(deal.distanceKm)} Min.` : ""}`;
   document.getElementById("pdRouteBtn").onclick = ()=>{ if(branch) openStoreRoute(branch.geo); };
   footerEl.style.display = branch ? "" : "none";
 
@@ -9699,9 +9723,9 @@ function renderStoreDetailMap(deal){
    nur mit genau einem Pin für den jeweiligen Händler. */
 function renderStoreDetailMapDesktop(deal){
   const wrap = document.getElementById("storeDetailMap");
-  const maxDist = Math.max(deal.distanceKm, radiusKm, 1);
+  const maxDist = Math.max(deal.distanceKm || 0, radiusKm, 1);
   const angle = (hashStr(deal.store) % 360) * Math.PI/180;
-  const r = Math.min(deal.distanceKm/maxDist, 0.92) * 45;
+  const r = Math.min((deal.distanceKm || 0)/maxDist, 0.92) * 45;
   const x = 50 + r*Math.cos(angle);
   const y = 50 + r*Math.sin(angle);
   const rings = [0.25,0.5,0.75,1].map(f=>
@@ -9713,7 +9737,7 @@ function renderStoreDetailMapDesktop(deal){
       ${rings}
       <div class="map-pin selected" style="left:${x}%;top:${y}%">
         <span class="pin-logo"><img src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="${deal.store}" referrerpolicy="no-referrer"></span>
-        <span class="pin-price">${deal.distanceKm} km</span>
+        <span class="pin-price">${hasDistance(deal) ? `${deal.distanceKm} km` : ""}</span>
       </div>
       <div class="map-user"></div>
       <div class="map-user-label">Du</div>
@@ -9748,7 +9772,7 @@ function ensureStoreDetailLeafletMap(){
      große Karte zeigt die reguläre Attribution bereits); Pan/Pinch-Zoom
      bleiben trotzdem aktiv, siehe Anfrage "Karte soll interaktiv bleiben". */
   storeDetailLeafletMap = L.map("storeDetailLeafletEl", {zoomControl:false, attributionControl:false})
-    .setView([51.4013, 8.0658], 13);
+    .setView(...mapStartView());
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 19}).addTo(storeDetailLeafletMap);
 }
 
@@ -9770,7 +9794,7 @@ function renderStoreDetailMapMobile(deal){
       className: "",
       html: `<div class="leaflet-store-marker size-md selected">
         <span class="pin-logo"><img src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="${deal.store}" referrerpolicy="no-referrer"></span>
-        <span class="pin-price">${deal.distanceKm} km</span>
+        <span class="pin-price">${hasDistance(deal) ? `${deal.distanceKm} km` : ""}</span>
       </div>`,
       iconSize: [30, 48],
       iconAnchor: [15, 15]
@@ -9858,7 +9882,7 @@ function openStoreDetail(dealId){
   document.getElementById("storeDetailHours").textContent = branch ? formatHours(branch) : "–";
 
   document.getElementById("storeDetailProduct").textContent = deal.product;
-  document.getElementById("storeDetailProductMeta").textContent = `${deal.brand} · ${formatSize(deal)} · ${deal.distanceKm} km entfernt`;
+  document.getElementById("storeDetailProductMeta").textContent = `${deal.brand} · ${formatSize(deal)}${kmSuffix(deal.distanceKm, " entfernt")}`;
   document.getElementById("storeDetailPrice").textContent = euro(deal.offerPrice) + " €";
 
   const routeBtn = document.getElementById("storeDetailRouteBtn");
@@ -9901,6 +9925,7 @@ function renderPriceFeedback(deal){
   const submitBtn = document.getElementById("priceFeedbackSubmitBtn");
 
   attachGermanPriceInput(input);
+  input.placeholder = euro(deal.offerPrice);
 
   function reset(){
     upBtn.classList.remove("active");
@@ -10368,6 +10393,31 @@ function parseSqlTimeToHourFloat(t){
   return h + (Number.isFinite(m) ? m : 0)/60;
 }
 
+/* Übernimmt public.app_settings (eine Zeile oder null): Startstandort,
+   Standard-Umkreis, Beispieldaten-Hinweis, Versionstext, Store-Links. */
+function applyAppSettings(row){
+  appSettings = row || null;
+  const lat = row && row.default_latitude, lng = row && row.default_longitude;
+  defaultLocationGeo = (Number.isFinite(lat) && Number.isFinite(lng)) ? {lat, lng} : null;
+  if(row && Number.isFinite(row.default_radius_km)){
+    defaultRadiusKm = row.default_radius_km;
+    if(!radiusKmFromStorage){
+      radiusKm = defaultRadiusKm;
+      radiusSlider.value = radiusKm;
+      radiusValue.textContent = radiusKm;
+    }
+  }
+  if(!locationLabelFromUser) locationLabel = (row && row.default_location_label) || "";
+
+  const banner = document.getElementById("demoBanner");
+  banner.textContent = (row && row.demo_notice) || "";
+  banner.hidden = !(row && row.demo_notice);
+
+  document.querySelectorAll("[data-app-version]").forEach(el=>{
+    el.textContent = (row && row.app_version) || "";
+  });
+}
+
 /* ---------------- SUPABASE: ÖFFENTLICHE STAMMDATEN ----------------
    Einzige Datenquelle der App. Lädt Produkte/Nährwerte/Händler/Filialen/
    Angebote/Preisverlauf/Bewertungs-Aggregate und transformiert sie in die
@@ -10383,14 +10433,15 @@ function parseSqlTimeToHourFloat(t){
 async function loadFromSupabase(){
   if(!supabaseClient) throw new Error("Supabase-Client nicht initialisiert");
 
-  const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes] = await Promise.all([
+  const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes, settingsRes] = await Promise.all([
       supabaseClient.from("products").select("id,name,size_ml,packaging,image_url,is_new,brand:brands(name)"),
       supabaseClient.from("product_nutrition").select("*"),
       supabaseClient.from("brand_nutrition_defaults").select("*,brand:brands(name)"),
       supabaseClient.from("branches").select("id,street,postal_code,city,latitude,longitude,opens_at,closes_at,closed_sunday,retailer:retailers(name,logo_url)"),
       supabaseClient.from("offers").select("id,product_id,branch_id,units,regular_price,offer_price,deposit,valid_from,valid_until,link,bundle_image_url,last_checked_at"),
       supabaseClient.from("price_history").select("product_id,branch_id,units,price,deposit,recorded_at,available"),
-      supabaseClient.rpc("get_all_product_rating_summaries")
+      supabaseClient.rpc("get_all_product_rating_summaries"),
+      supabaseClient.from("app_settings").select("*").eq("id", 1).maybeSingle()
     ]);
 
   // products/branches/offers sind Pflicht; Nährwerte, Preisverlauf und
@@ -10405,6 +10456,11 @@ async function loadFromSupabase(){
   const rawBrandNutrition = brandNutritionRes.error ? [] : (brandNutritionRes.data || []);
   const rawPriceHistory = priceHistoryRes.error ? [] : (priceHistoryRes.data || []);
   const rawRatings = ratingsRes.error ? [] : (ratingsRes.data || []);
+
+  // Einstellungen sind ergänzend: ein Fehler lässt nur Startstandort,
+  // Hinweis, Version und Store-Links weg. Muss vor offers[] laufen, weil
+  // distanceKm vom Startstandort abhängt.
+  applyAppSettings(settingsRes.error ? null : settingsRes.data);
 
   // ---- Nährwerte (Produkt, sonst Marken-Default, siehe getNutritionPer100ml()) ----
   rawNutrition.forEach(n=>{
@@ -10489,8 +10545,9 @@ async function loadFromSupabase(){
   });
 
   // ---- offers[] (App-Form). distanceKm wird aus den Filial-Koordinaten
-  //      gegen DEFAULT_LOCATION_GEO berechnet und von applyRealDistances()
-  //      mit dem echten Standort überschrieben, sobald GPS verfügbar ist. ----
+  //      gegen den Startstandort aus app_settings berechnet (ohne ihn: null)
+  //      und von applyRealDistances() mit dem echten Standort überschrieben,
+  //      sobald GPS verfügbar ist. ----
   const mappedOffers = rawOffers
     .filter(o => o && o.id && o.product_id && o.branch_id && branchIdToStoreName[o.branch_id])
     .map(o => {
@@ -10505,7 +10562,7 @@ async function loadFromSupabase(){
         offerPrice: o.offer_price,
         pfand: o.deposit,
         packaging: (product && product.packaging) || PACKAGING_FALLBACK,
-        distanceKm: Math.round(haversineKm(DEFAULT_LOCATION_GEO, geo) * 10) / 10,
+        distanceKm: (defaultLocationGeo && geo) ? Math.round(haversineKm(defaultLocationGeo, geo) * 10) / 10 : null,
         validFrom: o.valid_from,
         validUntil: o.valid_until,
         link: o.link || "",
