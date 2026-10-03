@@ -1,0 +1,23 @@
+Supabase -> Authentication -> Emails -> Templates
+Je Vorlage: Betreff (Subject) eintragen, HTML-Datei in "Message body" (Source) einfuegen.
+
+Confirm sign up
+  Betreff: Bitte bestätige deine E-Mail-Adresse für CanSpot
+  Datei:   1-confirm-signup.html
+
+Reset password
+  Betreff: Neues Passwort für dein CanSpot-Konto
+  Datei:   2-reset-password.html
+
+Change email address
+  Betreff: Bitte bestätige deine neue E-Mail-Adresse für CanSpot
+  Datei:   3-change-email.html
+
+Password changed (Security)
+  Betreff: Dein CanSpot-Passwort wurde geändert
+  Datei:   4-password-changed.html
+
+Email address changed (Security)
+  Betreff: Deine E-Mail-Adresse bei CanSpot wurde geändert
+  Datei:   5-email-changed.html
+
