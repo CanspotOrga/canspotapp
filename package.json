@@ -1,0 +1,32 @@
+{
+  "name": "app-prototyp---canspotapp",
+  "version": "1.0.0",
+  "description": "CanSpot – Preisvergleich für Energy Drinks (Prototyp)",
+  "main": "service-worker.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CanspotOrga/canspotapp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/CanspotOrga/canspotapp/issues"
+  },
+  "homepage": "https://github.com/CanspotOrga/canspotapp#readme",
+  "dependencies": {
+    "@capacitor/action-sheet": "^8.1.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/geolocation": "^8.2.2",
+    "@capacitor/ios": "^8.5.1",
+    "@capacitor/share": "^8.0.1",
+    "@capawesome/capacitor-maps-launcher": "^0.1.2",
+    "@supabase/supabase-js": "^2.116.0",
+    "leaflet": "^1.9.4"
+  }
+}

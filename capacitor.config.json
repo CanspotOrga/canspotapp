@@ -1,0 +1,8 @@
+{
+  "appId": "de.canspot.app",
+  "appName": "CanSpot",
+  "webDir": "www",
+  "ios": {
+    "zoomEnabled": true
+  }
+}
