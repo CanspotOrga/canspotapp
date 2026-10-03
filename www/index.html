@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1b213f">
-<title>EnergyBoost — Prototyp</title>
+<title>CanSpot</title>
 
 <!-- PWA: manifest -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -3888,11 +3888,11 @@ padding-right:30px;
 overflow-wrap:anywhere
 }
 .card-info .unit{font-size:11.5px;line-height:1.35;margin-top:3px;padding-right:30px;color:var(--text-muted)}
-.card-store{display:flex;align-items:center;gap:6px;margin-top:6px;min-width:0}
+.card-store{display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:8px;min-width:0}
 .card-store .store-logo{width:20px;height:20px;padding:1px;border-radius:5px}
 .card-store .store-name{font-size:12px;font-weight:700;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-store .distance{font-weight:500}
-.card-price-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:10px}
+.card-price-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
 .card-price-row .old-price{font-size:11.5px;white-space:nowrap}
 .card-price{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .card .card-price .price{font-size:20px;line-height:1.1}
@@ -4093,7 +4093,7 @@ Nicht der Preis.
      unverändert weiterarbeiten. -->
 <div class="search">
 <svg class="icon icon-lg"><use href="#i-search"/></svg>
-<input type="search" id="search" placeholder="Energy Drink oder Marke" autocomplete="off">
+<input type="search" id="search" placeholder="Suchen" autocomplete="off">
 <button type="button" class="search-loc" id="statusEdit" aria-label="Standort und Umkreis ändern"><svg class="icon icon-sm"><use href="#i-pin"/></svg><span id="statusText">Arnsberg · 10 km</span></button>
 <div class="search-suggestions" id="searchSuggestions"></div>
 </div>
@@ -6261,16 +6261,16 @@ function buildDealCardEl(deal, isBest, favLiterMin){
       <div class="card-info">
         <div class="product">${deal.product}</div>
         <div class="unit">${formatSize(deal)} · ${euro(literPrice)} €/L + ${euro(pfand)} € Pfand</div>
-        <div class="card-store">
-          <img class="store-logo" src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="" loading="lazy" referrerpolicy="no-referrer">
-          <span class="store-name">${deal.store} <span class="distance">· ${deal.distanceKm} km</span></span>
-        </div>
         <div class="card-price-row">
           <span class="old-price">statt ${euro(deal.regularPrice)} €</span>
           <span class="card-price">
             <span class="saving-percent">−${savingPct} %</span>
             <span class="price">${euro(deal.offerPrice)} €</span>
           </span>
+        </div>
+        <div class="card-store">
+          <img class="store-logo" src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="" loading="lazy" referrerpolicy="no-referrer">
+          <span class="store-name">${deal.store} <span class="distance">· ${deal.distanceKm} km</span></span>
         </div>
       </div>
     </div>

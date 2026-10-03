@@ -4,6 +4,20 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-10-03 (3) — Tab-Titel, Suchfeld-Text, Reihenfolge auf der Angebotskarte
+
+**Was**:
+- **Tab-Titel:** `<title>` heißt jetzt „CanSpot“ statt „EnergyBoost — Prototyp“ (auch in `CLAUDE.md` angepasst).
+- **Suchfeld:** Der Hintergrundtext (`placeholder`) lautet „Suchen“ statt „Energy Drink oder Marke“.
+- **Angebotskarte** (`buildDealCardEl()`): Die Preiszeile („statt …“, Rabatt, Preis) steht jetzt über der Händlerzeile, der Händler steht darunter. Die Händlerzeile sitzt per `margin-top:auto` am unteren Rand der Infospalte, die Preiszeile folgt direkt auf die Größen-/Pfandzeile.
+- `CACHE_NAME` steht auf `canspot-cache-v153`, `www/` ist synchron, `npx cap copy ios` ist gelaufen.
+
+**Getestet**: Im Browser (Mobilbreite) mit Live-Daten: Reihenfolge in `.card-info` ist Produkt, Größe, Preiszeile, Händler; Titel und Placeholder stimmen.
+
+**Offen**: Nicht auf GitHub gepusht. Bei Karten mit „Neu“-Pille und langem Produktnamen noch auf dem Gerät prüfen, ob die Händlerzeile sauber unten bleibt.
+
+---
+
 ## 2026-10-03 (2) — Produktbilder einheitlich im Hochformat 3:4
 
 **Was**: Alle Produktbilder nutzen jetzt das Seitenverhältnis 3:4 (per `aspect-ratio`, nur die Breite ist gesetzt), weil Dosen und Flaschen hoch und schmal sind.
