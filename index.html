@@ -8256,7 +8256,7 @@ function authRedirectUrl(){
 function authErrorText(error){
   const code = (error && (error.code || error.name)) || "";
   if(code==="invalid_credentials") return "E-Mail oder Passwort ist falsch.";
-  if(code==="email_not_confirmed") return "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in unserer Mail.";
+  if(code==="email_not_confirmed") return "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in unserer Mail. Schau auch im Spam-Ordner nach.";
   if(code==="weak_password") return "Dieses Passwort ist zu schwach. Bitte wähle ein längeres Passwort mit Buchstaben und Zahlen.";
   if(code==="same_password") return "Das neue Passwort muss sich vom alten unterscheiden.";
   if(code==="validation_failed" || code==="email_address_invalid") return "Bitte eine gültige E-Mail-Adresse eingeben.";
@@ -8415,7 +8415,7 @@ authEls.form.addEventListener("submit", async (e)=>{
         /* Gleicher Text, egal ob die Adresse schon registriert ist. */
         setAuthMode("login");
         authEls.email.value = email;
-        showAuthMsg("Fast geschafft: Bitte bestätige deine E-Mail-Adresse über den Link, den wir dir geschickt haben. Danach kannst du dich hier anmelden.", "info");
+        showAuthMsg("Fast geschafft: Bitte bestätige deine E-Mail-Adresse über den Link, den wir dir geschickt haben. Danach kannst du dich hier anmelden. Keine E-Mail da? Schau bitte auch im Spam-Ordner nach.", "info");
       }
     } else if(authMode==="reset"){
       const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: authRedirectUrl() });
@@ -8425,7 +8425,7 @@ authEls.form.addEventListener("submit", async (e)=>{
       }
       setAuthMode("login");
       authEls.email.value = email;
-      showAuthMsg("Falls zu dieser Adresse ein Konto existiert, haben wir dir einen Link zum Zurücksetzen geschickt.", "info");
+      showAuthMsg("Falls zu dieser Adresse ein Konto existiert, haben wir dir einen Link zum Zurücksetzen geschickt. Keine E-Mail da? Schau bitte auch im Spam-Ordner nach.", "info");
     } else if(authMode==="newpw"){
       const { error } = await supabaseClient.auth.updateUser({ password });
       if(error){ showAuthMsg(authErrorText(error)); return; }
