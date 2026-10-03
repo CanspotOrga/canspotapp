@@ -1776,6 +1776,29 @@ text-align:center;
 padding:18px 0
 }
 
+/* "Zuletzt angesehen" (recentOverlay): Zeilen wie .fav-row, aber als
+   Button, der die Produktdetailansicht öffnet. */
+.recent-row{
+width:100%;
+background:none;
+border:0;
+border-bottom:1px solid var(--border-subtle);
+text-align:left;
+cursor:pointer;
+font-family:inherit;
+color:inherit
+}
+.recent-row:last-child{border-bottom:0}
+.recent-row .fav-txt{min-width:0}
+@media (hover:hover){
+.recent-row:hover .fav-txt b{color:var(--brand-primary-blue)}
+}
+.recent-meta{text-align:right;flex-shrink:0}
+.recent-meta b{display:block;font-size:13px;color:var(--text-primary)}
+.recent-meta span{font-size:11px;color:var(--text-muted)}
+#recentDesc[hidden],#recentClearBtn[hidden]{display:none}
+#recentClearBtn{margin-top:16px}
+
 /* price history modal */
 
 .hist-head{
@@ -3600,47 +3623,45 @@ flex-shrink:0;
 margin-left:-4px
 }
 
-/* Schließen-X im Burger-Menü etwas höher als der generische .sheet-close-Wert,
-   damit es auf einer Linie mit der "Menü"-Überschrift sitzt (dieselbe
-   Position gilt automatisch für alle internen Ansichten - Hauptmenü,
-   Neuigkeiten, Detail -, da es sich um ein und denselben, immer sichtbaren
-   Button handelt statt separater Buttons je Ansicht). Nur #menuOverlay
-   betroffen, alle anderen Sheets behalten den bisherigen .sheet-close-Wert. */
-#menuOverlay .sheet-close{top:calc(-4px + env(safe-area-inset-top))}
-/* Side-Drawer reicht (height:100%) bis an den physischen oberen Bildschirmrand
-   heran - auf Geräten mit Dynamic Island/Notch liefe "Menü" + das Schließen-X
-   sonst unter die Statusleiste. Padding-top NUR auf .sheet-inner (nicht auf
-   .sheet selbst), damit die Fläche/Breite/Position/Animation des Sheets exakt
-   gleich bleiben und nur der Inhalt nach unten rutscht - env() ist auf
-   Nicht-Notch-Geräten/Desktop ohnehin 0px, daher hier bewusst unconditional
-   (gleiche Konvention wie bei .hero-top/.bottomnav) statt hinter einer
-   zusätzlichen Media Query versteckt. */
-#menuOverlay .sheet-inner{padding-top:env(safe-area-inset-top)}
-
-/* Burger-Menü: Side-Drawer von rechts statt Bottom-Sheet. Ausschließlich
-   #menuOverlay betroffen (ID-Selektor > .overlay/.sheet-Basisregeln) - alle
-   anderen Sheets (Standort, Filter, Mein Bereich, ...) bleiben unverändert
-   Bottom-Sheets. Inhalt/Farben/Icons/Abstände der Menüzeilen selbst sind
-   unangetastet (.profile-row etc.) - nur Position/Maße/Animation des
-   Sheet-Containers ändern sich. */
+/* Burger-Menü: Ausklappmenü direkt unter dem Menü-Button statt Side-Drawer
+   am rechten Bildschirmrand. Ausschließlich #menuOverlay betroffen (ID-
+   Selektor > .overlay/.sheet-Basisregeln), alle anderen Sheets bleiben
+   Bottom-Sheets. Die Position (--menu-top/--menu-right) setzt
+   positionMenuDropdown() im Script beim Öffnen aus der Lage von #menuBtn,
+   damit das Menü auch im breiten Fenster an der App-Spalte hängt und nicht
+   am Fensterrand; ohne diese Werte greifen die Fallbacks. Inhalt/Farben/
+   Icons der Menüzeilen selbst sind unangetastet (.profile-row etc.). */
 #menuOverlay{
-align-items:stretch;
-justify-content:flex-end
+align-items:flex-start;
+justify-content:flex-end;
+background:rgba(10,13,24,.32)
 }
 #menuOverlay .sheet{
-width:82%;
-max-width:340px;
-max-height:none;
-height:100%;
-border-radius:var(--radius-2xl) 0 0 var(--radius-2xl);
-transform:translateX(100%);
-transition:transform .28s cubic-bezier(.32,.72,0,1),background .2s ease;
+position:absolute;
+top:var(--menu-top,64px);
+right:var(--menu-right,12px);
+width:min(340px,calc(100vw - 24px));
+max-width:none;
+max-height:calc(100vh - var(--menu-top,64px) - 12px);
+max-height:calc(100dvh - var(--menu-top,64px) - 12px);
+border-radius:var(--radius-2xl);
+padding:16px 16px 18px;
+box-shadow:var(--shadow-lg);
+transform-origin:top right;
+transform:translateY(-8px) scale(.97);
+opacity:0;
+transition:transform .2s cubic-bezier(.32,.72,0,1),opacity .16s ease,background .2s ease;
 overflow-y:auto;
 box-sizing:border-box
 }
 #menuOverlay.open .sheet{
-transform:translateX(0)
+transform:none;
+opacity:1
 }
+/* Schließen-X auf einer Linie mit der "Menü"-Überschrift (gilt für alle
+   internen Ansichten, da es ein und derselbe Button ist). Bezug ist
+   .sheet-inner, also innerhalb des 16px-Innenabstands. */
+#menuOverlay .sheet-close{top:-4px;right:-4px}
 
 /* Menü-Einträge (außer "Neuigkeiten") klappen ihren Inhalt direkt im Menü
    auf, statt ein weiteres Fenster zu öffnen — siehe toggleMenuAccordion() im
@@ -3695,7 +3716,7 @@ vertical-align:middle
    Schriftzügen auf farbigem Grund in der App. */
 .fav-row .fav-txt .new-badge{color:var(--brand-primary-contrast)}
 
-/* Mini-Navigation innerhalb des Drawers (Menü ↔ Neuigkeiten ↔ Detailansicht),
+/* Mini-Navigation innerhalb des Menüs (Menü ↔ Neuigkeiten ↔ Detailansicht),
    siehe showMenuView() im Script. Dezente Slide-Animation statt Öffnen eines
    weiteren Fensters: die neu eingeblendete Ansicht kommt mit einem kurzen,
    kleinen Versatz aus der jeweiligen Richtung ("vorwärts" = von rechts,
@@ -3821,7 +3842,7 @@ color:var(--text-muted)
 .news-inbox-empty-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
 
 /* Neuigkeit-Detailansicht: kompakte Variante der bekannten Angebotsfelder
-   (Preis/Normalpreis/Ersparnis/Gültigkeit), auf die schmale Drawer-Breite
+   (Preis/Normalpreis/Ersparnis/Gültigkeit), auf die schmale Menü-Breite
    zugeschnitten statt der großen Produktdetail-Hero-Ansicht. */
 .news-detail-img-wrap{display:flex;justify-content:center;margin:14px 0}
 .news-detail-img{
@@ -4587,6 +4608,27 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 </div>
 
+<!-- ZULETZT ANGESEHEN (Untermenü von "Mein Bereich"): Produkte aus
+     public.recently_viewed, siehe openRecentSheet() im Script. Ohne Konto
+     nur der Hinweis zum Anmelden. -->
+<div class="overlay" id="recentOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="recentOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2>Zuletzt angesehen</h2>
+<div class="desc" id="recentDesc">Deine letzten 20 angesehenen Produkte, gespeichert in deinem Konto.</div>
+<div class="auth-guest" id="recentGuestBox" hidden>
+<b>Nur mit Konto</b>
+<p>Melde dich an, damit CanSpot sich merkt, welche Produkte du dir angesehen hast.</p>
+<button class="sheet-btn" id="recentAuthBtn">Anmelden oder registrieren</button>
+</div>
+<div id="recentList"></div>
+<button class="profile-action profile-action-danger" id="recentClearBtn" hidden><svg class="icon icon-md"><use href="#i-trash"/></svg> Verlauf löschen</button>
+</div>
+</div>
+</div>
+
 <!-- KONTO VERWALTEN (Untermenü von "Mein Bereich") -->
 <div class="overlay" id="accountManageOverlay">
 <div class="sheet">
@@ -5098,7 +5140,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 </div>
 
-<!-- BURGER-MENÜ (nur Mobile — siehe .iconbtn-menu / @media max-width:540px).
+<!-- BURGER-MENÜ (Ausklappmenü unter #menuBtn, siehe #menuOverlay in <style>).
      "Neuigkeiten" ist bewusst der erste Punkt, außerhalb der Gruppen-Blöcke,
      und bleibt die einzige Zeile, die ein eigenes Sheet öffnet (openNewsSheet(),
      erkennbar am "›"-Pfeil). Alle anderen Zeilen sind Accordion-Umschalter
@@ -5112,7 +5154,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="sheet-inner">
 <button class="sheet-close" data-close="menuOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
 
-<!-- Mini-Navigation innerhalb des Drawers: genau eine der drei .menu-view
+<!-- Mini-Navigation innerhalb des Menüs: genau eine der drei .menu-view
      Ansichten ist sichtbar (siehe showMenuView() im Script), Wechsel per
      dezenter Slide-Animation statt eines neuen Fensters/Overlays. -->
 <div class="menu-view" id="menuViewMain">
@@ -5258,7 +5300,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 
 </div>
 
-<!-- NEUIGKEITEN-POSTFACH (innerhalb des Drawers, siehe menuNewsRow oben).
+<!-- NEUIGKEITEN-POSTFACH (innerhalb des Menüs, siehe menuNewsRow oben).
      Ersetzt für die Mobile-Ansicht das frühere separate newsOverlay-Sheet -
      die Desktop-/Webapp-Glocke (#notifBtn) nutzt newsOverlay unverändert
      weiter (siehe openNewsSheet() im Script), da es dort kein Burger-Menü
@@ -5271,7 +5313,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div id="menuNewsInboxList"></div>
 </div>
 
-<!-- NEUIGKEIT-DETAILANSICHT (innerhalb des Drawers). "Zum Angebot" nutzt
+<!-- NEUIGKEIT-DETAILANSICHT (innerhalb des Menüs). "Zum Angebot" nutzt
      openStoreDetail(dealId) - dieselbe Funktion/Ansicht, die auch die
      "Zum Angebot"-Buttons der Angebotskarten öffnen, keine doppelte
      Angebotslogik. -->
@@ -5290,8 +5332,9 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
    Einzige Datenquelle für die öffentlichen Stammdaten (Produkte/Händler/
    Filialen/Angebote/Preisverlauf/Nährwerte/Bewertungs-Aggregate), siehe
    loadFromSupabase() weiter unten. Dazu das Nutzerkonto über Supabase Auth
-   (E-Mail + Passwort, siehe initAuth()). Favoriten/eigene Bewertungen/
-   Preisalarme liegen weiter nur lokal - späterer Schritt.
+   (E-Mail + Passwort, siehe initAuth()) und "Zuletzt angesehen" je Konto
+   (recently_viewed, siehe recordProductView()). Favoriten/eigene
+   Bewertungen/Preisalarme liegen weiter nur lokal - späterer Schritt.
 
    Der "Publishable"/"anon"-Key ist bewusst ÖFFENTLICH in Client-Code
    aufrufbar - er dient nur der Projekt-Identifikation, der eigentliche
@@ -7909,10 +7952,8 @@ function initSwipeToClose(overlayId){
    basierten Desktop-/Webapp-Bildschirmen feuern touchstart/-move/-end
    ohnehin nie, daher betrifft dies ausschließlich die mobile Nutzung. */
 /* menuOverlay bewusst NICHT hier: Wisch-nach-unten-zum-Schließen passt
-   konzeptionell nicht zu einem seitlichen Drawer (schiebt sich nach rechts
-   raus, nicht nach unten) und hätte per Inline-transform:translateY() mit
-   der neuen translateX()-Animation des Menüs kollidiert. */
-["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","authOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
+   nicht zu einem Ausklappmenü, das oben am Menü-Button hängt. */
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","recentOverlay","accountManageOverlay","authOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
 
 /* Zusätzlich zu Pfeil/X und (bei Detail-/Preisverlauf-Fenster) der
    Wischgeste: Tippen auf den Handle-Balken oben mittig schließt das Sheet —
@@ -7922,25 +7963,42 @@ function initHandleTapToClose(overlayId){
   const handle = document.querySelector(`#${overlayId} .handle`);
   if(handle) handle.addEventListener("click", ()=>closeSheet(overlayId));
 }
-/* menuOverlay bewusst NICHT hier: hat seit dem Umbau zum Side-Drawer keinen
-   .handle-Balken mehr (macht bei seitlichem statt unterem Einschub keinen
-   Sinn) - Schließen läuft dort über das X sowie Tippen auf den abgedunkelten
-   Bereich (bestehender generischer Overlay-Klick-Handler weiter oben). */
-["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","authOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initHandleTapToClose);
+/* menuOverlay bewusst NICHT hier: das Ausklappmenü hat keinen .handle-
+   Balken - Schließen läuft dort über das X, Escape sowie Tippen auf den
+   abgedunkelten Bereich (generischer Overlay-Klick-Handler weiter oben). */
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","recentOverlay","accountManageOverlay","authOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initHandleTapToClose);
 
 document.getElementById("locBtn").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("statusEdit").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("notifBtn").addEventListener("click",()=>openNewsSheet());
 
 /* ---------------- BURGER-MENÜ (nur Mobile) ----------------
-   Ersetzt die Glocke ausschließlich unterhalb von 540px (siehe .iconbtn-menu
-   in <style>). "Neuigkeiten" navigiert INNERHALB des Drawers zum
+   Öffnet sich als Ausklappmenü direkt unter dem Button (siehe #menuOverlay
+   in <style>). "Neuigkeiten" navigiert INNERHALB des Menüs zum
    Postfach (menuViewNews, siehe showMenuView()) statt ein weiteres Fenster zu
    öffnen - die Desktop-/Webapp-Glocke (#notifBtn, oben) nutzt weiterhin
    unverändert openNewsSheet()/newsOverlay, da es dort kein Burger-Menü gibt.
    Alle anderen Zeilen klappen ihren Inhalt DIREKT im Menü auf
    (toggleMenuAccordion), statt ein weiteres Fenster zu öffnen. */
-document.getElementById("menuBtn").addEventListener("click",()=>openSheet("menuOverlay"));
+/* Position des Ausklappmenüs aus der aktuellen Lage von #menuBtn: 8px
+   unter dem Button, rechtsbündig mit ihm. Bei Größenänderung oder Scrollen
+   der Seite hinter dem offenen Menü wird nachgezogen. */
+function positionMenuDropdown(){
+  const btnRect = document.getElementById("menuBtn").getBoundingClientRect();
+  const overlay = document.getElementById("menuOverlay");
+  const viewportW = document.documentElement.clientWidth;
+  overlay.style.setProperty("--menu-top", `${Math.max(12, Math.round(btnRect.bottom + 8))}px`);
+  overlay.style.setProperty("--menu-right", `${Math.max(12, Math.round(viewportW - btnRect.right))}px`);
+}
+document.getElementById("menuBtn").addEventListener("click",()=>{
+  positionMenuDropdown();
+  openSheet("menuOverlay");
+});
+["resize","scroll"].forEach(type=>{
+  window.addEventListener(type, ()=>{
+    if(document.getElementById("menuOverlay").classList.contains("open")) positionMenuDropdown();
+  }, {passive:true});
+});
 
 document.getElementById("menuNewsRow").addEventListener("click",()=>{
   renderNewsInboxList();
@@ -8125,11 +8183,156 @@ function openProfile(){
   openSheet("profileOverlay");
 }
 
-/* "Zuletzt angesehen" ist noch nicht implementiert und daher nur als
-   Platzhalter vorbereitet (gleiches Muster wie #logoutBtn/#deleteAccountBtn:
-   Demo-Hinweis statt echter Funktion). */
-document.getElementById("profileRecentRow").addEventListener("click", ()=>{
-  showToast("„Zuletzt angesehen“ ist noch nicht verfügbar.");
+/* ---------------- ZULETZT ANGESEHEN (public.recently_viewed) ----------------
+   Nur mit Konto: Beim Öffnen der Produktdetailansicht merkt
+   record_product_view() das Produkt in der Datenbank (Serverzeit, höchstens
+   20 Einträge je Konto, ältere entfernt die Funktion selbst). Ohne Konto
+   wird nichts gespeichert. recentViews ist die zuletzt bekannte Liste
+   (neueste zuerst) und gehört immer zu recentViewsUser; beim Öffnen des
+   Fensters wird sie aus der Datenbank neu geladen. */
+const RECENT_LIMIT = 20;
+let recentViews = [];
+let recentViewsUser = null;
+let recentState = "idle"; // "idle" | "loading" | "ready" | "error"
+
+function isRecentOpen(){
+  return document.getElementById("recentOverlay").classList.contains("open");
+}
+
+function recordProductView(productId){
+  if(!supabaseClient || !currentUser) return;
+  recentViews = [{ productId, viewedAt:new Date().toISOString() }, ...recentViews.filter(v=>v.productId!==productId)].slice(0, RECENT_LIMIT);
+  if(isRecentOpen()) renderRecentList();
+  /* Abfragen von supabase-js starten erst mit then(); ein Fehler (z. B.
+     offline) bleibt still, die Liste lädt beim nächsten Öffnen neu. */
+  supabaseClient.rpc("record_product_view", { p_product_id:productId }).then(()=>{});
+}
+
+async function loadRecentViews(){
+  if(!supabaseClient || !currentUser) return;
+  const uid = currentUser.id;
+  if(recentState!=="ready"){
+    recentState = "loading";
+    renderRecentList();
+  }
+  const { data, error } = await supabaseClient.from("recently_viewed")
+    .select("product_id,viewed_at")
+    .eq("user_id", uid)
+    .order("viewed_at", { ascending:false })
+    .limit(RECENT_LIMIT);
+  if(!currentUser || currentUser.id !== uid) return;
+  if(error){
+    if(recentState!=="ready") recentState = "error";
+  } else {
+    recentViews = (data || []).map(r=>({ productId:r.product_id, viewedAt:r.viewed_at }));
+    recentState = "ready";
+  }
+  renderRecentList();
+}
+
+/* "gerade eben" / "vor 5 Min." / "heute, 14:32" / "gestern, 09:10" / Datum */
+function formatViewedAt(iso){
+  const date = new Date(iso);
+  if(isNaN(date.getTime())) return "";
+  const diffMin = Math.floor((Date.now() - date.getTime()) / 60000);
+  if(diffMin < 1) return "gerade eben";
+  if(diffMin < 60) return `vor ${diffMin} Min.`;
+  const time = date.toLocaleTimeString("de-DE", { hour:"2-digit", minute:"2-digit" });
+  const dayStart = new Date(date); dayStart.setHours(0,0,0,0);
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const dayDiff = Math.round((todayStart - dayStart) / 86400000);
+  if(dayDiff === 0) return `heute, ${time}`;
+  if(dayDiff === 1) return `gestern, ${time}`;
+  return date.toLocaleDateString("de-DE", { day:"2-digit", month:"2-digit", year:"numeric" });
+}
+
+function renderRecentList(){
+  const listEl = document.getElementById("recentList");
+  const loggedIn = !!currentUser;
+  document.getElementById("recentGuestBox").hidden = loggedIn;
+  document.getElementById("recentDesc").hidden = !loggedIn;
+  /* Produkte, die es im Katalog nicht mehr gibt, fallen still heraus. */
+  const items = loggedIn ? recentViews
+    .map(view=>({ view, product:products.find(p=>p.id===view.productId) }))
+    .filter(item=>item.product) : [];
+  document.getElementById("recentClearBtn").hidden = items.length === 0;
+  if(!loggedIn){
+    listEl.innerHTML = "";
+    return;
+  }
+  if(items.length === 0){
+    const msg = recentState==="loading" ? "Wird geladen …"
+      : recentState==="error" ? "Der Verlauf konnte nicht geladen werden. Bitte versuche es später erneut."
+      : "Noch nichts angesehen. Tippe auf ein Angebot, um die Produktdetails zu öffnen. Es erscheint dann hier.";
+    listEl.innerHTML = `<div class="fav-empty">${msg}</div>`;
+    return;
+  }
+  listEl.innerHTML = items.map(({ view, product })=>{
+    const bestPrice = deals
+      .filter(d=>d.productId===product.id && daysUntil(d.validUntil)>=0)
+      .reduce((min, d)=> min===null || d.offerPrice < min ? d.offerPrice : min, null);
+    return `
+    <button type="button" class="fav-row recent-row" data-recent-product="${escapeHtml(product.id)}">
+      <img class="fav-emoji" src="${escapeHtml(product.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+      <div class="fav-txt">
+        <b>${escapeHtml(product.name)}</b>
+        <span>${escapeHtml(product.brand)} · ${product.sizeMl} ml</span>
+      </div>
+      <div class="recent-meta">
+        ${bestPrice!==null ? `<b>ab ${euro(bestPrice)} €</b>` : ""}
+        <span>${formatViewedAt(view.viewedAt)}</span>
+      </div>
+    </button>`;
+  }).join("");
+  listEl.querySelectorAll("img.fav-emoji").forEach(img=>{
+    img.addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
+  });
+}
+
+function openRecentSheet(){
+  renderRecentList();
+  openSheet("recentOverlay");
+  document.querySelector("#recentOverlay .sheet").scrollTop = 0;
+  loadRecentViews();
+}
+
+/* Aufruf aus applyAuthState(): Liste gehört nur zum aktuellen Konto, bei
+   Ab-/Ummeldung wird sie verworfen. */
+function syncRecentWithAuth(){
+  const uid = currentUser ? currentUser.id : null;
+  if(uid === recentViewsUser) return;
+  recentViewsUser = uid;
+  recentViews = [];
+  recentState = "idle";
+  if(isRecentOpen()){
+    renderRecentList();
+    /* nicht direkt im onAuthStateChange-Callback auf Supabase warten */
+    if(uid) setTimeout(loadRecentViews, 0);
+  }
+}
+
+document.getElementById("profileRecentRow").addEventListener("click", openRecentSheet);
+document.getElementById("recentAuthBtn").addEventListener("click", ()=>openAuthSheet("login"));
+document.getElementById("recentList").addEventListener("click", (e)=>{
+  const row = e.target.closest("[data-recent-product]");
+  if(row) openProductDetail(row.dataset.recentProduct);
+});
+document.getElementById("recentClearBtn").addEventListener("click", async ()=>{
+  if(!supabaseClient || !currentUser) return;
+  const btn = document.getElementById("recentClearBtn");
+  const uid = currentUser.id;
+  btn.disabled = true;
+  const { error } = await supabaseClient.from("recently_viewed").delete().eq("user_id", uid);
+  btn.disabled = false;
+  if(error){
+    showToast("Der Verlauf konnte nicht gelöscht werden.");
+    return;
+  }
+  if(!currentUser || currentUser.id !== uid) return;
+  recentViews = [];
+  recentState = "ready";
+  renderRecentList();
+  showToast("Verlauf gelöscht.");
 });
 
 /* Push-Benachrichtigungen sind aus "Mein Bereich" entfernt und leben jetzt
@@ -8319,6 +8522,7 @@ function applyAuthState(user){
   if(!loggedIn || (profileLoadedFor && profileLoadedFor !== currentUser.id)) profileLoadedFor = null;
   if(!loggedIn) currentUsername = null;
   applyUsername(currentUsername);
+  syncRecentWithAuth();
   /* Ohne Konto gibt es nichts zu verwalten: offene Konto-Fenster schließen. */
   if(!loggedIn){
     ["accountManageOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay"].forEach(id=>{
@@ -9374,7 +9578,7 @@ function renderNewsDetail(n){
   });
 }
 
-/* Mini-Navigation innerhalb des Drawers: genau eine .menu-view ist sichtbar,
+/* Mini-Navigation innerhalb des Menüs: genau eine .menu-view ist sichtbar,
    der Wechsel bekommt eine kurze, dezente Richtungs-Animation ("forward" =
    von rechts hinein, "back" = von links hinein). */
 function showMenuView(viewId, direction){
@@ -9897,6 +10101,7 @@ function openProductDetail(productId, dealId){
   /* Sheet scrollt selbst (.sheet{overflow:auto}) - beim erneuten Öffnen
      immer oben beginnen, damit Bild/Preis/Route direkt sichtbar sind. */
   document.querySelector("#productDetailOverlay .sheet").scrollTop = 0;
+  recordProductView(productId);
 }
 
 /* Dezente Zeile "xx % positiv bewertet" unter dem Untertitel - dieselbe

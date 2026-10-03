@@ -342,6 +342,46 @@ create table public.notification_settings (
 comment on table public.notification_settings is 'Entspricht den vier canspot-notif-* Keys (notifBest/notifFav/notifNearby/notifWeekly).';
 
 
+-- Zuletzt angesehene Produkte (Produktdetailansicht). Nur fuer angemeldete
+-- Nutzer; geschrieben wird ausschliesslich ueber record_product_view()
+-- weiter unten, die pro Nutzer nur die 20 neuesten Eintraege behaelt.
+create table public.recently_viewed (
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  product_id  uuid not null references public.products(id) on delete cascade,
+  viewed_at   timestamptz not null default now(),
+  primary key (user_id, product_id)
+);
+create index recently_viewed_user_viewed_idx on public.recently_viewed(user_id, viewed_at desc);
+create index recently_viewed_product_id_idx on public.recently_viewed(product_id);
+comment on table public.recently_viewed is 'Zuletzt angesehene Produkte je Konto (Produktdetailansicht). Pro Nutzer hoechstens 20 Eintraege, aeltere entfernt record_product_view().';
+
+-- Merkt ein angesehenes Produkt (Zeitpunkt = Serverzeit) und kuerzt die
+-- Liste auf die 20 neuesten Eintraege. SECURITY INVOKER: laeuft mit den
+-- Rechten des Aufrufers, RLS von recently_viewed greift.
+create function public.record_product_view(p_product_id uuid)
+returns void
+language sql
+security invoker
+set search_path = ''
+as $$
+  insert into public.recently_viewed (user_id, product_id, viewed_at)
+  values ((select auth.uid()), p_product_id, now())
+  on conflict (user_id, product_id) do update set viewed_at = excluded.viewed_at;
+
+  delete from public.recently_viewed
+  where user_id = (select auth.uid())
+    and product_id not in (
+      select product_id from public.recently_viewed
+      where user_id = (select auth.uid())
+      order by viewed_at desc
+      limit 20
+    );
+$$;
+comment on function public.record_product_view(uuid) is 'Merkt ein angesehenes Produkt fuer den angemeldeten Nutzer (Zeitpunkt = Serverzeit) und behaelt nur die 20 neuesten Eintraege. SECURITY INVOKER, RLS greift.';
+revoke execute on function public.record_product_view(uuid) from public, anon;
+grant execute on function public.record_product_view(uuid) to authenticated;
+
+
 -- ----------------------------------------------------------------------------
 -- 5. ANONYMISIERTES LÖSCH-FEEDBACK (Entscheidung 6)
 -- ----------------------------------------------------------------------------
@@ -609,6 +649,12 @@ alter table public.notification_settings enable row level security;
 create policy "notification_settings_all_own" on public.notification_settings
   for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+alter table public.recently_viewed enable row level security;
+create policy "recently_viewed_all_own" on public.recently_viewed
+  for all to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
 
 -- ---- ratings: Rohdaten nur fuer den eigenen Nutzer sichtbar/aenderbar.
 --      Das oeffentliche Aggregat laeuft ueber get_product_rating_summary()
@@ -690,6 +736,7 @@ grant select, insert, update, delete on public.favorites             to authenti
 grant select, insert, update, delete on public.ratings               to authenticated;
 grant select, insert, update, delete on public.price_alerts          to authenticated;
 grant select, insert, update, delete on public.notification_settings to authenticated;
+grant select, insert, update, delete on public.recently_viewed       to authenticated;
 
 
 -- ---- price_feedback_reports: nur INSERT fuer anon + authenticated (auch

@@ -8,6 +8,9 @@
 -- Sicherheitsstopp: Bricht ohne Änderung ab, sobald Nutzerdaten existieren
 -- (favorites, ratings, price_alerts, price_feedback_reports). Diese hängen per
 -- ON DELETE CASCADE an Produkten/Filialen und würden sonst mitgelöscht.
+-- Ausnahme: "Zuletzt angesehen" (recently_viewed) verweist ebenfalls per
+-- CASCADE auf products und wird ohne Sicherheitsstopp mitgeleert, weil die
+-- Einträge nach einem neuen Datenstand ohnehin ins Leere zeigen würden.
 --
 -- Danach seed.sql (oder einen eigenen Datenstand) ausführen.
 -- ============================================================================
