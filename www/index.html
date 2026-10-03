@@ -2096,6 +2096,7 @@ font-weight:700;
 font-family:inherit;
 cursor:pointer
 }
+.auth-link:disabled{color:var(--text-muted);cursor:default}
 .auth-legal{font-size:11.5px;color:var(--text-muted);margin-top:14px;line-height:1.5}
 .auth-legal a{color:var(--brand-primary-blue)}
 
@@ -4706,6 +4707,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="auth-msg" id="authMsg" role="alert" hidden></div>
 <button type="submit" class="sheet-btn" id="authSubmit">Anmelden</button>
 </form>
+<button type="button" class="auth-link" id="authResendBtn" hidden>Keine E-Mail erhalten? Neuen Bestätigungslink senden</button>
 <button type="button" class="auth-link" id="authForgotBtn">Passwort vergessen?</button>
 <button type="button" class="auth-link" id="authBackBtn" hidden>Zurück zur Anmeldung</button>
 <div class="auth-legal" id="authLegal" hidden>Mit der Registrierung legst du ein CanSpot-Konto an. Dafür speichern wir deinen Nutzernamen, deine E-Mail-Adresse und dein Passwort (nie im Klartext). Mehr dazu in der <a href="datenschutz.html#konto">Datenschutzerklärung</a>. Es gelten die <a href="impressum.html#nutzung">Nutzungsbedingungen</a>.</div>
@@ -8190,6 +8192,7 @@ const authEls = {
   pwHint: document.getElementById("authPwHint"),
   msg: document.getElementById("authMsg"),
   submit: document.getElementById("authSubmit"),
+  resend: document.getElementById("authResendBtn"),
   forgot: document.getElementById("authForgotBtn"),
   back: document.getElementById("authBackBtn"),
   legal: document.getElementById("authLegal")
@@ -8224,6 +8227,7 @@ function setAuthMode(mode){
   authEls.passwordField.hidden = !cfg.password;
   if(cfg.password) authEls.password.setAttribute("autocomplete", cfg.pwAutocomplete);
   authEls.pwHint.hidden = !cfg.hint;
+  authEls.resend.hidden = true;
   authEls.forgot.hidden = !cfg.forgot;
   authEls.back.hidden = !cfg.back;
   authEls.legal.hidden = !cfg.legal;
@@ -8341,6 +8345,73 @@ authEls.back.addEventListener("click", ()=>{
   setAuthMode("login");
   authEls.email.value = email;
 });
+/* "Neuen Bestätigungslink senden": nur sichtbar, wenn ein Konto noch nicht
+   bestätigt ist (nach der Registrierung oder beim Anmelden). Supabase lässt
+   pro Adresse höchstens eine Mail pro Minute zu; die Wartezeit steht
+   deshalb direkt am Link. Die Antwort verrät nicht, ob die Adresse
+   registriert ist. */
+const AUTH_RESEND_LABEL = "Keine E-Mail erhalten? Neuen Bestätigungslink senden";
+const AUTH_RESEND_WAIT_S = 60;
+let authResendUntil = 0;
+let authResendTimer = null;
+
+function updateResendBtn(){
+  const left = Math.ceil((authResendUntil - Date.now()) / 1000);
+  if(left > 0){
+    authEls.resend.disabled = true;
+    authEls.resend.textContent = `Neuen Bestätigungslink senden (in ${left} s)`;
+    return;
+  }
+  clearInterval(authResendTimer);
+  authResendTimer = null;
+  authEls.resend.disabled = false;
+  authEls.resend.textContent = AUTH_RESEND_LABEL;
+}
+
+function startResendWait(seconds){
+  authResendUntil = Date.now() + seconds * 1000;
+  clearInterval(authResendTimer);
+  authResendTimer = setInterval(updateResendBtn, 1000);
+  updateResendBtn();
+}
+
+function showResendOffer(){
+  authEls.resend.hidden = false;
+  updateResendBtn();
+}
+
+authEls.resend.addEventListener("click", async ()=>{
+  if(!supabaseClient || authEls.resend.disabled) return;
+  const email = authEls.email.value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    showAuthMsg("Bitte gib oben deine E-Mail-Adresse ein.");
+    authEls.email.focus();
+    return;
+  }
+  authEls.resend.disabled = true;
+  try{
+    const { error } = await supabaseClient.auth.resend({
+      type:"signup", email, options:{ emailRedirectTo: authRedirectUrl() }
+    });
+    if(error && (/rate_limit/.test(error.code || "") || error.status===429)){
+      const m = /(\d+)\s*seconds?/.exec(error.message || "");
+      startResendWait(m ? Number(m[1]) : AUTH_RESEND_WAIT_S);
+      showAuthMsg("Bitte warte kurz, bevor du einen neuen Link anforderst.");
+      return;
+    }
+    if(error && (error.name==="AuthRetryableFetchError" || error.status===0)){
+      showAuthMsg(authErrorText(error));
+      return;
+    }
+    startResendWait(AUTH_RESEND_WAIT_S);
+    showAuthMsg("Falls zu dieser Adresse ein noch nicht bestätigtes Konto existiert, haben wir dir einen neuen Bestätigungslink geschickt. Schau bitte auch im Spam-Ordner nach.", "info");
+  } catch(err){
+    showAuthMsg(authErrorText(err));
+  } finally {
+    updateResendBtn();
+  }
+});
+
 document.getElementById("authOpenBtn").addEventListener("click", ()=>openAuthSheet("login"));
 document.getElementById("profileUsernameSetBtn").addEventListener("click", ()=>openAuthSheet("username"));
 
@@ -8383,7 +8454,11 @@ authEls.form.addEventListener("submit", async (e)=>{
   try{
     if(authMode==="login"){
       const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if(error){ showAuthMsg(authErrorText(error)); return; }
+      if(error){
+        showAuthMsg(authErrorText(error));
+        if(error.code==="email_not_confirmed") showResendOffer();
+        return;
+      }
       closeSheet("authOverlay");
       showToast("Du bist angemeldet.");
     } else if(authMode==="signup"){
@@ -8416,6 +8491,9 @@ authEls.form.addEventListener("submit", async (e)=>{
         setAuthMode("login");
         authEls.email.value = email;
         showAuthMsg("Fast geschafft: Bitte bestätige deine E-Mail-Adresse über den Link, den wir dir geschickt haben. Danach kannst du dich hier anmelden. Keine E-Mail da? Schau bitte auch im Spam-Ordner nach.", "info");
+        /* Die erste Mail ist gerade erst raus: Wartezeit gleich starten. */
+        startResendWait(AUTH_RESEND_WAIT_S);
+        showResendOffer();
       }
     } else if(authMode==="reset"){
       const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: authRedirectUrl() });
