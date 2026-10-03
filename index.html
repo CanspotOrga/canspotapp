@@ -39,7 +39,7 @@
      damit der App-Shell wie bisher ohne Netzwerkabhängigkeit startet - nur
      die Kartenkacheln selbst brauchen Netz zur Laufzeit (dieselbe, bereits
      akzeptierte Einschränkung wie bei den hotlinked Produkt-/Händlerbildern,
-     siehe CLAUDE.md "Images"). Reine zusätzliche Script-/CSS-Datei, keine
+     siehe FALLBACK_IMG). Reine zusätzliche Script-/CSS-Datei, keine
      Bundler-/Framework-Migration - die restliche HTML/CSS/JS-Struktur der
      App bleibt unverändert. -->
 <link rel="stylesheet" href="lib/leaflet/leaflet.css">
@@ -1222,7 +1222,7 @@ color:var(--text-disabled);
 margin-top:16px
 }
 
-/* Pflicht-Hinweis auf Beispieldaten (DATENQUELLEN.md, Regel 4): bewusst
+/* Pflicht-Hinweis auf Beispieldaten (Datenquellen-Regel 4): bewusst
    gut sichtbar über der Liste, nicht nur klein in .note darunter. */
 .demo-banner{
 font-size:12px;
@@ -1394,7 +1394,7 @@ text-align:left
    schon über :last-child korrekt ohne Trennlinie auskommt) erneut ergänzt. */
 .sort-row[data-sort="rating"]{display:none}
 .sort-row[data-sort="ending"]{border-bottom:0}
-@media all{ /* immer mobile Ansicht, siehe CLAUDE.md "Nur mobile Ansicht" */
+@media all{ /* immer mobile Ansicht */
 .sort-row[data-sort="rating"]{display:flex}
 .sort-row[data-sort="ending"]{border-bottom:1px solid var(--border-subtle)}
 }
@@ -2702,7 +2702,7 @@ z-index:2
    weiter unten: dasselbe geteilte #productDetailOverlay-Sheet dient auch der
    Desktop-/Webapp-Ansicht, die unverändert bleiben soll). */
 .pd-alert-btn{display:none}
-@media all{ /* immer mobile Ansicht, siehe CLAUDE.md "Nur mobile Ansicht" */
+@media all{ /* immer mobile Ansicht */
 #productDetailOverlay .detail-hero .pd-alert-btn{
 display:flex;
 position:absolute;
@@ -2947,7 +2947,7 @@ font-size:12.5px
    Webapp-Ansicht von #productDetailOverlay (dasselbe geteilte Sheet)
    unverändert bleibt. */
 .detail-rating{display:none}
-@media all{ /* immer mobile Ansicht, siehe CLAUDE.md "Nur mobile Ansicht" */
+@media all{ /* immer mobile Ansicht */
 .detail-rating{display:block;margin-top:10px}
 }
 .rating-quick{display:flex;align-items:center;gap:6px}
@@ -3092,7 +3092,7 @@ color:var(--status-success-text)
    fachfremd zur Bewertung), Inhalt selbst nutzt die bereits bestehenden
    .alert-box/-input-row/-active-Klassen aus dem Preisverlauf-Sheet. */
 .detail-alert-panel{display:none}
-@media all{ /* immer mobile Ansicht, siehe CLAUDE.md "Nur mobile Ansicht" */
+@media all{ /* immer mobile Ansicht */
 .detail-alert-panel{
 display:grid;
 grid-template-rows:0fr;
@@ -3475,7 +3475,7 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
    Browser-Standardstilen (Rahmen/Innenabstand) sichtbar bleiben, statt wie
    gewollt komplett zu verschwinden. */
 .community-rating{display:none}
-@media all{ /* immer mobile Ansicht, siehe CLAUDE.md "Nur mobile Ansicht" */
+@media all{ /* immer mobile Ansicht */
 .card{padding:12px}
 .card-top{gap:9px}
 .card-top .thumb{width:72px;height:72px}
@@ -3553,7 +3553,7 @@ transition:transform .1s ease
    Breakpoint-Definition, damit Mobile/Webapp exakt gleich abgegrenzt bleiben
    und die Desktop-/Webapp-Ansicht (>540px) unverändert die Glocke behält. */
 .iconbtn-menu{display:none}
-@media all{ /* immer mobile Ansicht, siehe CLAUDE.md "Nur mobile Ansicht" */
+@media all{ /* immer mobile Ansicht */
 #notifBtn{display:none}
 .iconbtn-menu{display:flex}
 }
@@ -3580,7 +3580,7 @@ transition:transform .1s ease
    oben) ist die bereits stimmige Referenz: ebenfalls 16px, aber regulär
    (400) statt fett - Labels ("NAME"/"E-MAIL-ADRESSE"), der "Speichern"-
    Button und alle anderen Schriftgrade/-schnitte bleiben unangetastet. */
-@media all{ /* immer mobile Ansicht, siehe CLAUDE.md "Nur mobile Ansicht" */
+@media all{ /* immer mobile Ansicht */
 .alert-input-row input{font-size:16px}
 .plz-input{font-size:16px}
 .profile-input{font-size:16px;font-weight:400}
@@ -5312,7 +5312,7 @@ const supabaseClient = (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && window.supab
 let products = [];
 
 /* Produktbilder kommen aus products.image_url (optional). Nur Bilder
-   verwenden, die DATENQUELLEN.md erlaubt; ohne Bild greift FALLBACK_IMG. */
+   verwenden, die die Datenquellen-Regeln erlauben; ohne Bild greift FALLBACK_IMG. */
 
 const FALLBACK_IMG = "data:image/svg+xml," + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 80">'+
@@ -5321,7 +5321,7 @@ const FALLBACK_IMG = "data:image/svg+xml," + encodeURIComponent(
 );
 
 /* Händler-Logos aus Supabase (retailers.logo_url, optional). Keine fremden
-   Logos ohne Erlaubnis (DATENQUELLEN.md); ohne Logo greift STORE_FALLBACK_IMG. */
+   Logos ohne Erlaubnis (Datenquellen-Regeln); ohne Logo greift STORE_FALLBACK_IMG. */
 let storeLogos = {};
 
 const STORE_FALLBACK_IMG = "data:image/svg+xml," + encodeURIComponent(
@@ -7828,7 +7828,7 @@ function initSwipeToClose(overlayId){
   /* Manche Sheets scrollen direkt über .sheet (kein eigener Footer-Button),
      andere über ein inneres .sheet-scroll, damit ein .sheet-footer (z.B.
      "Anwenden"/"Aktualisieren") beim Scrollen fix stehen bleibt (siehe
-     CLAUDE.md-Markup-Konvention). Für die "ist noch ganz oben?"-Prüfung
+     Sheet-Markup-Konvention). Für die "ist noch ganz oben?"-Prüfung
      muss deshalb das TATSÄCHLICH scrollende Element geprüft werden, sonst
      würde die Wischgeste ausgelöst, obwohl man nur innerhalb des Inhalts
      nach oben scrollt. */
@@ -8151,7 +8151,7 @@ function showToast(msg){
    automatisch. Alle Änderungen am Anmeldestatus laufen über
    onAuthStateChange -> applyAuthState(); es gibt keinen zweiten Zustand.
    Fehlermeldungen verraten bewusst nicht, ob eine E-Mail registriert ist
-   (siehe CLAUDE.md, Abschnitt "DSGVO & Sicherheit"). */
+   (Datenschutz). */
 let currentUser = null;
 let authMode = "login";
 const AUTH_MIN_PASSWORD = 8;
@@ -9509,7 +9509,7 @@ function openHistory(dealId){
    beim Laden auswertet und automatisch das passende Angebot öffnet) - keine
    erfundene/nicht funktionierende URL. deal.link (die Zielseite beim
    Händler) wird hier bewusst NICHT verwendet, da deals.json dafür aktuell
-   nur den Platzhalter "#" enthält (siehe CLAUDE.md "Datenquelle" - reine
+   nur den Platzhalter "#" enthält (reine
    Demo-Daten); sobald echte Angebots-Links vorliegen, kann diese Funktion
    unverändert bleiben. */
 function shareDeal(deal){

@@ -5,8 +5,7 @@
 -- Indizes, Funktionen, Trigger, RLS-Policies, Grants).
 --
 -- Nur für ein LEERES Supabase-Projekt: legt alle Tabellen neu an und bricht
--- ab, wenn sie schon existieren. Inhalte stehen in seed.sql. Anleitung:
--- supabase/README.md. Regeln für Datenquellen: DATENQUELLEN.md.
+-- ab, wenn sie schon existieren. Inhalte stehen in seed.sql.
 --
 -- Nicht enthalten: Objekte, die Supabase selbst anlegt (z. B. Event-Trigger
 -- ensure_rls mit Funktion public.rls_auto_enable, Extensions-Schema).

@@ -3,13 +3,13 @@
 -- ============================================================================
 -- Additiv und mehrfach ausführbar: legt fehlende Zeilen an und setzt
 -- vorhandene (gleiche id) auf die Werte unten. Löscht nichts.
--- Voraussetzung: schema.sql wurde ausgeführt. Anleitung: supabase/README.md.
+-- Voraussetzung: schema.sql wurde ausgeführt.
 --
 -- Inhalt: 2 Marken mit je 2 Produkten, 4 Filialen in Arnsberg, 4 Angebote,
 -- dazu app_settings (Startstandort Arnsberg, Demo-Hinweis, Version).
 -- Preise, Zeiträume und Filialangaben sind DEMODATEN, keine erhobenen Preise.
--- Bilder und Logos sind bewusst leer (Regel 5 in DATENQUELLEN.md).
--- Neue Daten nur aus Quellen, die DATENQUELLEN.md erlaubt.
+-- Bilder und Logos sind bewusst leer (Datenquellen-Regel 5).
+-- Neue Daten nur aus erlaubten Quellen.
 -- ============================================================================
 
 begin;
