@@ -6405,11 +6405,11 @@ function buildWeeklyBestEl(deal, literPrice){
   el.innerHTML = `
     <span class="weekly-best-info">
       <span class="weekly-best-label"><svg class="icon icon-xs"><use href="#i-trophy"/></svg> Bester Deal der Woche</span>
-      <span class="weekly-best-name">${deal.product} · ${formatSize(deal)}</span>
+      <span class="weekly-best-name">${escapeHtml(deal.product)} · ${formatSize(deal)}</span>
       <span class="weekly-best-price"><span class="price">${euro(deal.offerPrice)} €</span><span class="saving-percent">−${savingPct} %</span></span>
-      <span class="weekly-best-meta">${euro(literPrice)} €/L · ${deal.store} · bis ${formatSingleDate(deal.validUntil)}</span>
+      <span class="weekly-best-meta">${euro(literPrice)} €/L · ${escapeHtml(deal.store)} · bis ${formatSingleDate(deal.validUntil)}</span>
     </span>
-    <span class="weekly-best-img"><img src="${deal.img}" alt="" referrerpolicy="no-referrer"></span>
+    <span class="weekly-best-img"><img src="${escapeHtml(deal.img)}" alt="" referrerpolicy="no-referrer"></span>
   `;
   el.querySelector("img").addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
   return el;
@@ -6448,11 +6448,11 @@ function buildDealCardEl(deal, isBest, favLiterMin){
     <button class="btn fav card-fav ${isFav ? "active":""}" data-fav="${favKeyForDeal(deal)}" aria-label="Favorit" aria-pressed="${isFav}"><svg class="icon icon-md"><use href="#i-heart"/></svg></button>
     <div class="card-main">
       <div class="thumb-frame">
-        <img class="thumb" src="${deal.img}" alt="${deal.product}" loading="lazy" referrerpolicy="no-referrer">
+        <img class="thumb" src="${escapeHtml(deal.img)}" alt="${escapeHtml(deal.product)}" loading="lazy" referrerpolicy="no-referrer">
         ${deal.isNew ? `<span class="new-pill">Neu</span>` : ""}
       </div>
       <div class="card-info">
-        <div class="product">${deal.product}</div>
+        <div class="product">${escapeHtml(deal.product)}</div>
         <div class="unit">${formatSize(deal)} · ${euro(literPrice)} €/L + ${euro(pfand)} € Pfand</div>
         <div class="card-price-row">
           <span class="old-price">statt ${euro(deal.regularPrice)} €</span>
@@ -6462,8 +6462,8 @@ function buildDealCardEl(deal, isBest, favLiterMin){
           </span>
         </div>
         <div class="card-store">
-          <img class="store-logo" src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="" loading="lazy" referrerpolicy="no-referrer">
-          <span class="store-name">${deal.store}${hasDistance(deal) ? ` <span class="distance">· ${deal.distanceKm} km</span>` : ""}</span>
+          <img class="store-logo" src="${escapeHtml(storeLogos[deal.store] || STORE_FALLBACK_IMG)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+          <span class="store-name">${escapeHtml(deal.store)}${hasDistance(deal) ? ` <span class="distance">· ${deal.distanceKm} km</span>` : ""}</span>
         </div>
       </div>
     </div>
@@ -6548,12 +6548,14 @@ function getSearchSuggestions(query){
    bilden jede normalisierte Position auf ihre Position im Original-Text ab,
    sodass z.B. bei Eingabe "redbull" in "Red Bull" der komplette Abschnitt
    "Red Bull" (inkl. Leerzeichen) markiert wird statt nur eines Teilstücks. */
-/* Escaped Text, bevor er per innerHTML eingefuegt wird - schuetzt vor
-   HTML/Skript-Injection ueber Produktname/Marke. Aktuell handgepflegte
-   deals.json ist vertrauenswuerdig, aber highlightMatch()s Rueckgabewert
-   landet direkt in innerHTML (renderSearchSuggestions()) - sobald diese
-   Texte einmal aus einem echten/externen Feed stammen, darf ein darin
-   enthaltenes "<script>" o.ae. nicht als Markup interpretiert werden. */
+/* Entschärft Text, bevor er per innerHTML eingefügt wird: < > & " ' werden
+   zu HTML-Entities, der Browser zeigt sie als Zeichen an statt sie als
+   Markup oder Skript zu lesen. Regel für die ganze App: Jeder Wert aus der
+   Datenbank oder von Nutzern (Namen, Marken, Händler, Adressen, Bild-URLs,
+   Neuigkeiten-Texte), der in ein HTML-Template eingesetzt wird, läuft durch
+   escapeHtml() - auch in Attributen (src/alt/data-*), dataset liefert beim
+   Auslesen wieder den Originalwert. Zahlen, IDs (uuid) und feste App-Texte
+   brauchen es nicht; textContent ist ohnehin sicher. */
 function escapeHtml(str){
   return String(str)
     .replace(/&/g, "&amp;")
@@ -6598,7 +6600,7 @@ function renderSearchSuggestions(){
 
   searchSuggestions.innerHTML = `<div class="search-suggestions-list">${matches.map(p=>`
     <button type="button" class="search-suggestion" data-suggest="${p.id}">
-      <img src="${p.img}" alt="" loading="lazy" referrerpolicy="no-referrer">
+      <img src="${escapeHtml(p.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="search-suggestion-text">
         <div class="search-suggestion-name">${highlightMatch(p.name, q)}</div>
         <div class="search-suggestion-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
@@ -7084,7 +7086,7 @@ function renderMapMobile(filtered){
     const icon = L.divIcon({
       className: "",
       html: `<div class="leaflet-store-marker size-${tier.name} ${selected?"selected":""}">
-        <span class="pin-logo"><img src="${storeLogos[s.store] || STORE_FALLBACK_IMG}" alt="${s.store}" referrerpolicy="no-referrer"></span>
+        <span class="pin-logo"><img src="${escapeHtml(storeLogos[s.store] || STORE_FALLBACK_IMG)}" alt="${escapeHtml(s.store)}" referrerpolicy="no-referrer"></span>
         <span class="pin-price">${euro(s.minPrice)} €</span>
       </div>`,
       iconSize: [tier.logo, tier.logo + 18],
@@ -7144,14 +7146,14 @@ function showMapPopoverMobile(storeInfo){
     : "Entfernung benötigt Standortzugriff";
   wrap.innerHTML = `
     <div class="map-popover">
-      <img class="store-row-logo" src="${storeLogos[storeInfo.store] || STORE_FALLBACK_IMG}" alt="${storeInfo.store}" referrerpolicy="no-referrer">
+      <img class="store-row-logo" src="${escapeHtml(storeLogos[storeInfo.store] || STORE_FALLBACK_IMG)}" alt="${escapeHtml(storeInfo.store)}" referrerpolicy="no-referrer">
       <div class="map-popover-txt">
-        <b>${storeInfo.store}</b>
-        <span>${branch ? branch.address : "Adresse nicht verfügbar"}</span>
+        <b>${escapeHtml(storeInfo.store)}</b>
+        <span>${branch ? escapeHtml(branch.address) : "Adresse nicht verfügbar"}</span>
         <span>${distText} · ${openNow===null?"Öffnungszeiten unbekannt":(openNow?"Jetzt geöffnet":"Aktuell geschlossen")}</span>
         <span>${storeInfo.count} Angebot${storeInfo.count===1?"":"e"} · ab ${euro(storeInfo.minPrice)} €</span>
       </div>
-      <button class="btn primary" data-jump-store="${storeInfo.store}">Ansehen</button>
+      <button class="btn primary" data-jump-store="${escapeHtml(storeInfo.store)}">Ansehen</button>
     </div>
   `;
   wrap.querySelector("[data-jump-store]").addEventListener("click", ()=>{
@@ -7228,8 +7230,8 @@ function renderMapDesktop(filtered){
   const pins = pinPositions.map(p=>{
     const s = byStore[p.store];
     const selected = selectedMapStore===p.store;
-    return `<button class="map-pin ${selected?"selected":""}" style="left:${p.x}%;top:${p.y}%" data-store="${p.store}">
-      <span class="pin-logo"><img src="${storeLogos[p.store] || STORE_FALLBACK_IMG}" alt="${p.store}" referrerpolicy="no-referrer"></span>
+    return `<button class="map-pin ${selected?"selected":""}" style="left:${p.x}%;top:${p.y}%" data-store="${escapeHtml(p.store)}">
+      <span class="pin-logo"><img src="${escapeHtml(storeLogos[p.store] || STORE_FALLBACK_IMG)}" alt="${escapeHtml(p.store)}" referrerpolicy="no-referrer"></span>
       <span class="pin-price">${euro(s.minPrice)} €</span>
     </button>`;
   }).join("");
@@ -7267,12 +7269,12 @@ function showMapPopoverDesktop(storeInfo){
   if(!wrap || !storeInfo) return;
   wrap.innerHTML = `
     <div class="map-popover">
-      <img class="store-row-logo" src="${storeLogos[storeInfo.store] || STORE_FALLBACK_IMG}" alt="${storeInfo.store}" referrerpolicy="no-referrer">
+      <img class="store-row-logo" src="${escapeHtml(storeLogos[storeInfo.store] || STORE_FALLBACK_IMG)}" alt="${escapeHtml(storeInfo.store)}" referrerpolicy="no-referrer">
       <div class="map-popover-txt">
-        <b>${storeInfo.store}</b>
+        <b>${escapeHtml(storeInfo.store)}</b>
         <span>${storeInfo.count} Angebot${storeInfo.count===1?"":"e"} · ab ${euro(storeInfo.minPrice)} €${kmSuffix(storeInfo.distanceKm, " entfernt")}</span>
       </div>
-      <button class="btn primary" data-jump-store="${storeInfo.store}">Ansehen</button>
+      <button class="btn primary" data-jump-store="${escapeHtml(storeInfo.store)}">Ansehen</button>
     </div>
   `;
   wrap.querySelector("[data-jump-store]").addEventListener("click", ()=>{
@@ -7624,10 +7626,10 @@ function newsCardHtml(item){
       <article class="news-card">
         <div class="news-card-status expired"><svg class="icon icon-xs"><use href="#i-x"/></svg> Aktuell nicht verfügbar</div>
         <div class="news-card-body">
-          <img class="thumb" data-product-detail="${p.id}" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+          <img class="thumb" data-product-detail="${p.id}" src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
           <div class="news-card-text">
-            <div class="news-card-name" data-product-detail="${p.id}">${p.name}</div>
-            <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
+            <div class="news-card-name" data-product-detail="${p.id}">${escapeHtml(p.name)}</div>
+            <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
           </div>
         </div>
       </article>
@@ -7642,15 +7644,15 @@ function newsCardHtml(item){
       <article class="news-card">
         <div class="news-card-status gold"><svg class="icon icon-xs"><use href="#i-hourglass"/></svg> Demnächst im Angebot</div>
         <div class="news-card-body">
-          <img class="thumb" data-product-detail="${p.id}" data-deal-id="${d.id}" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+          <img class="thumb" data-product-detail="${p.id}" data-deal-id="${d.id}" src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
           <div class="news-card-text">
-            <div class="news-card-name" data-product-detail="${p.id}" data-deal-id="${d.id}">${p.name}</div>
-            <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
+            <div class="news-card-name" data-product-detail="${p.id}" data-deal-id="${d.id}">${escapeHtml(p.name)}</div>
+            <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
           </div>
         </div>
         <div class="news-card-price-row">
           <span class="news-card-price">${euro(d.offerPrice)} €</span>
-          <span class="news-card-store">ab ${startLabel} · ${d.store}${typeof d.distanceKm==="number" ? ` · ${d.distanceKm} km` : ""}</span>
+          <span class="news-card-store">ab ${startLabel} · ${escapeHtml(d.store)}${typeof d.distanceKm==="number" ? ` · ${d.distanceKm} km` : ""}</span>
         </div>
       </article>
     `;
@@ -7670,15 +7672,15 @@ function newsCardHtml(item){
     <article class="news-card">
       <div class="news-card-status green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> Jetzt im Angebot</div>
       <div class="news-card-body">
-        <img class="thumb" data-product-detail="${p.id}" data-deal-id="${d.id}" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+        <img class="thumb" data-product-detail="${p.id}" data-deal-id="${d.id}" src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
         <div class="news-card-text">
-          <div class="news-card-name" data-product-detail="${p.id}" data-deal-id="${d.id}">${p.name}</div>
-          <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
+          <div class="news-card-name" data-product-detail="${p.id}" data-deal-id="${d.id}">${escapeHtml(p.name)}</div>
+          <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
         </div>
       </div>
       <div class="news-card-price-row">
         <span class="news-card-price">${euro(d.offerPrice)} €</span>
-        <span class="news-card-store">${d.store}${typeof d.distanceKm==="number" ? ` · ${d.distanceKm} km` : ""}</span>
+        <span class="news-card-store">${escapeHtml(d.store)}${typeof d.distanceKm==="number" ? ` · ${d.distanceKm} km` : ""}</span>
       </div>
       ${badges.length ? `<div class="news-card-badges">${badges.join("")}</div>` : ""}
     </article>
@@ -7720,10 +7722,10 @@ function renderAlertsView(){
       <article class="card alert-card">
         <div class="line">
           <div class="thumb-price">
-            <img class="thumb" data-product-detail="${e.product.id}" src="${e.product.img}" alt="${e.product.name}" loading="lazy" referrerpolicy="no-referrer">
+            <img class="thumb" data-product-detail="${e.product.id}" src="${escapeHtml(e.product.img)}" alt="${escapeHtml(e.product.name)}" loading="lazy" referrerpolicy="no-referrer">
             <div>
-              <div class="product" data-product-detail="${e.product.id}">${e.product.name}</div>
-              <div class="brandtxt">${e.product.brand} · ${e.product.sizeMl} ml</div>
+              <div class="product" data-product-detail="${e.product.id}">${escapeHtml(e.product.name)}</div>
+              <div class="brandtxt">${escapeHtml(e.product.brand)} · ${e.product.sizeMl} ml</div>
             </div>
           </div>
           <label class="switch">
@@ -8076,7 +8078,8 @@ function openStoreRating(){
   /* Links kommen aus app_settings; ohne Eintrag ist die App noch nicht im Store. */
   const links = storeRatingLinks();
   const url = isIOSDevice() ? links.ios : links.android;
-  if(!url){
+  /* Nur echte http(s)-Adressen öffnen, nie z. B. javascript:-Links. */
+  if(!hasRealLink(url)){
     showToast("CanSpot ist noch nicht im App Store oder bei Google Play erhältlich.");
     return;
   }
@@ -8108,14 +8111,14 @@ function renderStoreListSheet(){
     const statusLabel = openNow===null ? "Öffnungszeiten unbekannt" : (openNow ? "Jetzt geöffnet" : "Aktuell geschlossen");
     return `
     <div class="store-row" style="align-items:flex-start">
-      <img class="store-row-logo" src="${storeLogos[name] || STORE_FALLBACK_IMG}" alt="${name}" loading="lazy" referrerpolicy="no-referrer">
+      <img class="store-row-logo" src="${escapeHtml(storeLogos[name] || STORE_FALLBACK_IMG)}" alt="${escapeHtml(name)}" loading="lazy" referrerpolicy="no-referrer">
       <div class="store-row-txt">
-        <b>${name}</b>
+        <b>${escapeHtml(name)}</b>
         <span class="open-status" style="margin-top:2px"><span class="open-dot ${openNow?"open":""}"></span>${statusLabel}</span>
-        <span>${branch ? branch.address : ""}</span>
+        <span>${branch ? escapeHtml(branch.address) : ""}</span>
         <span>${branch ? formatHours(branch) : ""}</span>
       </div>
-      ${branch ? `<button class="store-row-link" data-store-route="${branch.geo}">Route</button>` : ""}
+      ${branch ? `<button class="store-row-link" data-store-route="${escapeHtml(branch.geo)}">Route</button>` : ""}
     </div>`;
   }).join("");
 
@@ -8141,10 +8144,10 @@ function renderNewArrivals(){
   }
   container.innerHTML = items.map(p=>`
     <div class="fav-row">
-      <img class="fav-emoji" src="${p.img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+      <img class="fav-emoji" src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
       <div class="fav-txt">
-        <b>${p.name}<span class="new-badge">NEU</span></b>
-        <span>${p.brand} · ${p.sizeMl} ml</span>
+        <b>${escapeHtml(p.name)}<span class="new-badge">NEU</span></b>
+        <span>${escapeHtml(p.brand)} · ${p.sizeMl} ml</span>
       </div>
     </div>
   `).join("");
@@ -9343,7 +9346,7 @@ function renderNewsList(){
   list.innerHTML = notifications.map(n=>`
     <div class="event-row">
       <svg class="icon icon-sm info-badge ${n.cls}" style="padding:6px;border-radius:8px"><use href="#${n.icon}"/></svg>
-      <span>${n.text}</span>
+      <span>${escapeHtml(n.text)}</span>
     </div>
   `).join("");
 }
@@ -9413,8 +9416,8 @@ function renderNewsInboxList(){
         <button class="news-inbox-row${isRead ? " read" : ""}" data-news-id="${n.id}">
           <span class="news-inbox-dot"></span>
           <div class="news-inbox-text">
-            <div class="msg">${n.text}</div>
-            ${meta ? `<div class="news-inbox-meta">${meta}</div>` : ""}
+            <div class="msg">${escapeHtml(n.text)}</div>
+            ${meta ? `<div class="news-inbox-meta">${escapeHtml(meta)}</div>` : ""}
           </div>
         </button>
       </div>`;
@@ -9585,15 +9588,15 @@ function renderNewsDetail(n){
   const deal = n.dealId ? deals.find(d=>d.id===n.dealId) : null;
 
   if(!product){
-    container.innerHTML = `<div class="desc" style="margin-top:18px">${n.text}</div>`;
+    container.innerHTML = `<div class="desc" style="margin-top:18px">${escapeHtml(n.text)}</div>`;
     return;
   }
 
   if(!deal){
     container.innerHTML = `
-      <h2 style="margin-top:18px">${product.name}</h2>
-      <div class="news-detail-img-wrap"><img class="news-detail-img" src="${product.img}" alt="${product.name}" loading="lazy" referrerpolicy="no-referrer"></div>
-      <div class="desc">${n.text}</div>
+      <h2 style="margin-top:18px">${escapeHtml(product.name)}</h2>
+      <div class="news-detail-img-wrap"><img class="news-detail-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" loading="lazy" referrerpolicy="no-referrer"></div>
+      <div class="desc">${escapeHtml(n.text)}</div>
     `;
     return;
   }
@@ -9603,10 +9606,10 @@ function renderNewsDetail(n){
   const savings = deal.regularPrice - deal.offerPrice;
 
   container.innerHTML = `
-    <h2 style="margin-top:18px">${product.name}</h2>
-    <div class="news-detail-img-wrap"><img class="news-detail-img" src="${img}" alt="${product.name}" loading="lazy" referrerpolicy="no-referrer"></div>
+    <h2 style="margin-top:18px">${escapeHtml(product.name)}</h2>
+    <div class="news-detail-img-wrap"><img class="news-detail-img" src="${escapeHtml(img)}" alt="${escapeHtml(product.name)}" loading="lazy" referrerpolicy="no-referrer"></div>
     <div class="news-card-status ${n.cls}"><svg class="icon icon-xs"><use href="#${n.icon}"/></svg> ${statusLabel}</div>
-    <div class="news-detail-store">${deal.store}</div>
+    <div class="news-detail-store">${escapeHtml(deal.store)}</div>
     <div class="news-detail-price-row">
       <span class="news-detail-price">${euro(deal.offerPrice)} €</span>
       <span class="news-detail-unit">${formatSize(deal)}</span>
@@ -9930,7 +9933,7 @@ function openHistory(dealId){
   document.getElementById("detailBadges").innerHTML = badges || `<span class="info-badge green"><svg class="icon icon-xs"><use href="#i-check"/></svg> Aktuelles Angebot</span>`;
 
   document.getElementById("detailTrust").innerHTML =
-    `<svg class="icon icon-xs"><use href="#i-check"/></svg> ${deal.lastCheckedAt ? `Preis geprüft am ${formatSingleDate(deal.lastCheckedAt)}` : "Preis"} · direkt bei ${deal.store}`;
+    `<svg class="icon icon-xs"><use href="#i-check"/></svg> ${deal.lastCheckedAt ? `Preis geprüft am ${formatSingleDate(deal.lastCheckedAt)}` : "Preis"} · direkt bei ${escapeHtml(deal.store)}`;
 
   const daysLeft = daysUntil(deal.validUntil);
   document.getElementById("detailValidity").textContent =
@@ -9954,14 +9957,14 @@ function openHistory(dealId){
   } else if(!hasRealLink(bestDeal.link)){
     /* Ohne echten Händlerlink kein Button, der nach Weiterleitung aussieht. */
     ctaBtn.href = "#";
-    ctaBtn.innerHTML = `Bestes Angebot: ${bestDeal.store} · ${euro(bestDeal.offerPrice)} €`;
+    ctaBtn.innerHTML = `Bestes Angebot: ${escapeHtml(bestDeal.store)} · ${euro(bestDeal.offerPrice)} €`;
     ctaBtn.classList.add("disabled-cta");
     ctaBtn.style.pointerEvents = "none";
   } else {
     ctaBtn.href = bestDeal.link;
     ctaBtn.classList.remove("disabled-cta");
     ctaBtn.style.pointerEvents = "";
-    ctaBtn.innerHTML = `Zum Angebot bei ${bestDeal.store} · ${euro(bestDeal.offerPrice)} € <svg class="icon icon-md"><use href="#i-external"/></svg>`;
+    ctaBtn.innerHTML = `Zum Angebot bei ${escapeHtml(bestDeal.store)} · ${euro(bestDeal.offerPrice)} € <svg class="icon icon-md"><use href="#i-external"/></svg>`;
   }
 
   openSheet("histOverlay");
@@ -10068,15 +10071,15 @@ function renderOtherStores(deal){
     .sort((a,b)=>a.offerPrice-b.offerPrice);
 
   if(others.length===0){
-    container.innerHTML = `<div class="fav-empty">Aktuell nur bei ${deal.store} im Angebot.</div>`;
+    container.innerHTML = `<div class="fav-empty">Aktuell nur bei ${escapeHtml(deal.store)} im Angebot.</div>`;
     return;
   }
 
   container.innerHTML = others.map(d=>`
     <div class="store-row">
-      <img class="store-row-logo" src="${storeLogos[d.store] || STORE_FALLBACK_IMG}" alt="${d.store}" loading="lazy" referrerpolicy="no-referrer">
+      <img class="store-row-logo" src="${escapeHtml(storeLogos[d.store] || STORE_FALLBACK_IMG)}" alt="${escapeHtml(d.store)}" loading="lazy" referrerpolicy="no-referrer">
       <div class="store-row-txt">
-        <b>${d.store}</b>
+        <b>${escapeHtml(d.store)}</b>
         <span>${hasDistance(d) ? `${d.distanceKm} km · ` : ""}${formatDateRange(d.validFrom, d.validUntil)}</span>
       </div>
       <div class="store-row-price">${euro(d.offerPrice)} €</div>
@@ -10492,9 +10495,9 @@ function renderSimilarProducts(product){
       .sort((a,b)=>a.offerPrice-b.offerPrice)[0];
     return `
     <button class="similar-card" data-similar="${p.id}">
-      <img src="${p.img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
-      <div class="similar-name">${p.name}</div>
-      <div class="similar-meta">${p.brand} · ${p.sizeMl} ml</div>
+      <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
+      <div class="similar-name">${escapeHtml(p.name)}</div>
+      <div class="similar-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
       ${cheapest
         ? `<div class="similar-price">ab ${euro(cheapest.offerPrice)} €</div>`
         : `<div class="similar-price muted">Kein Angebot</div>`}
@@ -10540,7 +10543,7 @@ function renderStoreDetailMapDesktop(deal){
     <div class="map-canvas">
       ${rings}
       <div class="map-pin selected" style="left:${x}%;top:${y}%">
-        <span class="pin-logo"><img src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="${deal.store}" referrerpolicy="no-referrer"></span>
+        <span class="pin-logo"><img src="${escapeHtml(storeLogos[deal.store] || STORE_FALLBACK_IMG)}" alt="${escapeHtml(deal.store)}" referrerpolicy="no-referrer"></span>
         <span class="pin-price">${hasDistance(deal) ? `${deal.distanceKm} km` : ""}</span>
       </div>
       <div class="map-user"></div>
@@ -10597,7 +10600,7 @@ function renderStoreDetailMapMobile(deal){
     const icon = L.divIcon({
       className: "",
       html: `<div class="leaflet-store-marker size-md selected">
-        <span class="pin-logo"><img src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="${deal.store}" referrerpolicy="no-referrer"></span>
+        <span class="pin-logo"><img src="${escapeHtml(storeLogos[deal.store] || STORE_FALLBACK_IMG)}" alt="${escapeHtml(deal.store)}" referrerpolicy="no-referrer"></span>
         <span class="pin-price">${hasDistance(deal) ? `${deal.distanceKm} km` : ""}</span>
       </div>`,
       iconSize: [30, 48],
@@ -10888,7 +10891,7 @@ function initChartScrub(svg, coords, pointsSlice, w){
     scrubDot.style.display = "block";
     lastDot.style.opacity = index === pointsSlice.length-1 ? "1" : "0.35";
 
-    tooltip.innerHTML = `<b>${euro(pt.price)} €</b><span>${formatChartTooltipDate(pt.date)} · ${pt.retailer}</span>`;
+    tooltip.innerHTML = `<b>${euro(pt.price)} €</b><span>${formatChartTooltipDate(pt.date)} · ${escapeHtml(pt.retailer)}</span>`;
     tooltip.style.display = "block";
     const tw = tooltip.offsetWidth;
     tooltip.style.left = Math.max(4, Math.min(w - tw - 4, x - tw/2)) + "px";
