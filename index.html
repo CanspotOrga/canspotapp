@@ -3714,49 +3714,79 @@ vertical-align:middle
    Schriftzügen auf farbigem Grund in der App. */
 .fav-row .fav-txt .new-badge{color:var(--brand-primary-contrast)}
 
-/* Neuheiten / Coming Soon!: Leiste im Header (.hero-links) öffnet die
-   eigene Seite #newSoonPage (zwei Reiter), siehe openNewSoonPage(). Header,
-   obere Leiste der Seite und Radar-Kopf bleiben in beiden Themes
-   dunkelblau, deshalb dort feste Farbwerte. */
-.hero-links{
-display:flex;
-margin-top:14px;
-background:rgba(255,255,255,.06);
-border:1px solid rgba(112,146,197,.3);
-border-radius:var(--radius-md);
-overflow:hidden
-}
-.hero-link{
-flex:1;
+/* Coming Soon: Teaser-Karte im Header (.hero-soon) öffnet die eigene Seite
+   #newSoonPage, siehe openNewSoonPage(). Neuheiten laufen über den Tab der
+   unteren Navigation (#newView). Header, obere Leiste der Seite und
+   Radar-Banner bleiben in beiden Themes dunkelblau, deshalb dort feste
+   Farbwerte. */
+.hero-soon{
 position:relative;
+overflow:hidden;
+display:flex;
+align-items:center;
+gap:10px;
+width:100%;
+margin-top:12px;
+padding:6px 10px 6px 6px;
+text-align:left;
+font-family:inherit;
+color:#fff;
+cursor:pointer;
+background:linear-gradient(100deg,rgba(51,99,172,.42) 0%,rgba(51,99,172,.14) 55%,rgba(255,255,255,.03) 100%);
+border:1px solid rgba(112,146,197,.35);
+border-radius:var(--radius-md);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.06)
+}
+.hero-soon::after{
+content:"";
+position:absolute;
+top:0;
+bottom:0;
+left:-40%;
+width:40%;
+background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.13),rgba(255,255,255,0));
+transform:skewX(-18deg);
+animation:heroSoonShine 5s ease-in-out infinite;
+pointer-events:none
+}
+@keyframes heroSoonShine{0%,62%{left:-40%}100%{left:130%}}
+.hero-soon-radar{
+position:relative;
+width:30px;
+height:30px;
+flex-shrink:0;
 display:flex;
 align-items:center;
 justify-content:center;
-gap:7px;
-padding:10px 8px;
-background:transparent;
-border:none;
-color:#fff;
-font-family:inherit;
-font-size:13px;
-font-weight:700;
-cursor:pointer;
-transition:background .15s ease
+overflow:hidden;
+border-radius:50%;
+background:#1b213f;
+border:1px solid rgba(112,146,197,.55);
+box-shadow:0 0 10px rgba(51,99,172,.55)
 }
-.hero-link + .hero-link::before,
-.np-tab + .np-tab::before{
+.hero-soon-radar::before{
 content:"";
 position:absolute;
-left:0;
-top:9px;
-bottom:9px;
-width:1px;
-background:rgba(112,146,197,.35)
+inset:6px;
+border-radius:50%;
+border:1px solid rgba(112,146,197,.35)
 }
-@media (hover:hover){
-.hero-link:hover{background:rgba(255,255,255,.06)}
+.hero-soon-sweep{
+position:absolute;
+inset:0;
+border-radius:50%;
+background:conic-gradient(from 0deg,rgba(112,146,197,0) 0deg,rgba(112,146,197,0) 280deg,rgba(112,146,197,.7) 360deg);
+animation:heroSoonSweep 3.5s linear infinite
 }
-.hero-link .icon{width:16px;height:16px;color:#7092c5}
+@keyframes heroSoonSweep{to{transform:rotate(360deg)}}
+.hero-soon-radar .icon{position:relative;width:14px;height:14px;color:#fff}
+.hero-soon-txt{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px}
+.hero-soon-txt b{display:flex;align-items:center;gap:6px;flex-shrink:0;font-size:13.5px;font-weight:800}
+.hero-soon-sub{display:block;min-width:0;font-size:11.5px;color:#c9d3e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-soon-chev{width:16px;height:16px;flex-shrink:0;color:#9fb4d8;transform:rotate(-90deg)}
+@media (prefers-reduced-motion:reduce){
+.hero-soon::after,.hero-soon-sweep{animation:none}
+}
 .hero-link-count{
 min-width:18px;
 height:18px;
@@ -3825,37 +3855,27 @@ color:#fff;
 cursor:pointer
 }
 .np-back .icon{width:18px;height:18px}
-.np-tabs{flex:1;display:flex;justify-content:center;margin-right:44px}
-.np-tab{
-position:relative;
+.np-title{
+flex:1;
 display:flex;
 align-items:center;
+justify-content:center;
 gap:7px;
-padding:12px 14px 15px;
-background:transparent;
-border:none;
-color:rgba(255,255,255,.7);
-font-family:inherit;
-font-size:13.5px;
-font-weight:700;
-cursor:pointer;
-white-space:nowrap
+margin-right:44px;
+padding:12px 0 16px;
+color:#fff;
+font-size:15px;
+font-weight:800
 }
-.np-tab .icon{width:17px;height:17px;color:#7092c5}
-.np-tab-label{position:relative}
-.np-tab[aria-selected="true"]{color:#fff}
-.np-tab[aria-selected="true"] .np-tab-label::after{
-content:"";
-position:absolute;
-left:0;
-right:0;
-bottom:-6px;
-height:2px;
-border-radius:2px;
-background:#7092c5
-}
-.np-pane[hidden]{display:none}
+.np-title .icon{width:17px;height:17px;color:#7092c5}
 .np-pane{animation:menuViewEnterRight .2s ease}
+
+/* Neuheiten im Tab der unteren Navigation: liegt in <main>, das schon
+   18px Seitenabstand hat. */
+#newView .np-intro{padding:6px 0 2px}
+#newView .np-chips{margin:0 -18px;padding:12px 18px 2px}
+#newView .np-list{padding:12px 0 0}
+#newView .np-empty{margin:14px 0 0}
 
 .np-intro{padding:16px 18px 2px}
 .np-eyebrow{
@@ -4595,10 +4615,11 @@ gap:6px
 Der Energy soll kicken.<br>
 Nicht der Preis.
 </div>
-<nav class="hero-links" aria-label="Neuheiten und Coming Soon">
-<button class="hero-link" id="heroNewBtn"><svg class="icon"><use href="#i-sparkle"/></svg>Neuheiten</button>
-<button class="hero-link" id="heroSoonBtn"><svg class="icon"><use href="#i-rocket"/></svg>Coming Soon!<span class="hero-link-count" id="heroSoonCount" hidden></span></button>
-</nav>
+<button class="hero-soon" id="heroSoonBtn">
+<span class="hero-soon-radar" aria-hidden="true"><span class="hero-soon-sweep"></span><svg class="icon"><use href="#i-rocket"/></svg></span>
+<span class="hero-soon-txt"><b>Coming Soon!<span class="hero-link-count" id="heroSoonCount" hidden></span></b><span class="hero-soon-sub" id="heroSoonSub">Angebote früher sehen</span></span>
+<svg class="icon hero-soon-chev"><use href="#i-chevron-down"/></svg>
+</button>
 </div>
 
 <div class="hero-search-sticky" id="heroSearchSticky">
@@ -4676,6 +4697,7 @@ Du bist offline. Angebote werden möglicherweise nicht aktuell angezeigt.
 <div id="deals"></div>
 <div id="mapView" class="map-view" style="display:none"></div>
 <div id="alertsView" style="display:none"></div>
+<div id="newView" style="display:none"></div>
 
 <div class="note">
 CanSpot ist ein unabhängiger Preisvergleich und nicht mit den genannten Händlern oder Herstellern verbunden. Marken- und Produktnamen gehören den jeweiligen Unternehmen.
@@ -4685,18 +4707,14 @@ CanSpot ist ein unabhängiger Preisvergleich und nicht mit den genannten Händle
 
 </div>
 
-<!-- NEUHEITEN / COMING SOON (eigene Seite über der Startseite, geöffnet über
-     die Header-Leiste, siehe openNewSoonPage()) -->
-<section class="np-page" id="newSoonPage" aria-label="Neuheiten und Coming Soon" aria-hidden="true">
+<!-- COMING SOON (eigene Seite über der Startseite, geöffnet über die
+     Teaser-Karte im Header, siehe openNewSoonPage()) -->
+<section class="np-page" id="newSoonPage" aria-label="Coming Soon" aria-hidden="true">
 <div class="np-bar">
 <button class="np-back" id="npBack" aria-label="Zurück"><svg class="icon"><use href="#i-arrow-left"/></svg></button>
-<div class="np-tabs" role="tablist">
-<button class="np-tab" id="npTabNew" role="tab" aria-selected="true" aria-controls="npPaneNew"><svg class="icon"><use href="#i-sparkle"/></svg><span class="np-tab-label">Neuheiten</span></button>
-<button class="np-tab" id="npTabSoon" role="tab" aria-selected="false" aria-controls="npPaneSoon"><svg class="icon"><use href="#i-rocket"/></svg><span class="np-tab-label">Coming Soon!</span></button>
+<div class="np-title"><svg class="icon"><use href="#i-rocket"/></svg>Coming Soon!</div>
 </div>
-</div>
-<div class="np-pane" id="npPaneNew" role="tabpanel"></div>
-<div class="np-pane" id="npPaneSoon" role="tabpanel" hidden></div>
+<div class="np-pane" id="npPaneSoon"></div>
 </section>
 
 <div class="toast" id="toast"></div>
@@ -7887,6 +7905,7 @@ const tabsNav = document.querySelector(".brand-row");
 const controlsEl = document.querySelector(".controls");
 const viewToggleEl = document.querySelector(".view-toggle");
 const alertsView = document.getElementById("alertsView");
+const newViewEl = document.getElementById("newView");
 
 /* Start/Neuheiten/Favoriten wechseln immer zurück in die Listenansicht -
    sonst blieb nach "Karte" viewMode auf "map" und render() zeigte weiter
@@ -7898,6 +7917,7 @@ function showDealsView(){
   controlsEl.style.display = "flex";
   viewToggleEl.style.display = "flex";
   alertsView.style.display = "none";
+  newViewEl.style.display = "none";
   render();
 }
 
@@ -7907,8 +7927,20 @@ function showAlertsView(){
   viewToggleEl.style.display = "none";
   dealsContainer.style.display = "none";
   mapView.style.display = "none";
+  newViewEl.style.display = "none";
   alertsView.style.display = "block";
   renderAlertsView();
+}
+
+function showNewView(){
+  tabsNav.style.display = "none";
+  controlsEl.style.display = "none";
+  viewToggleEl.style.display = "none";
+  dealsContainer.style.display = "none";
+  mapView.style.display = "none";
+  alertsView.style.display = "none";
+  newViewEl.style.display = "block";
+  renderNewView();
 }
 
 document.getElementById("navHome").addEventListener("click", ()=>{
@@ -7943,10 +7975,9 @@ document.getElementById("navHome").addEventListener("click", ()=>{
 document.getElementById("navNeu").addEventListener("click", ()=>{
   closeAllSheets();
   viewFavoritesOnly = false;
-  viewNewOnly = true;
-  showDealsView();
+  viewNewOnly = false;
+  showNewView();
   setActiveNav("neu");
-  updateStatus();
   window.scrollTo({top:0, behavior:"smooth"});
 });
 
@@ -8547,16 +8578,16 @@ function renderStoreListSheet(){
 
 
 
-/* ---------------- NEUHEITEN / COMING SOON (eigene Seite) ----------------
-   Neuheiten = products[].isNew mit ihren laufenden Angeboten, Coming Soon =
-   Angebote mit Startdatum in der Zukunft (validFrom), nach Startwoche
-   gruppiert. Die Seite liegt über der Startseite, die untere Navigation
-   bleibt sichtbar und schließt sie. */
+/* ---------------- NEUHEITEN / COMING SOON ----------------
+   Neuheiten (Tab der unteren Navigation, #newView) = products[].isNew mit
+   ihren laufenden Angeboten. Coming Soon (eigene Seite #newSoonPage, Einstieg
+   über die Teaser-Karte im Header) = Angebote mit Startdatum in der Zukunft
+   (validFrom), nach Startwoche gruppiert. Die Seite liegt über der
+   Startseite, die untere Navigation bleibt sichtbar und schließt sie. */
 const NP_MARK = `<svg viewBox="0 0 240 345" aria-hidden="true"><path fill="#3363ac" d="M84.3,310.5c-11.9-15.9-21.4-32.3-29.2-50.1-4.6-10.5-7.5-20.7-8-32.4-1.1-24.7,9.2-49.1,28.1-65.4,15.7-13.6,35.4-20.3,55.9-21.4,24.3-1.3,48.8-2.2,70.4-13.5,11.4-6,20.8-13.8,28.6-24.8,7.5,38.1-4.8,83.2-20.1,118.1-18.3,41.6-42,80-70.1,115.5l-9.6,10.4c-4.2,4.5-11.5,5.1-15.9.4l-13.4-14.5-16.7-22.4ZM123.5,266.4c10.5,0,20.5-4.9,27.4-13.3,15.4-18.8,14.1-46-4.2-62.2-12.6-11.2-31.1-11.5-44.3-1.1-11.3,8.9-17.7,23-16.8,37.5,1.3,21,17,39,37.9,39.1Z"/>
   <path fill="#fff" d="M227.8,94.7c-10.5,17.9-31.2,28.5-51.4,33.1-24.7,5.7-46.5,1.9-71,8.8-24.8,7-44.8,23.8-56.4,46.7-5.9,11.6-10.2,23.7-10,36.9l.2,18.7c-10.4-14.7-18-29.7-24.5-46C2.4,162.4-4.4,130.4,3.3,97.9c3.3-13.9,9-26.6,15.8-39.2,5.2,6.3,10.5,11.1,17.3,14.6,7.1,3.7,14.2,7,21.9,9.4,20.8,6.6,42,8.5,63.9,8.3,24.5-.2,48.1-3.8,70.7-12.9,10.4-4.2,18.9-9.8,26.7-18.8,2.7,5.4,4.5,10.5,6.2,16.1,1.7,6.4,2.4,12.6,2,19.3Z"/>
   <path fill="#fff" d="M197.4,67.6c-36.8,18.8-90.8,19.2-130.9,9.2-15.8-4-33.6-10.7-42.5-23.9-7.5-11.3-.9-23.2,10-31,9.3-6.6,19.5-10.8,30.6-13.7,14.3-3.8,28.5-6.5,43.3-7.5,27.8-2,57.6.9,83.2,11.8,8.3,3.5,15.8,8.6,21.6,15.1,7.5,8.3,7.9,19.1.9,27.7-4.3,5.4-9.9,9.2-16.3,12.4ZM153.8,35.5l-15.7,29.8c19.4-1.4,39.6-4.5,54.6-14.8,2.3-2.3,4.4-5,4.6-7.7,2.3-25-98.8-38.5-145.9-12.1-4.3,2.4-7.6,5.7-9,10.3.5,4.2,2.9,7.7,6.4,10.1,9.7,6.6,20.5,9.8,32.4,11.5l21.2-33.5c2.2-3.4,5.8-5.3,9.7-6.7,14.9-3.7,45.1-1.9,41.8,13.1ZM137.6,33.9c-1.4-6.8-22.5-6.5-23.3.8-.8,7.8,24.8,6.7,23.3-.8ZM126.7,55.4c-1.9-8.1-26.6-6-26.3,1.5,0,1,1.5,3,2.4,3.4,12,5.4,24.9-.7,23.9-5Z"/></svg>`;
 const NP_WEEKDAYS = ["So","Mo","Di","Mi","Do","Fr","Sa"];
-let npTab = "new";
 let npBrand = "Alle";
 
 function getNewProductEntries(){
@@ -8614,7 +8645,7 @@ function npPfandNote(d){
 }
 
 function renderNewPane(){
-  const pane = document.getElementById("npPaneNew");
+  const pane = document.getElementById("newView");
   const entries = getNewProductEntries();
   const brands = [...new Set(entries.map(e=>e.product.brand))].sort((a,b)=>a.localeCompare(b,"de"));
   if(npBrand!=="Alle" && !brands.includes(npBrand)) npBrand = "Alle";
@@ -8728,27 +8759,29 @@ function renderSoonPane(){
     ${items.length ? list : `<div class="np-empty">Aktuell sind keine kommenden Angebote bekannt.<br>Sobald ein Angebot angekündigt ist, erscheint es hier.</div>`}`;
 }
 
-function renderNewSoonPage(){
-  if(npTab==="soon") renderSoonPane(); else renderNewPane();
-  document.querySelectorAll("#newSoonPage img").forEach(img=>{
+function npBindImages(container){
+  container.querySelectorAll("img").forEach(img=>{
     img.addEventListener("error", function(){ this.src = img.classList.contains("store-logo") ? STORE_FALLBACK_IMG : FALLBACK_IMG; }, {once:true});
   });
 }
 
-function showNewSoonTab(tab){
-  npTab = tab;
-  const soon = tab==="soon";
-  document.getElementById("npTabNew").setAttribute("aria-selected", String(!soon));
-  document.getElementById("npTabSoon").setAttribute("aria-selected", String(soon));
-  document.getElementById("npPaneNew").hidden = soon;
-  document.getElementById("npPaneSoon").hidden = !soon;
-  renderNewSoonPage();
-  document.getElementById("newSoonPage").scrollTop = 0;
+function isNewViewShown(){ return newViewEl.style.display !== "none"; }
+function isSoonPageOpen(){ return document.getElementById("newSoonPage").classList.contains("open"); }
+
+function renderNewView(){
+  renderNewPane();
+  npBindImages(newViewEl);
 }
 
-function openNewSoonPage(tab){
+function renderSoonPage(){
+  renderSoonPane();
+  npBindImages(document.getElementById("npPaneSoon"));
+}
+
+function openNewSoonPage(){
   const page = document.getElementById("newSoonPage");
-  showNewSoonTab(tab);
+  renderSoonPage();
+  page.scrollTop = 0;
   page.classList.add("open");
   page.setAttribute("aria-hidden","false");
   document.body.classList.add("np-lock");
@@ -8767,23 +8800,28 @@ function updateHeroSoonCount(){
   const el = document.getElementById("heroSoonCount");
   el.textContent = n;
   el.hidden = n===0;
+  document.getElementById("heroSoonSub").textContent = n
+    ? `${n} ${n===1 ? "Angebot startet" : "Angebote starten"} bald`
+    : "Angebote früher sehen";
 }
 
-document.getElementById("heroNewBtn").addEventListener("click", ()=>openNewSoonPage("new"));
-document.getElementById("heroSoonBtn").addEventListener("click", ()=>openNewSoonPage("soon"));
-document.getElementById("npTabNew").addEventListener("click", ()=>showNewSoonTab("new"));
-document.getElementById("npTabSoon").addEventListener("click", ()=>showNewSoonTab("soon"));
+document.getElementById("heroSoonBtn").addEventListener("click", openNewSoonPage);
 document.getElementById("npBack").addEventListener("click", closeNewSoonPage);
 document.querySelector(".bottomnav").addEventListener("click", closeNewSoonPage, true);
 document.addEventListener("keydown", e=>{
   if(e.key==="Escape" && !document.querySelector(".overlay.open")) closeNewSoonPage();
 });
 
-document.getElementById("newSoonPage").addEventListener("click", e=>{
+function npRerender(){
+  if(isNewViewShown()) renderNewView();
+  if(isSoonPageOpen()) renderSoonPage();
+}
+
+function npHandleClick(e){
   const brandBtn = e.target.closest("[data-np-brand]");
   if(brandBtn){
     npBrand = brandBtn.dataset.npBrand;
-    renderNewSoonPage();
+    renderNewView();
     return;
   }
   const favBtn = e.target.closest("[data-np-fav]");
@@ -8794,7 +8832,7 @@ document.getElementById("newSoonPage").addEventListener("click", e=>{
     saveFavorites();
     render();
     updateNotifDot();
-    renderNewSoonPage();
+    npRerender();
     showToast(wasFav ? `${favBtn.dataset.npName} aus Favoriten entfernt` : `${favBtn.dataset.npName} zu Favoriten hinzugefügt`);
     return;
   }
@@ -8802,7 +8840,9 @@ document.getElementById("newSoonPage").addEventListener("click", e=>{
   if(openBtn && products.some(p=>p.id===openBtn.dataset.npOpen)){
     openProductDetail(openBtn.dataset.npOpen, openBtn.dataset.npDeal || undefined);
   }
-});
+}
+document.getElementById("newSoonPage").addEventListener("click", npHandleClick);
+newViewEl.addEventListener("click", npHandleClick);
 
 /* ---------------- PROFILE / MEIN BEREICH ---------------- */
 /* Zugang nur noch über den "Mein Bereich"-Tab in der unteren Navigation
@@ -11772,6 +11812,7 @@ function finishInit(){
   renderDynamicFilters();
   render();
   updateHeroSoonCount();
+  if(isNewViewShown()) renderNewView();
   updateNotifDot();
   updateStatus();
   updateAlertsDot();
