@@ -6039,6 +6039,8 @@ function buildDeals(offers){
 
 /* Laufzeit-Angebotsliste; bis zum ersten erfolgreichen loadDeals() leer. */
 let deals = [];
+/* true ab dem ersten erfolgreichen loadDeals(); vorher zeigt die Liste das Ladegerüst. */
+let dealsReady = false;
 
 function daysUntil(dateStr){
   const target = new Date(dateStr + "T00:00:00");
@@ -6084,29 +6086,13 @@ function timeAgoLabel(min){
 
 let selectedBrand = "Alle";
 
-const DEFAULT_FAVORITES = [];
-let favorites;
-try{
-  const storedFavs = localStorage.getItem("canspot-favorites");
-  favorites = new Set(storedFavs===null ? DEFAULT_FAVORITES : JSON.parse(storedFavs));
-}catch(e){ favorites = new Set(DEFAULT_FAVORITES); }
-/* Migration: Favoriten waren ursprünglich reine productIds (keine Trennung
-   Einzelartikel/Bundle), ein Zwischenstand nutzte kurzzeitig
-   "productId:single"/"productId:bundle" (EINE gemeinsame Kategorie für alle
-   Bundle-Größen). Beides wird beim Laden auf das jetzige, genauere Format
-   "productId:units" angehoben: die alte "single"-Markierung wird zu ":1"
-   (das war schon immer ihre Bedeutung); die alte generische "bundle"-
-   Markierung lässt sich dagegen nicht eindeutig einer bestimmten
-   Packungsgröße zuordnen und wird verworfen (rein lokale Demo-Daten, kein
-   Datenverlust für echte Nutzer möglich). */
-favorites = new Set([...favorites].map(k=>{
-  if(!k.includes(":")) return `${k}:1`;
-  const [pid, tag] = k.split(":");
-  if(tag==="single") return `${pid}:1`;
-  if(tag==="bundle") return null;
-  return k;
-}).filter(Boolean));
-function saveFavorites(){ localStorage.setItem("canspot-favorites", JSON.stringify([...favorites])); }
+/* Favoriten, Preisalarme und eigene Bewertungen gehören zum Konto und
+   werden nach der Anmeldung aus Supabase geladen (loadUserData()). Ohne
+   Anmeldung sind sie leer, auf dem Gerät wird nichts davon gespeichert. */
+let favorites = new Set();
+["canspot-favorites","canspot-alerts","canspot-ratings"].forEach(k=>{
+  try{ localStorage.removeItem(k); }catch(e){}
+});
 
 /* Favoriten werden je exakter Packungsgröße (productId + units) gespeichert,
    nicht mehr nur je Produkt - Favorisieren der Einzeldose lässt Bundles
@@ -6208,9 +6194,8 @@ let collapsedPeriodWeeks = new Set();
 let committedSearch = "";
 let chartRangeDays = 30;
 
+/* { [productId]: { target, enabled } } aus public.price_alerts */
 let priceAlerts = {};
-try{ priceAlerts = JSON.parse(localStorage.getItem("canspot-alerts") || "{}"); }catch(e){ priceAlerts = {}; }
-function savePriceAlerts(){ localStorage.setItem("canspot-alerts", JSON.stringify(priceAlerts)); }
 
 /* Produkt-Bewertung (Detailansicht, nur mobil - siehe .detail-rating CSS):
    { [productId]: { vote: "up"|"down"|null, taste, sweetness, intensity, aftertaste } }
@@ -6222,9 +6207,10 @@ function savePriceAlerts(){ localStorage.setItem("canspot-alerts", JSON.stringif
    untereinander tatsächlich am meisten unterscheiden und die beim Kauf am
    ehesten den Ausschlag geben - anders als z.B. "Aussehen"/"Mundgefühl" aus
    Bier-/Wein-Bewertungen, die hier keine sinnvolle Entsprechung hätten. */
+/* Eigene Bewertungen aus public.ratings (nur für das eigene Konto lesbar).
+   Öffentlich sichtbar ist nur der Schnitt aller Bewertungen ohne Namen
+   (productRatingSummaries). */
 let productRatings = {};
-try{ productRatings = JSON.parse(localStorage.getItem("canspot-ratings") || "{}"); }catch(e){ productRatings = {}; }
-function saveProductRatings(){ localStorage.setItem("canspot-ratings", JSON.stringify(productRatings)); }
 
 /* Preisfeedback ("Preis noch aktuell?" in der Händler-Detailansicht, siehe
    renderPriceFeedback()/submitPriceFeedback() weiter unten): jede Meldung
@@ -6273,6 +6259,29 @@ function getProductRatingSummary(productId){
     return {percentPositive: null, count: 0, criteria, avgStars: null};
   }
   return s;
+}
+/* Zeilen aus get_all_product_rating_summaries(); ersetzt alle bisherigen
+   Werte, damit auch ein zurückgezogenes letztes Votum verschwindet. */
+function applyRatingSummaries(rows){
+  Object.keys(productRatingSummaries).forEach(k=>{ delete productRatingSummaries[k]; });
+  const avgOrNull = v => (v === null || v === undefined) ? null : Number(v);
+  rows.forEach(r=>{
+    if(!r || !r.product_id) return;
+    const criteria = {
+      taste: avgOrNull(r.avg_taste),
+      sweetness: avgOrNull(r.avg_sweetness),
+      intensity: avgOrNull(r.avg_intensity),
+      aftertaste: avgOrNull(r.avg_aftertaste)
+    };
+    const vals = Object.values(criteria).filter(v => v !== null);
+    productRatingSummaries[r.product_id] = {
+      percentPositive: r.percent_positive === null ? null : Number(r.percent_positive),
+      count: r.rating_count || 0,
+      criteria,
+      avgStars: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
+    };
+  });
+  _globalAvgRatingStarsCache = null;
 }
 function ratingPercentLabel(summary){
   return summary.percentPositive === null ? "–" : `${summary.percentPositive}%`;
@@ -6667,7 +6676,14 @@ function render(){
       }).length;
     }
 
-    dealsContainer.innerHTML = viewFavoritesOnly ? `
+    dealsContainer.innerHTML = viewFavoritesOnly && !currentUser ? `
+      <div class="empty">
+        <svg class="icon icon-xl"><use href="#i-heart"/></svg><br><br>
+        <b>Favoriten gehören zu deinem Konto.</b><br>
+        Melde dich an, um Angebote mit <svg class="icon icon-xs"><use href="#i-heart"/></svg> zu sammeln.
+        <br><br>
+        <button class="btn primary" data-auth-login style="display:inline-flex">Anmelden</button>
+      </div>` : viewFavoritesOnly ? `
       <div class="empty">
         <svg class="icon icon-xl"><use href="#i-heart"/></svg><br><br>
         <b>Noch keine Favoriten.</b><br>
@@ -7158,9 +7174,8 @@ dealsContainer.addEventListener("click",(e)=>{
        Angebots-ID der tatsächlich angeklickten Karte, um nach dem
        Neu-Rendern gezielt genau diese Karte wiederzufinden. */
     const dealId = favBtn.closest(".card")?.dataset.id;
-    const wasFav = favorites.has(key);
-    if(wasFav) favorites.delete(key); else favorites.add(key);
-    saveFavorites();
+    if(!requireAccount("Melde dich an, um Favoriten zu speichern.")) return;
+    const wasFav = toggleFavorite(key);
     render();
     updateNotifDot();
     if(!wasFav){
@@ -8149,6 +8164,18 @@ function renderAlertsView(){
     <div class="news-card-list">${events.map(newsCardHtml).join("")}</div>
   `;
 
+  if(!currentUser){
+    alertsView.innerHTML = `
+      <div class="empty">
+        <svg class="icon icon-xl"><use href="#i-target"/></svg><br><br>
+        <b>Preisalarme gehören zu deinem Konto.</b><br>
+        Melde dich an, um dir einen Wunschpreis zu merken.
+        <br><br>
+        <button class="btn primary" data-auth-login style="display:inline-flex">Anmelden</button>
+      </div>`;
+    return;
+  }
+
   if(entries.length===0){
     alertsView.innerHTML = eventsHtml + `
       <div class="empty">
@@ -8215,8 +8242,7 @@ alertsView.addEventListener("click", (e)=>{
   }
   const delBtn = e.target.closest("[data-alert-delete]");
   if(delBtn){
-    delete priceAlerts[delBtn.dataset.alertDelete];
-    savePriceAlerts();
+    removePriceAlert(delBtn.dataset.alertDelete);
     renderAlertsView();
     updateAlertsDot();
     showToast("Preisalarm gelöscht.");
@@ -8249,8 +8275,7 @@ alertsView.addEventListener("change", (e)=>{
   if(toggle){
     const pid = toggle.dataset.alertToggle;
     if(priceAlerts[pid]){
-      priceAlerts[pid].enabled = toggle.checked;
-      savePriceAlerts();
+      setPriceAlertEnabled(pid, toggle.checked);
       updateAlertsDot();
       renderAlertsView();
     }
@@ -8827,9 +8852,8 @@ function npHandleClick(e){
   const favBtn = e.target.closest("[data-np-fav]");
   if(favBtn){
     const key = favBtn.dataset.npFav;
-    const wasFav = favorites.has(key);
-    if(wasFav) favorites.delete(key); else favorites.add(key);
-    saveFavorites();
+    if(!requireAccount("Melde dich an, um Favoriten zu speichern.")) return;
+    const wasFav = toggleFavorite(key);
     render();
     updateNotifDot();
     npRerender();
@@ -8980,6 +9004,179 @@ function syncRecentWithAuth(){
     if(uid) setTimeout(loadRecentViews, 0);
   }
 }
+
+/* ---------------- KONTODATEN: Favoriten, Preisalarme, Bewertungen ----------------
+   Liegen in public.favorites / price_alerts / ratings (RLS: nur eigene
+   Zeilen). Änderungen erscheinen sofort und werden bei einem Fehler
+   zurückgenommen. Bei Ab- oder Ummeldung werden sie verworfen. */
+let userDataOwner = null;
+
+function requireAccount(msg){
+  if(currentUser && supabaseClient) return true;
+  showToast(msg);
+  openAuthSheet("login");
+  return false;
+}
+
+/* Alles neu zeichnen, was Favoriten oder Alarme anzeigt (vor dem ersten
+   Laden der Angebote bleibt das Ladegerüst stehen). */
+function refreshUserDataViews(){
+  if(!dealsReady) return;
+  render();
+  npRerender();
+  if(alertsView.style.display === "block") renderAlertsView();
+  updateNotifDot();
+  updateAlertsDot();
+}
+
+function syncUserDataWithAuth(){
+  const uid = currentUser ? currentUser.id : null;
+  if(uid === userDataOwner) return;
+  userDataOwner = uid;
+  favorites = new Set();
+  priceAlerts = {};
+  productRatings = {};
+  refreshUserDataViews();
+  refreshOpenProductRating();
+  /* nicht direkt im onAuthStateChange-Callback auf Supabase warten */
+  if(uid) setTimeout(loadUserData, 0);
+}
+
+async function loadUserData(){
+  if(!supabaseClient || !currentUser) return;
+  const uid = currentUser.id;
+  const [favRes, alertRes, ratingRes] = await Promise.all([
+    supabaseClient.from("favorites").select("product_id,units").eq("user_id", uid),
+    supabaseClient.from("price_alerts").select("product_id,target_price,enabled").eq("user_id", uid),
+    supabaseClient.from("ratings").select("product_id,vote,taste,sweetness,intensity,aftertaste").eq("user_id", uid)
+  ]);
+  if(!currentUser || currentUser.id !== uid) return;
+  if(!favRes.error){
+    favorites = new Set((favRes.data || []).map(r=>favKeyFor(r.product_id, r.units)));
+  }
+  if(!alertRes.error){
+    priceAlerts = {};
+    (alertRes.data || []).forEach(r=>{
+      priceAlerts[r.product_id] = { target:Number(r.target_price), enabled:r.enabled };
+    });
+  }
+  if(!ratingRes.error){
+    productRatings = {};
+    (ratingRes.data || []).forEach(r=>{
+      const entry = { vote:r.vote || null };
+      RATING_CRITERIA.forEach(crit=>{ entry[crit.key] = r[crit.key] || 0; });
+      productRatings[r.product_id] = entry;
+    });
+  }
+  if(favRes.error || alertRes.error || ratingRes.error){
+    showToast("Deine Favoriten und Alarme konnten nicht vollständig geladen werden.");
+  }
+  refreshUserDataViews();
+  refreshOpenProductRating();
+}
+
+/* Wartet auf die Antwort; bei einem Fehler undo() (nur, wenn noch dasselbe
+   Konto angemeldet ist) und Hinweis. Liefert true bei Erfolg. */
+function writeUserData(request, undo, failMsg){
+  const uid = currentUser.id;
+  return Promise.resolve(request).then(res=>res, err=>({ error:err })).then(({ error })=>{
+    if(!error) return true;
+    if(currentUser && currentUser.id === uid){
+      undo();
+      refreshUserDataViews();
+    }
+    showToast(failMsg);
+    return false;
+  });
+}
+
+/* Schaltet einen Favoriten um und liefert, ob er vorher gesetzt war. */
+function toggleFavorite(key){
+  const wasFav = favorites.has(key);
+  const uid = currentUser.id;
+  const row = { user_id:uid, product_id:favProductId(key), units:favUnitsFromKey(key) };
+  if(wasFav) favorites.delete(key); else favorites.add(key);
+  const table = supabaseClient.from("favorites");
+  const request = wasFav
+    ? table.delete().eq("user_id", uid).eq("product_id", row.product_id).eq("units", row.units)
+    : table.upsert(row, { onConflict:"user_id,product_id,units", ignoreDuplicates:true });
+  writeUserData(request, ()=>{
+    if(wasFav) favorites.add(key); else favorites.delete(key);
+  }, "Der Favorit konnte nicht gespeichert werden. Bitte versuche es erneut.");
+  return wasFav;
+}
+
+function setPriceAlert(productId, target){
+  const prev = priceAlerts[productId];
+  priceAlerts[productId] = { target, enabled:true };
+  writeUserData(
+    supabaseClient.from("price_alerts").upsert(
+      { user_id:currentUser.id, product_id:productId, target_price:target, enabled:true },
+      { onConflict:"user_id,product_id" }),
+    ()=>{ if(prev) priceAlerts[productId] = prev; else delete priceAlerts[productId]; },
+    "Der Preisalarm konnte nicht gespeichert werden. Bitte versuche es erneut.");
+}
+
+function removePriceAlert(productId){
+  const prev = priceAlerts[productId];
+  if(!prev || !currentUser) return;
+  delete priceAlerts[productId];
+  writeUserData(
+    supabaseClient.from("price_alerts").delete().eq("user_id", currentUser.id).eq("product_id", productId),
+    ()=>{ priceAlerts[productId] = prev; },
+    "Der Preisalarm konnte nicht gelöscht werden. Bitte versuche es erneut.");
+}
+
+function setPriceAlertEnabled(productId, enabled){
+  const alert = priceAlerts[productId];
+  if(!alert || !currentUser) return;
+  alert.enabled = enabled;
+  writeUserData(
+    supabaseClient.from("price_alerts").update({ enabled }).eq("user_id", currentUser.id).eq("product_id", productId),
+    ()=>{ alert.enabled = !enabled; },
+    "Der Preisalarm konnte nicht geändert werden. Bitte versuche es erneut.");
+}
+
+/* Speichert productRatings[productId] (0 = Kriterium nicht bewertet, in der
+   Datenbank NULL). Ohne Daumen und Sterne wird die Zeile gelöscht. Danach
+   wird der öffentliche Schnitt neu geladen. */
+function saveOwnRating(productId, prev){
+  const uid = currentUser.id;
+  const entry = productRatings[productId] || {};
+  const row = { user_id:uid, product_id:productId, vote:entry.vote || null };
+  RATING_CRITERIA.forEach(crit=>{ row[crit.key] = entry[crit.key] || null; });
+  const isEmpty = !row.vote && RATING_CRITERIA.every(crit=>row[crit.key] === null);
+  const table = supabaseClient.from("ratings");
+  const request = isEmpty
+    ? table.delete().eq("user_id", uid).eq("product_id", productId)
+    : table.upsert(row, { onConflict:"user_id,product_id" });
+  return writeUserData(request, ()=>{
+    if(prev) productRatings[productId] = prev; else delete productRatings[productId];
+  }, "Deine Bewertung konnte nicht gespeichert werden. Bitte versuche es erneut.").then(ok=>{
+    if(ok) refreshRatingSummaries(productId);
+    return ok;
+  });
+}
+
+async function refreshRatingSummaries(productId){
+  const { data, error } = await supabaseClient.rpc("get_all_product_rating_summaries");
+  if(error) return;
+  applyRatingSummaries(data || []);
+  if(currentProductDetailId === productId) paintProductRatingSummary(productId);
+  if(dealsReady) render();
+}
+
+/* Eigene Bewertung in einer gerade offenen Produktansicht nach An-/Abmeldung
+   neu darstellen. */
+function refreshOpenProductRating(){
+  if(!currentProductDetailId) return;
+  if(!document.getElementById("productDetailOverlay").classList.contains("open")) return;
+  renderProductRating(currentProductDetailId);
+}
+
+document.addEventListener("click", (e)=>{
+  if(e.target.closest("[data-auth-login]")) openAuthSheet("login");
+});
 
 document.getElementById("profileRecentRow").addEventListener("click", openRecentSheet);
 document.getElementById("recentAuthBtn").addEventListener("click", ()=>openAuthSheet("login"));
@@ -9199,6 +9396,7 @@ function applyAuthState(user){
   if(!loggedIn) currentUsername = null;
   applyUsername(currentUsername);
   syncRecentWithAuth();
+  syncUserDataWithAuth();
   syncAvatarWithAuth();
   /* Ohne Konto gibt es nichts zu verwalten: offene Konto-Fenster schließen. */
   if(!loggedIn){
@@ -9539,8 +9737,8 @@ async function finalizeAccountDeletion(reason){
 
 /* Entfernt die nur lokal gespeicherte Adresse und setzt ihre Anzeige
    zurück. Nutzername und Profilbild gehören zum Konto und verschwinden
-   mit applyAuthState(null). Favoriten, Alarme,
-   Bewertungen und Einstellungen funktionieren auch ohne Konto und bleiben. */
+   mit applyAuthState(null), ebenso Favoriten, Alarme und Bewertungen
+   (syncUserDataWithAuth()). Einstellungen bleiben auf dem Gerät. */
 function clearLocalProfileData(){
   try{ localStorage.removeItem("canspot-address"); }catch(e){}
   ["profileStreet","profileZip","profileCity"].forEach(id=>{ document.getElementById(id).value = ""; });
@@ -10576,9 +10774,8 @@ function openHistory(dealId){
   favBtn.classList.toggle("active", isFav);
   favBtn.onclick = ()=>{
     const key = favKeyForDeal(deal);
-    const wasFav = favorites.has(key);
-    if(wasFav) favorites.delete(key); else favorites.add(key);
-    saveFavorites();
+    if(!requireAccount("Melde dich an, um Favoriten zu speichern.")) return;
+    const wasFav = toggleFavorite(key);
     render();
     updateNotifDot();
     showToast(wasFav ? `${deal.product} aus Favoriten entfernt` : `${deal.product} zu Favoriten hinzugefügt`);
@@ -10899,9 +11096,8 @@ function renderProductOffer(deal){
   syncFav();
   favBtn.style.display = "";
   favBtn.onclick = ()=>{
-    const wasFav = favorites.has(key);
-    if(wasFav) favorites.delete(key); else favorites.add(key);
-    saveFavorites();
+    if(!requireAccount("Melde dich an, um Favoriten zu speichern.")) return;
+    const wasFav = toggleFavorite(key);
     syncFav();
     if(!wasFav) triggerFavPop(favBtn.querySelector(".icon"));
     render();
@@ -10977,6 +11173,13 @@ function renderNutrition(product){
   };
 }
 
+function paintProductRatingSummary(productId){
+  const summary = getProductRatingSummary(productId);
+  const summaryEl = document.getElementById("pdRatingSummary");
+  summaryEl.querySelector("b").textContent = ratingPercentLabel(summary);
+  summaryEl.setAttribute("aria-label", summary.count ? `${summary.percentPositive}% positive Bewertungen von ${summary.count} Nutzern` : "Noch keine Bewertungen");
+}
+
 function renderProductRating(productId){
   const thumbUpBtn = document.getElementById("pdThumbUp");
   const thumbDownBtn = document.getElementById("pdThumbDown");
@@ -10984,10 +11187,7 @@ function renderProductRating(productId){
   const advPanel = document.getElementById("pdRatingAdv");
   const advInner = document.getElementById("pdRatingAdvInner");
 
-  const summary = getProductRatingSummary(productId);
-  const summaryEl = document.getElementById("pdRatingSummary");
-  summaryEl.querySelector("b").textContent = ratingPercentLabel(summary);
-  summaryEl.setAttribute("aria-label", summary.count ? `${summary.percentPositive}% positive Bewertungen von ${summary.count} Nutzern` : "Noch keine Bewertungen");
+  paintProductRatingSummary(productId);
 
   function applyVoteState(){
     const vote = (productRatings[productId] || {}).vote || null;
@@ -10998,11 +11198,13 @@ function renderProductRating(productId){
   }
 
   function setVote(vote){
-    const entry = productRatings[productId] || {};
+    if(!requireAccount("Melde dich an, um Produkte zu bewerten.")) return;
+    const prev = productRatings[productId];
+    const entry = { ...(prev || {}) };
     entry.vote = entry.vote === vote ? null : vote;
     productRatings[productId] = entry;
-    saveProductRatings();
     applyVoteState();
+    saveOwnRating(productId, prev).then(ok=>{ if(!ok) applyVoteState(); });
   }
 
   thumbUpBtn.onclick = () => setVote("up");
@@ -11066,6 +11268,7 @@ function renderProductRating(productId){
     paintStars(crit.key);
     advInner.querySelectorAll(`.rating-stars[data-crit="${crit.key}"] button`).forEach(btn => {
       btn.onclick = () => {
+        if(!requireAccount("Melde dich an, um Produkte zu bewerten.")) return;
         const val = Number(btn.dataset.val);
         pending[crit.key] = pending[crit.key] === val ? 0 : val;
         paintStars(crit.key);
@@ -11076,11 +11279,13 @@ function renderProductRating(productId){
 
   saveBtn.onclick = () => {
     if(saveBtn.disabled) return;
-    const entry = productRatings[productId] || {};
+    if(!requireAccount("Melde dich an, um Produkte zu bewerten.")) return;
+    const prev = productRatings[productId];
+    const entry = { ...(prev || {}) };
     RATING_CRITERIA.forEach(crit => { entry[crit.key] = pending[crit.key]; });
     productRatings[productId] = entry;
-    saveProductRatings();
-    setSaveBtnState(true);
+    saveBtn.disabled = true;
+    saveOwnRating(productId, prev).then(ok=>setSaveBtnState(ok));
   };
 }
 
@@ -11118,8 +11323,7 @@ function renderProductAlertPanel(productId, deal){
     activeMsg.style.display = "flex";
     activeMsg.innerHTML = `<span><svg class="icon icon-sm"><use href="#i-target"/></svg> Aktiver Alarm bei ${euro(alert.target)} €</span><button type="button" data-remove-pd-alert>entfernen</button>`;
     activeMsg.querySelector("[data-remove-pd-alert]").addEventListener("click", ()=>{
-      delete priceAlerts[productId];
-      savePriceAlerts();
+      removePriceAlert(productId);
       renderActiveState();
       updateAlertsDot();
       showToast("Preisalarm entfernt.");
@@ -11137,10 +11341,10 @@ function renderProductAlertPanel(productId, deal){
   };
 
   setBtn.onclick = () => {
+    if(!requireAccount("Melde dich an, um Preisalarme zu speichern.")) return;
     const val = parseGermanPrice(input.value);
     if(!val || val<=0) return;
-    priceAlerts[productId] = {target: val, enabled: true};
-    savePriceAlerts();
+    setPriceAlert(productId, val);
     renderActiveState();
     updateAlertsDot();
     showToast(`Preisalarm gesetzt: ${deal.product} unter ${euro(val)} €`);
@@ -11457,8 +11661,7 @@ function updateAlertActiveMsg(productId){
   msg.style.display = "flex";
   msg.innerHTML = `<span><svg class="icon icon-sm"><use href="#i-target"/></svg> Aktiver Alarm bei ${euro(alert.target)} €</span><button data-remove-alert="${productId}">entfernen</button>`;
   msg.querySelector("[data-remove-alert]").addEventListener("click", ()=>{
-    delete priceAlerts[productId];
-    savePriceAlerts();
+    removePriceAlert(productId);
     updateAlertActiveMsg(productId);
     updateAlertsDot();
     showToast("Preisalarm entfernt.");
@@ -11471,10 +11674,10 @@ document.getElementById("alertSetBtn").addEventListener("click", ()=>{
   if(!currentDetailDealId) return;
   const deal = deals.find(d=>d.id===currentDetailDealId);
   if(!deal) return;
+  if(!requireAccount("Melde dich an, um Preisalarme zu speichern.")) return;
   const val = parseGermanPrice(document.getElementById("alertPriceInput").value);
   if(!val || val<=0) return;
-  priceAlerts[deal.productId] = {target: val, enabled: true};
-  savePriceAlerts();
+  setPriceAlert(deal.productId, val);
   updateAlertActiveMsg(deal.productId);
   updateAlertsDot();
   showToast(`Preisalarm gesetzt: ${deal.product} unter ${euro(val)} €`);
@@ -11951,24 +12154,7 @@ async function loadFromSupabase(){
   });
 
   // ---- Bewertungs-Aggregate (siehe getProductRatingSummary()) ----
-  const avgOrNull = v => (v === null || v === undefined) ? null : Number(v);
-  rawRatings.forEach(r=>{
-    if(!r || !r.product_id) return;
-    const criteria = {
-      taste: avgOrNull(r.avg_taste),
-      sweetness: avgOrNull(r.avg_sweetness),
-      intensity: avgOrNull(r.avg_intensity),
-      aftertaste: avgOrNull(r.avg_aftertaste)
-    };
-    const vals = Object.values(criteria).filter(v => v !== null);
-    productRatingSummaries[r.product_id] = {
-      percentPositive: r.percent_positive === null ? null : Number(r.percent_positive),
-      count: r.rating_count || 0,
-      criteria,
-      avgStars: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
-    };
-  });
-  _globalAvgRatingStarsCache = null;
+  applyRatingSummaries(rawRatings);
 
   // ---- products[] (App-Form: id/name/brand/sizeMl/img/isNew/packaging) ----
   const mappedProducts = rawProducts
@@ -12064,6 +12250,7 @@ function loadDeals(){
       `CanSpot: Stammdaten aus Supabase geladen (${data.products.length} Produkte, ${data.offers.length} Angebote, ${Object.keys(data.stores).length} Händler).`
     );
     applyLoadedData(data.products, data.stores, data.offers);
+    dealsReady = true;
     finishInit();
   }).catch(err => {
     console.error("CanSpot: Angebote konnten nicht aus Supabase geladen werden.", err);
