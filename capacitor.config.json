@@ -3,6 +3,8 @@
   "appName": "CanSpot",
   "webDir": "www",
   "ios": {
-    "zoomEnabled": true
+    "zoomEnabled": true,
+    "contentInset": "never",
+    "backgroundColor": "#1b213f"
   }
 }
