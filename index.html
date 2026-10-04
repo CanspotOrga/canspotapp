@@ -3987,11 +3987,79 @@ display:flex;
 align-items:center;
 justify-content:center;
 cursor:pointer;
-/* Heller Modus: kräftigerer Blauschimmer hinter der Dose, sonst kaum sichtbar */
-background:radial-gradient(circle at 50% 60%,rgba(51,99,172,.55) 0%,rgba(51,99,172,.24) 40%,rgba(51,99,172,.08) 62%,var(--bg-surface-sunken) 82%)
+overflow:hidden;
+isolation:isolate;
+--np-a1:rgba(51,99,172,.2);
+--np-a2:rgba(112,146,197,.24);
+background:
+radial-gradient(circle at 50% 50%,rgba(255,255,255,.7) 0%,transparent 45%),
+linear-gradient(160deg,#f5f8fc 0%,#e5ecf7 100%)
 }
-:root[data-theme="dark"] .np-media{background:radial-gradient(circle at 50% 60%,#223965 0%,#12151C 72%)}
-.np-media img{height:108px;max-width:50%;object-fit:contain}
+:root[data-theme="dark"] .np-media{
+--np-a1:rgba(51,99,172,.32);
+--np-a2:rgba(112,146,197,.14);
+background:
+radial-gradient(circle at 50% 50%,rgba(51,99,172,.18) 0%,transparent 45%),
+linear-gradient(160deg,#171d2c 0%,#10141c 100%)
+}
+/* Bühne (Neuheiten und Coming Soon): zart treibende Farbwolken im
+   Hintergrund, die Dose schwebt sanft auf und ab. */
+.np-media::after{
+content:"";
+position:absolute;
+left:-30%;
+top:-60%;
+width:160%;
+height:220%;
+z-index:-2;
+pointer-events:none;
+background:
+radial-gradient(circle at 36% 46%,var(--np-a1) 0%,transparent 26%),
+radial-gradient(circle at 64% 54%,var(--np-a2) 0%,transparent 24%);
+animation:npDrift 14s ease-in-out infinite alternate
+}
+.np-media img{
+height:108px;
+max-width:50%;
+object-fit:contain;
+animation:npFloat 5s ease-in-out infinite
+}
+/* Dasselbe Produktbild groß, weich und halbtransparent dahinter: färbt die
+   Bühne in den Farben der Dose und dreht sich langsam. */
+.np-media .np-media-bg{
+position:absolute;
+left:50%;
+top:50%;
+height:108px;
+max-width:none;
+z-index:-1;
+pointer-events:none;
+opacity:.3;
+-webkit-filter:blur(14px) saturate(1.3);
+filter:blur(14px) saturate(1.3);
+transform:translate(-50%,-50%) scale(2.1);
+animation:npAmbient 12s ease-in-out infinite alternate
+}
+:root[data-theme="dark"] .np-media .np-media-bg{opacity:.38}
+/* jede zweite Karte versetzt, damit nichts im Gleichtakt läuft */
+.np-card:nth-child(2n) .np-media::after{animation-delay:-7s}
+.np-card:nth-child(2n) .np-media img{animation-delay:-2.5s}
+.np-card:nth-child(2n) .np-media .np-media-bg{animation-delay:-6s}
+@keyframes npAmbient{
+0%{transform:translate(-56%,-50%) scale(2) rotate(-10deg)}
+100%{transform:translate(-44%,-52%) scale(2.3) rotate(10deg)}
+}
+@keyframes npDrift{
+0%{transform:translate(-5%,2%) rotate(0deg)}
+100%{transform:translate(5%,-2%) rotate(8deg)}
+}
+@keyframes npFloat{
+0%,100%{transform:translateY(2px)}
+50%{transform:translateY(-4px)}
+}
+@media (prefers-reduced-motion:reduce){
+.np-media::after,.np-media img,.np-media .np-media-bg{animation:none}
+}
 .np-badge{
 position:absolute;
 top:10px;
@@ -8821,6 +8889,7 @@ function renderNewPane(){
       <div class="np-media" ${openAttrs}>
         <span class="np-badge">Neu</span>
         <button class="np-fav${fav ? " active" : ""}" data-np-fav="${escapeHtml(key)}" data-np-name="${escapeHtml(p.name)}" aria-label="${fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}"><svg class="icon"><use href="#i-heart"/></svg></button>
+        ${p.img ? `<img class="np-media-bg" src="${escapeHtml(p.img)}" alt="" aria-hidden="true" loading="lazy" referrerpolicy="no-referrer">` : ""}
         <img src="${escapeHtml(p.img || FALLBACK_IMG)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
       </div>
       <div class="np-body">
@@ -8880,6 +8949,7 @@ function renderSoonPane(){
           <div class="np-media" data-np-open="${escapeHtml(d.productId)}" data-np-deal="${escapeHtml(d.id)}">
             <span class="np-badge"><svg class="icon"><use href="#i-rocket"/></svg>Startet bald</span>
             <button class="np-fav${fav ? " active" : ""}" data-np-fav="${escapeHtml(key)}" data-np-name="${escapeHtml(d.product)}" aria-label="${fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}"><svg class="icon"><use href="#i-heart"/></svg></button>
+            ${d.img ? `<img class="np-media-bg" src="${escapeHtml(d.img)}" alt="" aria-hidden="true" loading="lazy" referrerpolicy="no-referrer">` : ""}
             <img src="${escapeHtml(d.img || FALLBACK_IMG)}" alt="${escapeHtml(d.product)}" loading="lazy" referrerpolicy="no-referrer">
           </div>
           <div class="np-body">
@@ -8914,7 +8984,11 @@ function renderSoonPane(){
 
 function npBindImages(container){
   container.querySelectorAll("img").forEach(img=>{
-    img.addEventListener("error", function(){ this.src = img.classList.contains("store-logo") ? STORE_FALLBACK_IMG : FALLBACK_IMG; }, {once:true});
+    img.addEventListener("error", function(){
+      /* Hintergrundkopie ohne echtes Bild weglassen statt Platzhalter zu zeigen */
+      if(img.classList.contains("np-media-bg")) return img.remove();
+      this.src = img.classList.contains("store-logo") ? STORE_FALLBACK_IMG : FALLBACK_IMG;
+    }, {once:true});
   });
 }
 
