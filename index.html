@@ -3818,14 +3818,21 @@ overscroll-behavior:contain;
 -webkit-overflow-scrolling:touch;
 padding-bottom:calc(96px + env(safe-area-inset-bottom));
 box-sizing:border-box;
+/* Öffnet aus der Teaser-Karte heraus: --np-clip/--np-radius setzt
+   setSoonPageOrigin() auf deren Lage, geöffnet ist der Ausschnitt die
+   ganze Seite. Schließen läuft denselben Weg zurück. */
 visibility:hidden;
-transform:translateX(100%);
-transition:transform .28s cubic-bezier(.32,.72,0,1),visibility 0s linear .28s
+opacity:0;
+-webkit-clip-path:inset(var(--np-clip, 40% 0 40% 0) round var(--np-radius, 14px));
+clip-path:inset(var(--np-clip, 40% 0 40% 0) round var(--np-radius, 14px));
+transition:-webkit-clip-path .38s cubic-bezier(.4,0,.2,1),clip-path .38s cubic-bezier(.4,0,.2,1),opacity .2s ease .16s,visibility 0s linear .38s
 }
 .np-page.open{
 visibility:visible;
-transform:none;
-transition:transform .28s cubic-bezier(.32,.72,0,1),visibility 0s
+opacity:1;
+-webkit-clip-path:inset(0 round 0);
+clip-path:inset(0 round 0);
+transition:-webkit-clip-path .5s cubic-bezier(.32,.72,0,1),clip-path .5s cubic-bezier(.32,.72,0,1),opacity .08s linear,visibility 0s
 }
 body.np-lock{overflow:hidden}
 body.np-lock .view-toggle{visibility:hidden}
@@ -3868,7 +3875,8 @@ font-size:15px;
 font-weight:800
 }
 .np-title .icon{width:17px;height:17px;color:#7092c5}
-.np-pane{animation:menuViewEnterRight .2s ease}
+.np-pane{opacity:0;transform:translateY(14px);transition:opacity .15s ease,transform .15s ease}
+.np-page.open .np-pane{opacity:1;transform:none;transition:opacity .3s ease .18s,transform .5s cubic-bezier(.32,.72,0,1) .18s}
 
 /* Neuheiten im Tab der unteren Navigation: liegt in <main>, das schon
    18px Seitenabstand hat. */
@@ -4136,8 +4144,9 @@ padding:20px 18px 0
 .np-count{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
 
 @media (prefers-reduced-motion:reduce){
-.np-sweep,.np-blip,.np-pane{animation:none}
-.np-page,.np-page.open{transition:none}
+.np-sweep,.np-blip{animation:none}
+.np-page,.np-page.open,.np-pane,.np-page.open .np-pane{transition:none}
+.np-page{-webkit-clip-path:none;clip-path:none}
 }
 
 /* Mini-Navigation innerhalb des Menüs (Menü ↔ Neuigkeiten ↔ Detailansicht),
@@ -8814,10 +8823,29 @@ function renderSoonPage(){
   npBindImages(document.getElementById("npPaneSoon"));
 }
 
+/* Ausschnitt der geschlossenen Seite = Lage und Rundung der Teaser-Karte. */
+function setSoonPageOrigin(page){
+  const btn = document.getElementById("heroSoonBtn");
+  const r = btn.getBoundingClientRect();
+  const p = page.getBoundingClientRect();
+  if(!r.width || !p.width){
+    page.style.removeProperty("--np-clip");
+    page.style.removeProperty("--np-radius");
+    return;
+  }
+  page.style.setProperty("--np-clip", `${r.top - p.top}px ${p.right - r.right}px ${p.bottom - r.bottom}px ${r.left - p.left}px`);
+  page.style.setProperty("--np-radius", getComputedStyle(btn).borderTopLeftRadius);
+}
+
 function openNewSoonPage(){
   const page = document.getElementById("newSoonPage");
   renderSoonPage();
   page.scrollTop = 0;
+  /* Startform ohne Übergang setzen, dann mit Übergang öffnen. */
+  page.style.transition = "none";
+  setSoonPageOrigin(page);
+  void page.offsetWidth;
+  page.style.transition = "";
   page.classList.add("open");
   page.setAttribute("aria-hidden","false");
   document.body.classList.add("np-lock");
@@ -8826,6 +8854,7 @@ function openNewSoonPage(){
 function closeNewSoonPage(){
   const page = document.getElementById("newSoonPage");
   if(!page.classList.contains("open")) return;
+  setSoonPageOrigin(page);
   page.classList.remove("open");
   page.setAttribute("aria-hidden","true");
   document.body.classList.remove("np-lock");
