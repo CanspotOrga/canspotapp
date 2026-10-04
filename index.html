@@ -2067,7 +2067,7 @@ margin-top:6px
 .profile-account-email{font-size:12.5px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .profile-username{font-size:13px;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .profile-username-set{align-self:flex-start;border:0;background:none;padding:0;color:var(--brand-primary-blue);font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
-.profile-username-set[hidden],.profile-username[hidden]{display:none}
+.profile-username-set[hidden],.profile-username[hidden],.profile-name-display[hidden]{display:none}
 .auth-tabs{display:flex;gap:8px;margin:6px 0 18px}
 .auth-tab{
 flex:1;
@@ -3643,8 +3643,8 @@ top:var(--menu-top,64px);
 right:var(--menu-right,12px);
 width:min(340px,calc(100vw - 24px));
 max-width:none;
-max-height:calc(100vh - var(--menu-top,64px) - 12px);
-max-height:calc(100dvh - var(--menu-top,64px) - 12px);
+max-height:calc(100vh - var(--menu-top,64px) - var(--menu-bottom,12px));
+max-height:calc(100dvh - var(--menu-top,64px) - var(--menu-bottom,12px));
 border-radius:var(--radius-2xl);
 padding:16px 16px 18px;
 box-shadow:var(--shadow-lg);
@@ -4569,7 +4569,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <input type="file" accept="image/*" id="avatarFileInput" style="display:none">
 </div>
 <div class="profile-fields">
-<div class="profile-name-display placeholder-text" id="profileNameText">Name eingeben</div>
+<div class="profile-name-display" id="profileNameText" hidden></div>
 <div class="profile-username" id="profileUsername" hidden></div>
 <button type="button" class="profile-username-set" id="profileUsernameSetBtn" hidden>Nutzername festlegen</button>
 <div class="profile-account-email" id="profileAccountEmail"></div>
@@ -7840,8 +7840,11 @@ alertsView.addEventListener("change", (e)=>{
 
 const bottomNavEl = document.querySelector(".bottomnav");
 
+/* Das Burger-Menü ist ein Ausklappmenü oben und verdeckt die Leiste nicht,
+   deshalb bleibt sie dabei sichtbar (Antippen schließt das Menü über
+   closeAllSheets()). Nur Bottom-Sheets blenden sie aus. */
 function updateBottomNavVisibility(){
-  const anyOpen = document.querySelectorAll(".overlay.open").length > 0;
+  const anyOpen = document.querySelectorAll(".overlay.open:not(#menuOverlay)").length > 0;
   bottomNavEl.style.display = anyOpen ? "none" : "flex";
 }
 
@@ -7982,14 +7985,16 @@ document.getElementById("notifBtn").addEventListener("click",()=>openNewsSheet()
    Alle anderen Zeilen klappen ihren Inhalt DIREKT im Menü auf
    (toggleMenuAccordion), statt ein weiteres Fenster zu öffnen. */
 /* Position des Ausklappmenüs aus der aktuellen Lage von #menuBtn: 8px
-   unter dem Button, rechtsbündig mit ihm. Bei Größenänderung oder Scrollen
-   der Seite hinter dem offenen Menü wird nachgezogen. */
+   unter dem Button, rechtsbündig mit ihm, unten mit Abstand zur sichtbaren
+   Bottom-Navigation. Bei Größenänderung oder Scrollen der Seite hinter dem
+   offenen Menü wird nachgezogen. */
 function positionMenuDropdown(){
   const btnRect = document.getElementById("menuBtn").getBoundingClientRect();
   const overlay = document.getElementById("menuOverlay");
   const viewportW = document.documentElement.clientWidth;
   overlay.style.setProperty("--menu-top", `${Math.max(12, Math.round(btnRect.bottom + 8))}px`);
   overlay.style.setProperty("--menu-right", `${Math.max(12, Math.round(viewportW - btnRect.right))}px`);
+  overlay.style.setProperty("--menu-bottom", `${bottomNavEl.offsetHeight + 12}px`);
 }
 document.getElementById("menuBtn").addEventListener("click",()=>{
   positionMenuDropdown();
@@ -8929,8 +8934,10 @@ function updateNameDisplays(){
   const full = getFullName();
   const hasName = full.length > 0;
   const label = hasName ? full : "Name eingeben";
-  profileNameText.textContent = label;
-  profileNameText.classList.toggle("placeholder-text", !hasName);
+  /* Oben in "Mein Bereich" ohne Namen keine Zeile (dort nicht anklickbar),
+     der Platzhalter steht nur im Bearbeiten-Feld unter "Konto verwalten". */
+  profileNameText.textContent = full;
+  profileNameText.hidden = !hasName;
   profileNameFieldText.textContent = label;
   profileNameFieldText.classList.toggle("placeholder-text", !hasName);
   updateAvatarInitials(full);
@@ -11462,8 +11469,25 @@ function loadDeals(){
 loadDeals();
 
 if("serviceWorker" in navigator){
+  /* Nach einem Update übernimmt der neue Service Worker sofort (skipWaiting,
+     clients.claim), die offene Seite läuft aber noch mit dem alten Code.
+     Deshalb einmal neu laden, sobald er die Kontrolle hat. Beim ersten Besuch
+     (noch kein Service Worker) wird nicht neu geladen. */
+  const hadServiceWorker = !!navigator.serviceWorker.controller;
+  let reloadingForUpdate = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if(!hadServiceWorker || reloadingForUpdate) return;
+    reloadingForUpdate = true;
+    location.reload();
+  });
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js").then(reg => {
+      /* Lange offene App (z. B. auf dem Homescreen): beim Zurückkehren nach
+         einer neuen Version fragen. */
+      document.addEventListener("visibilitychange", () => {
+        if(document.visibilityState === "visible") reg.update().catch(() => {});
+      });
+    }).catch(() => {});
   });
 }
 
