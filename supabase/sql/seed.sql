@@ -104,7 +104,7 @@ insert into public.offers (id, product_id, branch_id, units, regular_price, offe
   ('651ab0a1-9972-4001-adee-75554c71da72', '1e86d7b4-fecc-4e2a-a930-a7e92f0067da', '50ff519a-4266-46a1-9f92-90d6fa370c87', 1, '1.99', '1.39', '0.25', '2026-09-30', '2026-10-13', '#', null, '2026-10-03'),
   ('212d7448-4b90-492e-aad5-b90efd8775e5', '7dfb0a5d-354b-4845-af7e-8c2e9120020b', '512e4c21-5183-4576-9673-b8d9ba9bf409', 1, '1.79', '1.29', '0.25', '2026-10-03', '2026-10-16', '#', null, '2026-10-03'),
   ('fd2ca12a-f416-434a-9f5c-09bc11f1c652', '67e34e31-a36f-48c3-bd29-fedfb4288732', '19585656-b415-510e-8739-401bb2dd6a09', 1, '1.99', '1.49', '0.25', '2026-10-04', '2026-10-17', '#', null, '2026-10-04'),
-  ('95dc220e-ee8e-4f0a-b9e2-65fd4f01eb72', 'd6a55d57-3b1b-4a2b-aff1-edeb0eb48399', '50ff519a-4266-46a1-9f92-90d6fa370c87', 1, '1.49', '1.11', '0.25', '2026-10-12', '2026-10-17', '#', null, '2026-10-04')
+  ('95dc220e-ee8e-4f0a-b9e2-65fd4f01eb72', 'd6a55d57-3b1b-4a2b-aff1-edeb0eb48399', '50ff519a-4266-46a1-9f92-90d6fa370c87', 1, null, null, '0.25', '2026-10-12', '2026-10-17', '#', null, '2026-10-04')
 on conflict (id) do update set
   product_id = excluded.product_id,
   branch_id = excluded.branch_id,

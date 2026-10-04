@@ -160,8 +160,9 @@ create table public.offers (
   product_id        uuid not null references public.products(id) on delete restrict,
   branch_id         uuid not null references public.branches(id) on delete restrict,
   units             integer not null default 1 check (units > 0),
-  regular_price     numeric(10,2) not null check (regular_price >= 0),
-  offer_price       numeric(10,2) not null check (offer_price >= 0),
+  -- Preise NULL = noch nicht bekannt (Coming Soon, Start in der Zukunft)
+  regular_price     numeric(10,2) check (regular_price >= 0),
+  offer_price       numeric(10,2) check (offer_price >= 0),
   deposit           numeric(10,2) not null default 0 check (deposit >= 0),
   valid_from        date not null,
   valid_until       date not null,

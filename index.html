@@ -6045,8 +6045,12 @@ function buildDeals(offers){
   }).filter(Boolean);
 }
 
-/* Laufzeit-Angebotsliste; bis zum ersten erfolgreichen loadDeals() leer. */
+/* Laufzeit-Angebotsliste; bis zum ersten erfolgreichen loadDeals() leer.
+   deals = gestartete Angebote mit Preis (Startseite, Karte, Suche, Details),
+   soonDeals = Angebote mit Start in der Zukunft (nur Coming Soon, Preis
+   meist noch unbekannt = null). */
 let deals = [];
+let soonDeals = [];
 /* true ab dem ersten erfolgreichen loadDeals(); vorher zeigt die Liste das Ladegerüst. */
 let dealsReady = false;
 
@@ -8070,7 +8074,7 @@ function computeFavoriteEvents(){
       return;
     }
 
-    const upcomingDeals = deals.filter(d=>d.productId===pid && d.units===units && daysUntil(d.validFrom)>0);
+    const upcomingDeals = soonDeals.filter(d=>d.productId===pid && d.units===units);
     if(upcomingDeals.length>0){
       const next = upcomingDeals.reduce((a,b)=> daysUntil(a.validFrom)<daysUntil(b.validFrom) ? a : b);
       items.push({status:"upcoming", product, deal:next, daysUntilStart: daysUntil(next.validFrom)});
@@ -8120,7 +8124,7 @@ function newsCardHtml(item){
           </div>
         </div>
         <div class="news-card-price-row">
-          <span class="news-card-price">${euro(d.offerPrice)} €</span>
+          <span class="news-card-price">${d.offerPrice===null ? "Preis folgt" : `${euro(d.offerPrice)} €`}</span>
           <span class="news-card-store">ab ${startLabel} · ${escapeHtml(d.store)}${typeof d.distanceKm==="number" ? ` · ${d.distanceKm} km` : ""}</span>
         </div>
       </article>
@@ -8633,9 +8637,8 @@ function getNewProductEntries(){
 }
 
 function getUpcomingDeals(){
-  return deals
-    .filter(d=>daysUntil(d.validFrom) > 0)
-    .sort((a,b)=>a.validFrom.localeCompare(b.validFrom) || a.offerPrice-b.offerPrice);
+  return [...soonDeals]
+    .sort((a,b)=>a.validFrom.localeCompare(b.validFrom) || a.product.localeCompare(b.product, "de"));
 }
 
 function npShortDate(dateStr){
@@ -8667,7 +8670,7 @@ function npStoreRow(d){
       <img class="store-logo" src="${escapeHtml(storeLogos[d.store] || STORE_FALLBACK_IMG)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <span class="np-store-name">${escapeHtml(d.store)}</span>
       ${hasDistance(d) ? `<span class="np-store-km"><svg class="icon"><use href="#i-pin"/></svg>${d.distanceKm} km</span>` : ""}
-      <span class="np-store-price">${euro(d.offerPrice)} €</span>
+      <span class="np-store-price">${d.offerPrice===null ? "Preis folgt" : `${euro(d.offerPrice)} €`}</span>
       <svg class="icon np-store-chev"><use href="#i-chevron-down"/></svg>
     </button>`;
 }
@@ -10154,8 +10157,8 @@ function getRelevantNotifications(){
   favorites.forEach(key=>{
     const pid = favProductId(key);
     const units = favUnitsFromKey(key);
-    const upcoming = deals
-      .filter(d=>d.productId===pid && d.units===units && daysUntil(d.validFrom) > 0)
+    const upcoming = soonDeals
+      .filter(d=>d.productId===pid && d.units===units)
       .sort((a,b)=>daysUntil(a.validFrom)-daysUntil(b.validFrom))[0];
     if(!upcoming) return;
     notifications.push({
@@ -10989,7 +10992,14 @@ function openProductDetail(productId, dealId){
      der Einzeldose — sonst (Ähnliche Produkte, Favoriten, kein dealId) bleibt
      es wie gehabt product.img. */
   const deal = dealId ? deals.find(d=>d.id===dealId) : null;
-  const heroImg = (deal && deal.img) ? deal.img : product.img;
+  /* Coming Soon ohne laufendes Angebot: das nächste kommende Angebot
+     (Händler, Startdatum, "Preis folgt") statt gar keinem Angebotsteil. */
+  const soonDeal = isProductComingSoon(productId)
+    ? (dealId && soonDeals.find(d=>d.id===dealId)) ||
+      soonDeals.filter(d=>d.productId===productId).sort((a,b)=>a.validFrom.localeCompare(b.validFrom))[0]
+    : null;
+  const shownDeal = deal || soonDeal;
+  const heroImg = (shownDeal && shownDeal.img) ? shownDeal.img : product.img;
 
   const pdImg = document.getElementById("pdImg");
   pdImg.src = heroImg;
@@ -11018,7 +11028,7 @@ function openProductDetail(productId, dealId){
   renderProductAlertPanel(productId, dealToShare);
   renderSimilarProducts(product);
   renderProductRatingLine(productId);
-  renderProductOffer(dealToShare);
+  renderProductOffer(dealToShare || soonDeal);
 
   openSheet("productDetailOverlay");
   /* Sheet scrollt selbst (.sheet{overflow:auto}) - beim erneuten Öffnen
@@ -11054,23 +11064,28 @@ function renderProductOffer(deal){
     favBtn.style.display = "none";
     return;
   }
-  const literPrice = deal.offerPrice / (deal.totalMl/1000);
-  const savingPct = Math.round((1 - deal.offerPrice/deal.regularPrice) * 100);
+  /* Coming Soon: Angebot startet erst, Preis meist noch unbekannt (null). */
+  const isSoon = daysUntil(deal.validFrom) > 0;
+  const priceKnown = deal.offerPrice !== null;
+  const literPrice = priceKnown ? deal.offerPrice / (deal.totalMl/1000) : null;
+  const savingPct = priceKnown && deal.regularPrice ? Math.round((1 - deal.offerPrice/deal.regularPrice) * 100) : null;
   const isExpired = daysUntil(deal.validUntil) < 0;
   const key = favKeyForDeal(deal);
 
-  document.getElementById("pdPrice").textContent = `${euro(deal.offerPrice)} €`;
-  document.getElementById("pdOldPrice").textContent = `${euro(deal.regularPrice)} €`;
-  document.getElementById("pdSaving").textContent = `−${savingPct} %`;
-  document.getElementById("pdLiter").textContent = `${euro(literPrice)} €`;
+  document.getElementById("pdPrice").textContent = priceKnown ? `${euro(deal.offerPrice)} €` : "Preis folgt";
+  document.getElementById("pdOldPrice").textContent = savingPct !== null ? `${euro(deal.regularPrice)} €` : "";
+  const savingEl = document.getElementById("pdSaving");
+  savingEl.textContent = savingPct !== null ? `−${savingPct} %` : "";
+  savingEl.style.display = savingPct !== null ? "" : "none";
+  document.getElementById("pdLiter").textContent = priceKnown ? `${euro(literPrice)} €` : "–";
   document.getElementById("pdPfand").textContent = `+ ${euro(deal.pfand)} €`;
-  document.getElementById("pdTotal").textContent = `${euro(deal.offerPrice + deal.pfand)} €`;
+  document.getElementById("pdTotal").textContent = priceKnown ? `${euro(deal.offerPrice + deal.pfand)} €` : "–";
   const validEl = document.getElementById("pdValid");
   validEl.textContent = formatDateRange(deal.validFrom, deal.validUntil) + (isExpired ? " · abgelaufen" : "");
   validEl.classList.toggle("expired", isExpired);
-  document.getElementById("pdChecked").textContent = deal.lastCheckedAt
-    ? `Preis zuletzt geprüft · ${formatSingleDate(deal.lastCheckedAt)}`
-    : "";
+  document.getElementById("pdChecked").textContent = isSoon
+    ? (priceKnown ? "Angebot startet bald." : "Angebot startet bald, der Preis ist noch nicht bekannt.")
+    : deal.lastCheckedAt ? `Preis zuletzt geprüft · ${formatSingleDate(deal.lastCheckedAt)}` : "";
   offerEl.style.display = "";
 
   const branch = storeBranches[deal.store];
@@ -11083,13 +11098,19 @@ function renderProductOffer(deal){
   document.getElementById("pdStoreSub").innerHTML =
     (hasDistance(deal) ? `${routeMinutes(deal.distanceKm)} Min. Route` : "Route") +
     (openNow===null ? "" : ` · <span class="open-dot ${openNow?"open":""}"></span>${openNow?"Jetzt geöffnet":"Geschlossen"}`);
-  document.getElementById("pdStoreRow").onclick = ()=> openStoreDetail(deal.id);
+  /* Händler- und Preisverlaufs-Ansicht gibt es nur für gestartete Angebote. */
+  const storeRow = document.getElementById("pdStoreRow");
+  storeRow.onclick = isSoon ? null : ()=> openStoreDetail(deal.id);
+  storeRow.querySelector(".pd-row-arrow").style.visibility = isSoon ? "hidden" : "";
 
   const hist = deal.history;
   document.getElementById("pdHistSub").textContent = hist.length
     ? `Tiefstpreis ${euro(Math.min(...hist))} € · ${hist.length} Preispunkte`
     : "Noch keine Preisdaten";
   document.getElementById("pdHistRow").onclick = ()=> openHistory(deal.id);
+  const histRow = document.getElementById("pdHistRow");
+  histRow.style.display = isSoon ? "none" : "";
+  histRow.previousElementSibling.style.display = isSoon ? "none" : "";
   storeEl.style.display = "";
 
   document.getElementById("pdFooterSub").textContent = `${deal.store}${hasDistance(deal) ? ` · ${deal.distanceKm} km · ${routeMinutes(deal.distanceKm)} Min.` : ""}`;
@@ -11185,8 +11206,7 @@ function renderNutrition(product){
    begonnen. Solche Produkte können noch nicht bewertet werden (die
    Datenbank prüft dasselbe über is_product_rateable()). */
 function isProductComingSoon(productId){
-  const own = deals.filter(d=>d.productId===productId);
-  return own.some(d=>daysUntil(d.validFrom) > 0) && !own.some(d=>daysUntil(d.validFrom) <= 0);
+  return soonDeals.some(d=>d.productId===productId) && !deals.some(d=>d.productId===productId);
 }
 
 function paintProductRatingSummary(productId){
@@ -12071,7 +12091,16 @@ function applyLoadedData(products_, stores, offers){
     storeLogos[name] = stores[name].logo;
     storeBranches[name] = stores[name].branch;
   }
-  deals = buildDeals(offers);
+  const all = buildDeals(offers);
+  soonDeals = all.filter(d=>daysUntil(d.validFrom) > 0);
+  deals = all.filter(d=>{
+    if(daysUntil(d.validFrom) > 0) return false;
+    if(d.offerPrice === null || d.regularPrice === null){
+      console.warn(`CanSpot: Angebot "${d.id}" ohne Preis ausgeblendet.`);
+      return false;
+    }
+    return true;
+  });
 }
 
 /* Wandelt einen Supabase-Nährwerte-Datensatz (snake_case Spalten, siehe
@@ -12242,8 +12271,8 @@ async function loadFromSupabase(){
         id: o.id,
         productId: o.product_id,
         store: branchIdToStoreName[o.branch_id],
-        regularPrice: o.regular_price,
-        offerPrice: o.offer_price,
+        regularPrice: o.regular_price === null ? null : Number(o.regular_price),
+        offerPrice: o.offer_price === null ? null : Number(o.offer_price),
         pfand: o.deposit,
         packaging: (product && product.packaging) || PACKAGING_FALLBACK,
         distanceKm: (defaultLocationGeo && geo) ? Math.round(haversineKm(defaultLocationGeo, geo) * 10) / 10 : null,
