@@ -283,9 +283,12 @@ comment on table public.favorites is 'Entspricht canspot-favorites (Set aus "pro
 -- unangetastete Kriterien beim Speichern als 0 mit-persistiert) - NULL wird
 -- von AVG() automatisch korrekt ignoriert, waehrend eine gespeicherte 0 den
 -- Durchschnitt faelschlich nach unten ziehen wuerde.
+-- Beim Loeschen eines Kontos bleibt die Bewertung ohne Personenbezug
+-- erhalten (on delete set null), Favoriten und Preisalarme dagegen werden
+-- mitgeloescht (on delete cascade).
 create table public.ratings (
   id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null references auth.users(id) on delete cascade,
+  user_id     uuid references auth.users(id) on delete set null,
   product_id  uuid not null references public.products(id) on delete cascade,
   vote        text check (vote in ('up','down')),
   taste       smallint check (taste between 1 and 5),
@@ -296,7 +299,7 @@ create table public.ratings (
   constraint ratings_unique unique (user_id, product_id)
 );
 create index ratings_product_id_idx on public.ratings(product_id);
-comment on table public.ratings is 'Max. eine Bewertung pro Nutzer+Produkt (Entscheidung 4). Rohdaten sind privat (siehe RLS) - oeffentlich sichtbar ist nur das Aggregat ueber public.get_product_rating_summary().';
+comment on table public.ratings is 'Max. eine Bewertung pro Nutzer+Produkt. Rohdaten sind privat (siehe RLS), oeffentlich sichtbar ist nur das Aggregat ueber get_all_product_rating_summaries(). Beim Loeschen eines Kontos bleibt die Bewertung ohne Personenbezug erhalten (user_id = NULL).';
 
 create trigger trg_ratings_updated_at
   before update on public.ratings
