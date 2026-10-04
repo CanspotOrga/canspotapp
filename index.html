@@ -3151,6 +3151,8 @@ overflow:hidden
 
 .profile-avatar-wrap{position:relative;flex-shrink:0}
 .profile-avatar{background-size:cover;background-position:center}
+/* Ohne Profilbild öffnet der ganze Kreis die Bildauswahl. */
+.profile-avatar.is-empty{cursor:pointer}
 .avatar-edit-badge{
 position:absolute;
 bottom:-2px;
@@ -3876,6 +3878,9 @@ clip-path:inset(0 round 0);
 transition:-webkit-clip-path .5s cubic-bezier(.32,.72,0,1),clip-path .5s cubic-bezier(.32,.72,0,1),opacity .08s linear,visibility 0s
 }
 body.np-lock{overflow:hidden}
+/* Offenes Sheet/Fenster: Seite dahinter scrollt nicht mit (siehe updateScrollLock()). */
+html.sheet-lock,
+html.sheet-lock body{overflow:hidden}
 .np-bar{
 position:sticky;
 top:0;
@@ -5107,7 +5112,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 
 <div class="profile-head" id="profileHead" hidden>
 <div class="profile-avatar-wrap">
-<div class="profile-avatar" id="profileAvatar">?</div>
+<div class="profile-avatar is-empty" id="profileAvatar" role="button" tabindex="0" aria-label="Profilbild hinzufügen">?</div>
 <button class="avatar-edit-badge" id="avatarEditBtn" aria-label="Profilbild ändern"><svg class="icon icon-xs"><use href="#i-camera"/></svg></button>
 <input type="file" accept="image/*" id="avatarFileInput" style="display:none">
 </div>
@@ -8391,6 +8396,13 @@ function updateBottomNavVisibility(){
   bottomNavEl.style.display = anyOpen ? "none" : "flex";
 }
 
+/* Solange ein Sheet oder das Menü offen ist, lässt sich nur dieses Fenster
+   bedienen: die Seite dahinter scrollt nicht mit. */
+function updateScrollLock(){
+  const anyOpen = document.querySelector(".overlay.open") !== null;
+  document.documentElement.classList.toggle("sheet-lock", anyOpen);
+}
+
 function openSheet(id){
   const el = document.getElementById(id);
   /* Auf dieselbe Ebene ans Ende ihres Elternelements verschieben, damit sie
@@ -8401,10 +8413,12 @@ function openSheet(id){
   if(el.parentNode) el.parentNode.appendChild(el);
   el.classList.add("open");
   updateBottomNavVisibility();
+  updateScrollLock();
 }
 function closeSheet(id){
   document.getElementById(id).classList.remove("open");
   updateBottomNavVisibility();
+  updateScrollLock();
   if(id==="avatarCropOverlay") resetAvatarCrop();
   if(id==="profileOverlay"){
     const profileTab = document.querySelector('.navitem[data-nav="profile"]');
@@ -8425,6 +8439,25 @@ document.querySelectorAll("[data-close]").forEach(el=>{
 });
 document.querySelectorAll(".overlay").forEach(ov=>{
   ov.addEventListener("click",(e)=>{ if(e.target===ov) closeSheet(ov.id); });
+});
+
+/* Wischen auf dem abgedunkelten Hintergrund oder auf Inhalt, der selbst nicht
+   scrollt, darf die Seite dahinter nicht bewegen. Scrollbare Bereiche im
+   Fenster, Eingabefelder (z.B. Zoom-Regler) und Karten bleiben unberührt. */
+function canScrollInside(target, overlay){
+  for(let el = target; el && el !== overlay; el = el.parentElement){
+    const oy = getComputedStyle(el).overflowY;
+    if((oy === "auto" || oy === "scroll") && el.scrollHeight > el.clientHeight + 1) return true;
+  }
+  return false;
+}
+document.querySelectorAll(".overlay").forEach(ov=>{
+  ov.addEventListener("touchmove",(e)=>{
+    if(!ov.classList.contains("open") || e.touches.length !== 1) return;
+    const t = e.target;
+    if(t.closest && t.closest("input, textarea, select, .leaflet-container")) return;
+    if(!canScrollInside(t, ov) && e.cancelable) e.preventDefault();
+  }, {passive:false});
 });
 
 /* ---------------- WISCHGESTE ZUM SCHLIESSEN (Detailansichten) ----------------
@@ -9985,6 +10018,22 @@ function applyAvatarPhoto(blob){
     updateAvatarInitials();
     avatarRemoveBtn.style.display = "none";
   }
+  setAvatarCircleClickable(!blob);
+}
+
+/* Ohne Profilbild ist der ganze Kreis ein Button zur Bildauswahl,
+   mit Bild nur noch das Kamera-Symbol. */
+function setAvatarCircleClickable(on){
+  profileAvatarEl.classList.toggle("is-empty", on);
+  if(on){
+    profileAvatarEl.setAttribute("role","button");
+    profileAvatarEl.setAttribute("tabindex","0");
+    profileAvatarEl.setAttribute("aria-label","Profilbild hinzufügen");
+  } else {
+    profileAvatarEl.removeAttribute("role");
+    profileAvatarEl.removeAttribute("tabindex");
+    profileAvatarEl.removeAttribute("aria-label");
+  }
 }
 
 /* Aufruf aus applyAuthState(): Bei Ab- oder Ummeldung wird das angezeigte
@@ -10185,6 +10234,15 @@ function renderAvatarCropBlob(){
 }
 
 avatarEditBtn.addEventListener("click", ()=> avatarFileInput.click());
+profileAvatarEl.addEventListener("click", ()=>{
+  if(profileAvatarEl.classList.contains("is-empty") && !avatarEditBtn.disabled) avatarFileInput.click();
+});
+profileAvatarEl.addEventListener("keydown", (e)=>{
+  if((e.key === "Enter" || e.key === " ") && profileAvatarEl.classList.contains("is-empty")){
+    e.preventDefault();
+    if(!avatarEditBtn.disabled) avatarFileInput.click();
+  }
+});
 
 avatarFileInput.addEventListener("change", async ()=>{
   const file = avatarFileInput.files[0];
