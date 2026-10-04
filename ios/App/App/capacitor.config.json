@@ -1,0 +1,16 @@
+{
+	"appId": "de.canspot.app",
+	"appName": "CanSpot",
+	"webDir": "www",
+	"ios": {
+		"zoomEnabled": true,
+		"contentInset": "never",
+		"backgroundColor": "#1b213f"
+	},
+	"packageClassList": [
+		"ActionSheetPlugin",
+		"GeolocationPlugin",
+		"SharePlugin",
+		"MapsLauncherPlugin"
+	]
+}
