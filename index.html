@@ -1879,10 +1879,14 @@ cursor:pointer
 
 /* ---------- PROFILE / MEIN BEREICH ---------- */
 
+/* Raster: Bild links, Name/E-Mail rechts (oben bündig mit dem Kreis),
+   "Profilbild entfernen" in eigener Zeile darunter, links unter dem Bild. */
 .profile-head{
-display:flex;
-align-items:center;
-gap:12px;
+display:grid;
+grid-template-columns:auto minmax(0,1fr);
+align-items:start;
+column-gap:12px;
+row-gap:8px;
 margin-top:6px
 }
 
@@ -1901,11 +1905,11 @@ flex-shrink:0
 }
 
 .profile-fields{
-flex:1;
 display:flex;
 flex-direction:column;
-gap:6px;
-min-width:0
+gap:8px;
+min-width:0;
+padding-top:4px
 }
 
 
@@ -2118,6 +2122,7 @@ margin-top:20px;
 padding-top:16px;
 border-top:1px solid var(--border-subtle)
 }
+.profile-legal.centered{justify-content:center}
 .profile-legal a{font-size:11.5px;color:var(--text-muted);text-decoration:none}
 .profile-legal a:hover{color:var(--brand-primary-blue)}
 
@@ -3234,7 +3239,8 @@ background:none;
 border:0;
 cursor:pointer;
 padding:0;
-margin-top:6px;
+grid-column:1 / -1;
+justify-self:start;
 font-family:inherit
 }
 .avatar-remove-link:hover{color:var(--status-error-text)}
@@ -4966,8 +4972,8 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="profile-username" id="profileUsername" hidden></div>
 <button type="button" class="profile-username-set" id="profileUsernameSetBtn" hidden>Nutzername festlegen</button>
 <div class="profile-account-email" id="profileAccountEmail"></div>
-<button class="avatar-remove-link" id="avatarRemoveBtn" style="display:none">Profilbild entfernen</button>
 </div>
+<button class="avatar-remove-link" id="avatarRemoveBtn" style="display:none">Profilbild entfernen</button>
 </div>
 
 <div class="field-label" style="margin-top:22px">Meine Aktivität</div>
@@ -4990,7 +4996,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <button class="profile-action" id="logoutBtn"><svg class="icon icon-md"><use href="#i-logout"/></svg> Abmelden</button>
 </div>
 
-<div class="profile-legal">
+<div class="profile-legal centered">
 <a href="impressum.html">Impressum</a>
 <a href="datenschutz.html">Datenschutz</a>
 <a href="impressum.html#nutzung">Nutzungsbedingungen</a>
