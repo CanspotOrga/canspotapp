@@ -28,6 +28,7 @@
 -- ----------------------------------------------------------------------------
 
 create extension if not exists pgcrypto with schema extensions; -- liefert gen_random_uuid()
+create extension if not exists pg_net with schema extensions;   -- Aufruf avatar-cleanup (Abschnitt 10)
 
 
 -- ----------------------------------------------------------------------------
@@ -463,8 +464,8 @@ grant execute on function public.is_username_available(text) to anon, authentica
 -- price_feedback_reports.user_id wird NULL. Der optionale Loeschgrund wird
 -- ohne Personenbezug in account_deletion_feedback gespeichert. Nur fuer
 -- authenticated (Advisor-Warnung 0029 ist gewollt), nicht fuer anon.
--- Das Profilbild (Bucket avatars, Abschnitt 10) muss die App vorher ueber
--- die Storage-API entfernen; liegt es noch da, bricht die Funktion ab.
+-- Das Profilbild (Bucket avatars) raeumt der Trigger trg_users_avatar_cleanup
+-- nach dem Loeschen auf (Abschnitt 10).
 create function public.delete_my_account(p_reason text default null, p_note text default null)
 returns void
 language plpgsql
@@ -476,15 +477,6 @@ declare
 begin
   if v_uid is null then
     raise exception 'not authenticated' using errcode = '42501';
-  end if;
-  -- Dateien in Storage haengen nicht per CASCADE am Konto und lassen sich
-  -- nur ueber die Storage-API loeschen. Die App entfernt das Profilbild
-  -- vorher; liegt es noch da, wird nichts geloescht.
-  if exists (
-    select 1 from storage.objects
-    where bucket_id = 'avatars' and name = v_uid::text || '/avatar.jpg'
-  ) then
-    raise exception 'avatar still present' using errcode = '55000';
   end if;
   if v_reason is not null then
     insert into public.account_deletion_feedback (reason, note)
@@ -789,8 +781,9 @@ grant all privileges on all sequences in schema public to service_role;
 -- Metadaten wie Aufnahmeort). Der Bucket ist nicht oeffentlich; lesen,
 -- schreiben und loeschen darf nur der Besitzer. Der feste Dateiname
 -- begrenzt den Speicher auf eine Datei pro Konto (hoechstens 50 KB).
--- Loeschen geht nur ueber die Storage-API (Trigger storage.protect_delete),
--- deshalb entfernt die App das Bild vor delete_my_account() (Abschnitt 6).
+-- Loeschen geht nur ueber die Storage-API (Trigger storage.protect_delete).
+-- Die App entfernt das Bild vor delete_my_account(); fuer alle anderen Faelle
+-- (Dashboard, Admin-API, Fehler) raeumt trg_users_avatar_cleanup auf.
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('avatars', 'avatars', false, 51200, array['image/jpeg'])
@@ -816,10 +809,13 @@ create policy "avatars_delete_own" on storage.objects
   for delete to authenticated
   using (bucket_id = 'avatars' and name = (select auth.uid())::text || '/avatar.jpg');
 
--- Konto nie loeschen, solange noch ein Profilbild existiert, egal auf welchem
--- Weg (App, Dashboard, Admin-API). Im Dashboard erscheint dann ein Fehler;
--- zuerst die Datei in Storage > avatars loeschen, dann das Konto.
-create function public.prevent_user_delete_with_avatar()
+-- Nach dem Loeschen eines Kontos (App, Dashboard, Admin-API) das Profilbild
+-- im Hintergrund entfernen: Liegt noch <id>/avatar.jpg im Bucket avatars,
+-- ruft die Datenbank die Edge Function avatar-cleanup auf (nur die Konto-ID,
+-- Region Frankfurt, Quelltext unter supabase/functions/avatar-cleanup). Die
+-- Funktion loescht nur diese eine Datei und nur, wenn das Konto nicht mehr
+-- existiert. pg_net sendet erst nach dem Commit.
+create function public.cleanup_avatar_after_user_delete()
 returns trigger
 language plpgsql
 security definer set search_path = ''
@@ -829,14 +825,18 @@ begin
     select 1 from storage.objects
     where bucket_id = 'avatars' and name = old.id::text || '/avatar.jpg'
   ) then
-    raise exception 'Profilbild zuerst loeschen: Storage > avatars > %/avatar.jpg', old.id
-      using errcode = '55000';
+    perform net.http_post(
+      url := 'https://kyksbqrdtdusdbqwvazw.supabase.co/functions/v1/avatar-cleanup',
+      body := jsonb_build_object('user_id', old.id),
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-region', 'eu-central-1'),
+      timeout_milliseconds := 10000
+    );
   end if;
   return old;
 end;
 $$;
-revoke execute on function public.prevent_user_delete_with_avatar() from public, anon, authenticated;
+revoke execute on function public.cleanup_avatar_after_user_delete() from public, anon, authenticated;
 
-create trigger trg_users_avatar_guard
-  before delete on auth.users
-  for each row execute function public.prevent_user_delete_with_avatar();
+create trigger trg_users_avatar_cleanup
+  after delete on auth.users
+  for each row execute function public.cleanup_avatar_after_user_delete();

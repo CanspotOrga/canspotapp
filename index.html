@@ -8830,11 +8830,11 @@ function resetDeleteFeedbackForm(){
    RPC delete_my_account() (SECURITY DEFINER, nur für authenticated) löscht
    ausschließlich das Konto von auth.uid() samt aller Nutzerdaten per CASCADE
    und speichert den Löschgrund ohne Personenbezug in
-   account_deletion_feedback. Das Profilbild liegt in Storage, hängt nicht
-   per CASCADE am Konto und wird deshalb vorher über die Storage-API
-   entfernt (ein fehlendes Bild ist kein Fehler); delete_my_account() bricht
-   ab, solange es noch existiert. Danach werden auch die nur lokal
-   gespeicherten Profilangaben auf diesem Gerät entfernt. */
+   account_deletion_feedback. Das Profilbild liegt in Storage und hängt
+   nicht per CASCADE am Konto: Die App entfernt es vorher selbst über die
+   Storage-API; klappt das nicht, räumt der Datenbank-Auslöser nach dem
+   Löschen des Kontos auf (Edge Function avatar-cleanup). Danach werden auch
+   die nur lokal gespeicherten Profilangaben auf diesem Gerät entfernt. */
 const deleteFeedbackButtons = [document.getElementById("skipDeleteFeedbackBtn"), document.getElementById("confirmDeleteFeedbackBtn")];
 async function finalizeAccountDeletion(reason){
   if(!supabaseClient || !currentUser){
@@ -8846,10 +8846,8 @@ async function finalizeAccountDeletion(reason){
   deleteFeedbackButtons.forEach(b=>b.disabled = true);
   let error = null;
   try{
-    ({ error } = await supabaseClient.storage.from(AVATAR_BUCKET).remove([avatarPath(currentUser.id)]));
-    if(!error){
-      ({ error } = await supabaseClient.rpc("delete_my_account", { p_reason: reason || null, p_note: note || null }));
-    }
+    try{ await supabaseClient.storage.from(AVATAR_BUCKET).remove([avatarPath(currentUser.id)]); }catch(e){}
+    ({ error } = await supabaseClient.rpc("delete_my_account", { p_reason: reason || null, p_note: note || null }));
   }catch(err){
     error = err;
   }
