@@ -1885,14 +1885,14 @@ cursor:pointer
 display:grid;
 grid-template-columns:auto minmax(0,1fr);
 align-items:start;
-column-gap:12px;
-row-gap:8px;
-margin-top:6px
+column-gap:16px;
+row-gap:10px;
+margin-top:22px
 }
 
 .profile-avatar{
-width:52px;
-height:52px;
+width:76px;
+height:76px;
 border-radius:50%;
 background:var(--brand-primary-blue);
 color:#fff;
@@ -1900,16 +1900,16 @@ display:flex;
 align-items:center;
 justify-content:center;
 font-weight:900;
-font-size:17px;
+font-size:26px;
 flex-shrink:0
 }
 
 .profile-fields{
 display:flex;
 flex-direction:column;
-gap:2px;
+gap:4px;
 min-width:0;
-padding-top:4px
+padding-top:12px
 }
 
 
@@ -2055,9 +2055,9 @@ margin-top:6px
 .auth-guest p{margin:4px 0 0;font-size:12.5px;color:var(--text-muted)}
 .auth-guest .sheet-btn{margin-top:14px}
 .profile-head[hidden],.auth-guest[hidden],.auth-msg[hidden],.auth-field[hidden],.auth-link[hidden]{display:none}
-.profile-account-email{font-size:12.5px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.profile-username{font-size:19px;font-weight:900;letter-spacing:-.01em;line-height:1.2;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.profile-username-set{align-self:flex-start;border:0;background:none;padding:0;color:var(--brand-primary-blue);font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.profile-account-email{font-size:14.5px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-username{font-size:24px;font-weight:900;letter-spacing:-.01em;line-height:1.2;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-username-set{align-self:flex-start;border:0;background:none;padding:0;color:var(--brand-primary-blue);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}
 .profile-username-set[hidden],.profile-username[hidden]{display:none}
 .auth-tabs{display:flex;gap:8px;margin:6px 0 18px}
 .auth-tab{
@@ -3157,8 +3157,8 @@ overflow:hidden
 position:absolute;
 bottom:-2px;
 right:-2px;
-width:22px;
-height:22px;
+width:28px;
+height:28px;
 border-radius:50%;
 background:var(--bg-surface);
 border:2px solid var(--bg-surface-elevated);
@@ -3171,6 +3171,7 @@ color:var(--brand-primary-blue);
 cursor:pointer;
 padding:0
 }
+.avatar-edit-badge .icon{width:14px;height:14px}
 .field-mini-label{
 font-size:10px;
 font-weight:800;
