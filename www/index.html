@@ -4519,19 +4519,18 @@ padding:10px
    bestehenden Design-Tokens - keine neuen Farben. Rabatte nutzen überall
    die originale .saving-percent-Gestaltung (--status-success-bg/-text). */
 
-/* Kopf: größeres Logo, Slogan in einer Zeile. Die Schriftgröße wächst mit
-   der Breite, damit der Slogan auch auf schmalen Handys in eine Zeile passt
-   (max. 20px). "Nicht der Preis." in Markenhellblau. */
+/* Kopf: größeres Logo, Slogan weiß in einer Zeile. Die Schriftgröße wächst
+   mit der Breite und ist so bemessen, dass der Slogan links vom Burger-Menü
+   endet (36px Seitenränder + 50px für Button und Abstand, max. 19px). */
 .brand svg{height:48px}
 .headline{
 margin:12px 0 2px;
 white-space:nowrap;
-font-size:min(20px,calc((100vw - 36px) * .0516));
+font-size:min(19px,calc((100vw - 86px) * .054));
 line-height:1.2;
 font-weight:800;
 letter-spacing:-.02em
 }
-.headline-2{color:#7092c5}
 .hero-search-sticky{padding:12px 18px 14px}
 .hero-search-sticky.is-stuck{padding-top:calc(12px + env(safe-area-inset-top))}
 .search{padding:0 6px 0 13px;gap:2px}
