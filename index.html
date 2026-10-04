@@ -3800,7 +3800,7 @@ pointer-events:none
 0%,62%{transform:translateX(0) skewX(-18deg)}
 100%{transform:translateX(425%) skewX(-18deg)}
 }
-/* App-Kachel im Teaser: Rakete schwebt schräg nach oben, aus der Düse
+/* Rakete im Teaser (ohne Kasten): schwebt schräg nach oben, aus der Düse
    steigen kleine Abgaswölkchen auf (nur transform/opacity). */
 .hero-soon-icon{
 position:relative;
@@ -3809,24 +3809,20 @@ height:30px;
 flex-shrink:0;
 display:flex;
 align-items:center;
-justify-content:center;
-overflow:hidden;
-border-radius:9px;
-background:linear-gradient(145deg,#4b80d1 0%,#3363ac 55%,#264a86 100%);
-box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 2px 6px rgba(10,16,40,.35)
+justify-content:center
 }
 .hero-soon-icon .icon{
 position:relative;
-width:15px;
-height:15px;
+width:19px;
+height:19px;
 color:#fff;
 animation:heroSoonRocket 2.4s ease-in-out infinite;
 will-change:transform
 }
 .hero-soon-puff{
 position:absolute;
-left:10px;
-top:18px;
+left:9px;
+top:19px;
 width:3px;
 height:3px;
 border-radius:50%;
@@ -4042,30 +4038,29 @@ will-change:transform;
 -webkit-backface-visibility:hidden;
 backface-visibility:hidden
 }
-/* Dasselbe Produktbild groß, weich und halbtransparent dahinter (statisch):
-   färbt die Bühne in den Farben der Dose. Klein weichgezeichnet und
-   hochskaliert, die Unschärfe wird nur einmal berechnet. */
+/* Farbschein dahinter: das Produktbild, einmalig winzig in ein Canvas
+   gerechnet und weichgezeichnet (npPaintGlow), hier nur vergrößert
+   angezeigt. Bewusst ohne CSS-Filter und ohne eigene Grafikebene: Safari
+   würde einen Filter sonst bei jedem Bild der Dosen-Animation neu rechnen. */
 .np-media .np-media-bg{
 position:absolute;
 left:50%;
 top:50%;
-height:54px;
-max-width:none;
+width:240px;
+height:240px;
+margin:-120px 0 0 -120px;
 z-index:-1;
 pointer-events:none;
-opacity:.3;
--webkit-filter:blur(7px) saturate(1.3);
-filter:blur(7px) saturate(1.3);
-transform:translate(-50%,-50%) scale(4.3);
-animation:none;
-will-change:auto
+opacity:.5
 }
-:root[data-theme="dark"] .np-media .np-media-bg{opacity:.38}
+:root[data-theme="dark"] .np-media .np-media-bg{opacity:.62}
 /* jede zweite Karte versetzt, damit nichts im Gleichtakt läuft */
 .np-card:nth-child(2n) .np-media img{animation-delay:-4s}
+/* rotate(.01deg) verhindert, dass Browser die Position auf ganze Pixel
+   runden (sonst ruckelt eine langsame Bewegung sichtbar in Stufen) */
 @keyframes npFloat{
-0%,100%{transform:translate3d(0,2px,0)}
-50%{transform:translate3d(0,-4px,0)}
+0%,100%{transform:translate3d(0,2px,0) rotate(.01deg)}
+50%{transform:translate3d(0,-4px,0) rotate(.01deg)}
 }
 /* Karten außerhalb des sichtbaren Bereichs pausieren (npWatchMotion) */
 .np-media.np-idle img{animation-play-state:paused}
@@ -8901,7 +8896,7 @@ function renderNewPane(){
       <div class="np-media" ${openAttrs}>
         <span class="np-badge">Neu</span>
         <button class="np-fav${fav ? " active" : ""}" data-np-fav="${escapeHtml(key)}" data-np-name="${escapeHtml(p.name)}" aria-label="${fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}"><svg class="icon"><use href="#i-heart"/></svg></button>
-        ${p.img ? `<img class="np-media-bg" src="${escapeHtml(p.img)}" alt="" aria-hidden="true" loading="lazy" referrerpolicy="no-referrer">` : ""}
+        ${p.img ? `<canvas class="np-media-bg" width="16" height="16" aria-hidden="true"></canvas>` : ""}
         <img src="${escapeHtml(p.img || FALLBACK_IMG)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
       </div>
       <div class="np-body">
@@ -8961,7 +8956,7 @@ function renderSoonPane(){
           <div class="np-media" data-np-open="${escapeHtml(d.productId)}" data-np-deal="${escapeHtml(d.id)}">
             <span class="np-badge"><svg class="icon"><use href="#i-rocket"/></svg>Startet bald</span>
             <button class="np-fav${fav ? " active" : ""}" data-np-fav="${escapeHtml(key)}" data-np-name="${escapeHtml(d.product)}" aria-label="${fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}"><svg class="icon"><use href="#i-heart"/></svg></button>
-            ${d.img ? `<img class="np-media-bg" src="${escapeHtml(d.img)}" alt="" aria-hidden="true" loading="lazy" referrerpolicy="no-referrer">` : ""}
+            ${d.img ? `<canvas class="np-media-bg" width="16" height="16" aria-hidden="true"></canvas>` : ""}
             <img src="${escapeHtml(d.img || FALLBACK_IMG)}" alt="${escapeHtml(d.product)}" loading="lazy" referrerpolicy="no-referrer">
           </div>
           <div class="np-body">
@@ -8997,11 +8992,45 @@ function renderSoonPane(){
 function npBindImages(container){
   container.querySelectorAll("img").forEach(img=>{
     img.addEventListener("error", function(){
-      /* Hintergrundkopie ohne echtes Bild weglassen statt Platzhalter zu zeigen */
-      if(img.classList.contains("np-media-bg")) return img.remove();
+      /* ohne echtes Produktbild kein Farbschein */
+      const glow = img.parentNode && img.parentNode.querySelector(".np-media-bg");
+      if(glow) glow.remove();
       this.src = img.classList.contains("store-logo") ? STORE_FALLBACK_IMG : FALLBACK_IMG;
     }, {once:true});
   });
+  container.querySelectorAll(".np-media-bg").forEach(canvas=>{
+    const img = canvas.parentNode.querySelector("img");
+    if(!img) return;
+    if(img.complete && img.naturalWidth) npPaintGlow(canvas, img);
+    else img.addEventListener("load", ()=>{ if(canvas.isConnected) npPaintGlow(canvas, img); }, {once:true});
+  });
+}
+
+/* Farbschein: Produktbild mittig klein (16x16) zeichnen und mit zwei
+   Box-Blur-Durchgängen weich rechnen (je 9 versetzte Kopien, Summe per
+   "lighter" mit 1/9 Deckkraft = Mittelwert). Einmal pro Bild, danach
+   kostet die Anzeige nichts mehr. Pixel werden nie ausgelesen, daher
+   funktioniert es auch mit Bildern fremder Server. */
+function npPaintGlow(canvas, img){
+  const ctx = canvas.getContext("2d");
+  if(!ctx || !img.naturalWidth || !img.naturalHeight) return;
+  const S = canvas.width;
+  /* etwas in die Breite gezogen: es zählt die Farbe, nicht die Form */
+  const h = S * .7;
+  const w = Math.min(S * .6, h * img.naturalWidth / img.naturalHeight * 1.8);
+  const tmp = document.createElement("canvas");
+  tmp.width = tmp.height = S;
+  const t = tmp.getContext("2d");
+  t.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+  for(let pass = 0; pass < 2; pass++){
+    ctx.clearRect(0, 0, S, S);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 1 / 9;
+    for(let dx = -1; dx <= 1; dx++) for(let dy = -1; dy <= 1; dy++) ctx.drawImage(tmp, dx, dy);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    if(pass === 0){ t.clearRect(0, 0, S, S); t.drawImage(canvas, 0, 0); }
+  }
 }
 
 /* Animationen nur für sichtbare Karten laufen lassen, spart Rechenzeit
