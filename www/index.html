@@ -3947,10 +3947,8 @@ font-weight:800;
 letter-spacing:-.03em;
 color:var(--text-primary)
 }
-.np-h1 span{color:var(--brand-primary-blue)}
 .np-lead{font-size:12.5px;line-height:1.45;color:var(--text-muted)}
-:root[data-theme="dark"] .np-eyebrow,
-:root[data-theme="dark"] .np-h1 span{color:var(--brand-primary-light)}
+:root[data-theme="dark"] .np-eyebrow{color:var(--brand-primary-light)}
 .np-chips{
 display:flex;
 gap:8px;
@@ -8902,7 +8900,7 @@ function renderNewPane(){
   pane.innerHTML = `
     <div class="np-intro">
       <div class="np-eyebrow">Neuheiten</div>
-      <h1 class="np-h1">Frisch im Regal<span>.</span></h1>
+      <h1 class="np-h1">Frisch im Regal</h1>
       <div class="np-lead">Neue Energy-Drink-Sorten entdecken und Angebote in deiner Nähe vergleichen.</div>
     </div>
     ${brands.length > 1 ? `<div class="np-chips">${["Alle", ...brands].map(b=>`<button class="chip${b===npBrand ? " on" : ""}" data-np-brand="${escapeHtml(b)}">${b==="Alle" ? "Alle Marken" : escapeHtml(b)}</button>`).join("")}</div>` : ""}
