@@ -3252,6 +3252,65 @@ font-family:inherit
 .avatar-remove-link:hover{color:var(--status-error-text)}
 .avatar-edit-badge:disabled,.avatar-remove-link:disabled{opacity:.5;cursor:default}
 
+/* Profilbild zuschneiden: quadratische Fläche, der Kreis zeigt den späteren
+   Ausschnitt, außerhalb abgedunkelt. Ziehen verschiebt, Zwei-Finger-Geste,
+   Mausrad oder Regler zoomen. */
+.avatar-crop-stage{
+position:relative;
+width:min(100%,300px);
+aspect-ratio:1/1;
+margin:18px auto 0;
+overflow:hidden;
+border-radius:var(--radius-lg);
+background:#0b0f1f;
+touch-action:none;
+-webkit-user-select:none;
+user-select:none;
+cursor:grab
+}
+.avatar-crop-stage.dragging{cursor:grabbing}
+.avatar-crop-stage img{
+position:absolute;
+left:0;
+top:0;
+max-width:none;
+transform-origin:0 0;
+pointer-events:none;
+-webkit-user-drag:none
+}
+.avatar-crop-stage::after{
+content:"";
+position:absolute;
+inset:0;
+border-radius:50%;
+border:2px solid rgba(255,255,255,.85);
+box-shadow:0 0 0 9999px rgba(11,15,31,.6);
+pointer-events:none
+}
+.avatar-crop-zoom{
+display:flex;
+align-items:center;
+gap:10px;
+width:min(100%,300px);
+margin:18px auto 0
+}
+.avatar-crop-zoom-btn{
+width:32px;
+height:32px;
+flex-shrink:0;
+border-radius:50%;
+border:1px solid var(--border-subtle);
+background:var(--bg-surface-sunken);
+color:var(--text-primary);
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+padding:0
+}
+.avatar-crop-actions{display:flex;gap:10px;margin-top:22px}
+.avatar-crop-actions .sheet-btn{margin-top:0}
+
 .notif-hint{
 margin-top:14px;
 background:var(--status-info-bg);
@@ -4073,9 +4132,9 @@ pointer-events:none
 .np-mark-bg{
 position:absolute;
 top:50%;
-right:82px;
-width:62px;
-margin-top:-45px;
+right:86px;
+width:48px;
+margin-top:-35px;
 opacity:.36;
 animation:npMarkFloat 8s ease-in-out infinite;
 pointer-events:none
@@ -4185,24 +4244,6 @@ animation:npBlast 6s ease-out infinite
 0%,40%,80%,100%{opacity:0;transform:scale(.4)}
 50%{opacity:1;transform:scale(1.2)}
 }
-.np-spark{
-position:absolute;
-width:9px;
-height:9px;
-background:#fff;
--webkit-clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);
-clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);
-opacity:0;
-animation:npTwinkle 2.4s ease-in-out infinite
-}
-.np-spark.k1{left:8px;top:12px}
-.np-spark.k2{right:8px;top:8px;width:7px;height:7px;animation-delay:.7s}
-.np-spark.k3{left:30px;bottom:12px;width:6px;height:6px;animation-delay:1.4s}
-.np-spark.k4{right:4px;bottom:22px;width:8px;height:8px;animation-delay:1.9s}
-@keyframes npTwinkle{
-0%,100%{opacity:0;transform:scale(.2) rotate(0deg)}
-50%{opacity:.9;transform:scale(1) rotate(45deg)}
-}
 
 .np-section-head{
 display:flex;
@@ -4220,8 +4261,8 @@ padding:20px 18px 0
 .np-count{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
 
 @media (prefers-reduced-motion:reduce){
-.np-hero::after,.np-fizz span,.np-rocket,.np-rocket-body,.np-flame,.np-blast,.np-spark,.np-rocket::after,.np-mark-bg,.np-mark-bg::before{animation:none}
-.np-fizz,.np-blast,.np-spark{display:none}
+.np-hero::after,.np-fizz span,.np-rocket,.np-rocket-body,.np-flame,.np-blast,.np-rocket::after,.np-mark-bg,.np-mark-bg::before{animation:none}
+.np-fizz,.np-blast{display:none}
 .np-page,.np-page.open,.np-pane,.np-page.open .np-pane{transition:none}
 .np-page{-webkit-clip-path:none;clip-path:none}
 }
@@ -5231,6 +5272,30 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <button type="button" class="auth-link" id="authForgotBtn">Passwort vergessen?</button>
 <button type="button" class="auth-link" id="authBackBtn" hidden>Zurück zur Anmeldung</button>
 <div class="auth-legal" id="authLegal" hidden>Mit der Registrierung legst du ein CanSpot-Konto an. Dafür speichern wir deinen Nutzernamen, deine E-Mail-Adresse und dein Passwort (nie im Klartext). Mehr dazu in der <a href="datenschutz.html#konto">Datenschutzerklärung</a>. Es gelten die <a href="impressum.html#nutzung">Nutzungsbedingungen</a>.</div>
+</div>
+</div>
+</div>
+
+<!-- PROFILBILD ZUSCHNEIDEN (nach der Bildauswahl in "Mein Bereich") -->
+<div class="overlay" id="avatarCropOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="avatarCropOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2>Profilbild anpassen</h2>
+<div class="desc">Verschiebe das Bild und zoome, bis der Ausschnitt im Kreis passt.</div>
+<div class="avatar-crop-stage" id="avatarCropStage">
+<img id="avatarCropImg" alt="" draggable="false">
+</div>
+<div class="avatar-crop-zoom">
+<button type="button" class="avatar-crop-zoom-btn" id="avatarCropZoomOut" aria-label="Verkleinern"><svg class="icon icon-md" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+<input type="range" id="avatarCropZoom" min="1" max="4" step="0.01" value="1" aria-label="Zoom">
+<button type="button" class="avatar-crop-zoom-btn" id="avatarCropZoomIn" aria-label="Vergrößern"><svg class="icon icon-md" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+</div>
+<div class="avatar-crop-actions">
+<button class="sheet-btn sheet-btn-secondary" data-close="avatarCropOverlay">Abbrechen</button>
+<button class="sheet-btn" id="avatarCropSaveBtn">Speichern</button>
+</div>
 </div>
 </div>
 </div>
@@ -8802,7 +8867,6 @@ function renderSoonPane(){
       <div class="np-mark-bg" aria-hidden="true">${NP_MARK}</div>
       <div class="np-fizz" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
       <div class="np-launch" aria-hidden="true">
-        <span class="np-spark k1"></span><span class="np-spark k2"></span><span class="np-spark k3"></span><span class="np-spark k4"></span>
         <span class="np-blast"></span>
         <div class="np-rocket"><div class="np-rocket-body">${NP_ROCKET}</div></div>
       </div>
