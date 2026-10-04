@@ -243,11 +243,19 @@ create table public.profiles (
       username ~ '^[A-Za-z0-9_]{3,20}$'
       and lower(username) not in ('admin','administrator','canspot','support','moderator','root','system')
     )
+  ),
+  constraint profiles_first_name_format check (
+    first_name is null or (char_length(first_name) between 1 and 50 and first_name !~ '[[:cntrl:]]' and first_name = btrim(first_name))
+  ),
+  constraint profiles_last_name_format check (
+    last_name is null or (char_length(last_name) between 1 and 50 and last_name !~ '[[:cntrl:]]' and last_name = btrim(last_name))
   )
 );
 create unique index profiles_username_lower_key on public.profiles (lower(username));
 comment on column public.profiles.username is 'Nutzername, 3-20 Zeichen (A-Z, a-z, 0-9, _), eindeutig ohne Ruecksicht auf Gross-/Kleinschreibung. Wird bei der Registrierung aus raw_user_meta_data.username gesetzt (handle_new_user). NULL nur bei Konten von vor dieser Spalte; die App fordert dann einen an.';
-comment on table public.profiles is 'Persoenliche Profildaten (Name/Geburtsdatum/Adresse/Avatar), 1:1 zu auth.users. Entspricht canspot-firstname/-lastname/-birthdate/-address/-avatar in localStorage.';
+comment on column public.profiles.first_name is 'Ungenutzt: Die App zeigt nur den Nutzernamen. Falls befuellt: 1-50 Zeichen ohne Steuerzeichen, nur fuer den Besitzer sichtbar (RLS).';
+comment on column public.profiles.last_name is 'Ungenutzt: Die App zeigt nur den Nutzernamen. Falls befuellt: 1-50 Zeichen ohne Steuerzeichen, nur fuer den Besitzer sichtbar (RLS).';
+comment on table public.profiles is 'Profildaten, 1:1 zu auth.users. Genutzt wird nur username (nur fuer den Besitzer sichtbar). first_name, last_name, birthdate, street, postal_code, city, country und avatar_url sind ungenutzt: Es gibt keinen Vor-/Nachnamen, Geburtsdatum und Adresse bleiben lokal auf dem Geraet, das Profilbild liegt im Bucket avatars.';
 
 create trigger trg_profiles_updated_at
   before update on public.profiles

@@ -1909,18 +1909,6 @@ gap:6px;
 min-width:0
 }
 
-/* Name bleibt als reiner Anzeigetext direkt in "Mein Bereich" sichtbar -
-   das Bearbeiten von Name/E-Mail liegt jetzt unter "Konto verwalten"
-   (siehe dortiger Abschnitt "Persönliche Daten"). */
-.profile-name-display{
-font-size:16.5px;
-font-weight:800;
-color:var(--text-primary);
-overflow:hidden;
-text-overflow:ellipsis;
-white-space:nowrap
-}
-.profile-name-display.placeholder-text{color:var(--text-disabled);font-weight:600}
 
 .profile-input{
 border:1px solid var(--border-default);
@@ -2065,9 +2053,9 @@ margin-top:6px
 .auth-guest .sheet-btn{margin-top:14px}
 .profile-head[hidden],.auth-guest[hidden],.auth-msg[hidden],.auth-field[hidden],.auth-link[hidden]{display:none}
 .profile-account-email{font-size:12.5px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.profile-username{font-size:13px;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-username{font-size:16.5px;font-weight:800;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .profile-username-set{align-self:flex-start;border:0;background:none;padding:0;color:var(--brand-primary-blue);font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
-.profile-username-set[hidden],.profile-username[hidden],.profile-name-display[hidden]{display:none}
+.profile-username-set[hidden],.profile-username[hidden]{display:none}
 .auth-tabs{display:flex;gap:8px;margin:6px 0 18px}
 .auth-tab{
 flex:1;
@@ -4569,7 +4557,6 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <input type="file" accept="image/*" id="avatarFileInput" style="display:none">
 </div>
 <div class="profile-fields">
-<div class="profile-name-display" id="profileNameText" hidden></div>
 <div class="profile-username" id="profileUsername" hidden></div>
 <button type="button" class="profile-username-set" id="profileUsernameSetBtn" hidden>Nutzername festlegen</button>
 <div class="profile-account-email" id="profileAccountEmail"></div>
@@ -4637,23 +4624,9 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <button class="sheet-close" data-close="accountManageOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
 <div class="handle"></div>
 <h2>Konto verwalten</h2>
-<div class="desc">Deine E-Mail-Adresse und dein Profilbild gehören zu deinem Konto. Das Profilbild kannst nur du sehen. Name und Geburtsdatum werden nur auf diesem Gerät gespeichert und nicht übertragen.</div>
+<div class="desc">Dein Nutzername, deine E-Mail-Adresse und dein Profilbild gehören zu deinem Konto. Das Profilbild kannst nur du sehen. Dein Geburtsdatum wird nur auf diesem Gerät gespeichert und nicht übertragen.</div>
 
 <div class="field-label" style="margin-top:22px">Persönliche Daten</div>
-<div class="field-block" id="nameBlock">
-<div class="field-mini-label">Name</div>
-<div class="field-view" data-edit="name">
-<span id="profileNameFieldText" class="placeholder-text">Name eingeben</span>
-<button class="field-edit-btn" data-edit="name" aria-label="Name bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
-</div>
-<div class="field-edit-row stacked" id="nameEditRow" style="display:none">
-<div class="field-edit-row-inline even">
-<input class="profile-input" id="profileFirstName" type="text" placeholder="Vorname eingeben">
-<input class="profile-input" id="profileLastName" type="text" placeholder="Nachname eingeben">
-</div>
-<button class="btn primary field-save-btn" data-save="name">Speichern</button>
-</div>
-</div>
 <div class="field-block" id="usernameBlock">
 <div class="field-mini-label">Nutzername</div>
 <!-- Nur Anzeige: kommt aus public.profiles.username (loadMyProfile()). -->
@@ -5340,7 +5313,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
    Der "Publishable"/"anon"-Key ist bewusst ÖFFENTLICH in Client-Code
    aufrufbar - er dient nur der Projekt-Identifikation, der eigentliche
    Datenzugriff wird ausschließlich durch die RLS-Policies + GRANTs aus
-   supabase/schema.sql eingeschränkt (nur lesender Zugriff auf die 8
+   supabase/sql/schema.sql eingeschränkt (nur lesender Zugriff auf die 8
    öffentlichen Stammdaten-Tabellen, siehe dortiger Abschnitt 8/9). Der
    geheime "service_role"-Key darf NIEMALS hier oder sonstwo im Client-Code
    stehen - er würde jede RLS-Regel umgehen und gehört ausschließlich in eine
@@ -8505,6 +8478,7 @@ function applyUsername(name){
   /* Nur anbieten, wenn das Profil geladen ist und wirklich keiner existiert. */
   document.getElementById("profileUsernameSetBtn").hidden = !(loggedIn && !hasName && profileLoadedFor === currentUser.id);
   document.getElementById("profileUsernameText").textContent = hasName ? "@" + currentUsername : "–";
+  updateAvatarInitials();
 }
 
 /* Liest den eigenen Nutzernamen aus public.profiles (RLS: nur die eigene
@@ -8872,18 +8846,14 @@ async function finalizeAccountDeletion(reason){
   showToast(reason ? "Dein Konto ist gelöscht. Danke für dein Feedback!" : "Dein Konto ist gelöscht.");
 }
 
-/* Entfernt die nur lokal gespeicherten Profilangaben (Name, Geburtsdatum,
-   Adresse) und setzt ihre Anzeige zurück. Das Profilbild gehört zum Konto
-   (siehe PROFILBILD) und verschwindet mit applyAuthState(null). Favoriten,
-   Alarme, Bewertungen und Einstellungen funktionieren auch ohne Konto und
-   bleiben. */
+/* Entfernt die nur lokal gespeicherten Profilangaben (Geburtsdatum,
+   Adresse) und setzt ihre Anzeige zurück. Nutzername und Profilbild gehören
+   zum Konto und verschwinden mit applyAuthState(null). Favoriten, Alarme,
+   Bewertungen und Einstellungen funktionieren auch ohne Konto und bleiben. */
 function clearLocalProfileData(){
-  ["canspot-firstname","canspot-lastname","canspot-birthdate","canspot-address"].forEach(key=>{
+  ["canspot-birthdate","canspot-address"].forEach(key=>{
     try{ localStorage.removeItem(key); }catch(e){}
   });
-  profileFirstNameInput.value = "";
-  profileLastNameInput.value = "";
-  updateNameDisplays();
   document.getElementById("profileBirthdate").value = "";
   const profileBirthdateText = document.getElementById("profileBirthdateText");
   profileBirthdateText.textContent = "TT.MM.JJJJ";
@@ -8903,54 +8873,22 @@ document.getElementById("confirmDeleteFeedbackBtn").addEventListener("click", ()
   finalizeAccountDeletion(deleteFeedbackReason);
 });
 
-function updateAvatarInitials(name){
-  /* Über einem Profilbild keine Initialen einblenden. */
+/* Ohne Profilbild zeigt der Kreis den ersten Buchstaben des Nutzernamens. */
+function updateAvatarInitials(){
   if(avatarObjectUrl) return;
-  const initials = name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("") || "?";
-  document.getElementById("profileAvatar").textContent = initials;
+  const first = currentUsername && currentUsername.match(/[A-Za-z0-9]/);
+  document.getElementById("profileAvatar").textContent = first ? first[0].toUpperCase() : "?";
 }
 
-const profileFirstNameInput = document.getElementById("profileFirstName");
-const profileLastNameInput = document.getElementById("profileLastName");
-/* Der Name wird an zwei Stellen angezeigt: als reiner Anzeigetext direkt in
-   "Mein Bereich" (profileNameText) und als aktueller Wert im bearbeitbaren
-   Feld unter "Konto verwalten" (profileNameFieldText) - beide werden beim
-   Laden/Speichern synchron gehalten. Vorname/Nachname sind zwei getrennte
-   Eingabefelder, aber weiterhin EIN gemeinsamer Anzeigewert (wie bisher). */
-const profileNameText = document.getElementById("profileNameText");
-const profileNameFieldText = document.getElementById("profileNameFieldText");
+/* Vor- und Nachname gibt es nicht mehr; angezeigt wird der Nutzername.
+   Früher lokal gespeicherte Namen werden entfernt (Datenminimierung). */
+["canspot-firstname","canspot-lastname"].forEach(key=>{
+  try{ localStorage.removeItem(key); }catch(e){}
+});
 
-function getFullName(){
-  return [profileFirstNameInput.value.trim(), profileLastNameInput.value.trim()].filter(Boolean).join(" ");
-}
-
-/* Zeigt den Namen an beiden Stellen an - oder, solange nichts eingetragen
-   ist, einen dezenten Platzhaltertext statt erfundener Beispieldaten (siehe
-   Anfrage). updateAvatarInitials() bekommt bewusst den ECHTEN Namen
-   (getFullName(), ggf. leer) übergeben, nicht den ggf. als Platzhalter
-   angezeigten Text - sonst würden aus "Name eingeben" fälschlich Initialen
-   "NE" berechnet. */
-function updateNameDisplays(){
-  const full = getFullName();
-  const hasName = full.length > 0;
-  const label = hasName ? full : "Name eingeben";
-  /* Oben in "Mein Bereich" ohne Namen keine Zeile (dort nicht anklickbar),
-     der Platzhalter steht nur im Bearbeiten-Feld unter "Konto verwalten". */
-  profileNameText.textContent = full;
-  profileNameText.hidden = !hasName;
-  profileNameFieldText.textContent = label;
-  profileNameFieldText.classList.toggle("placeholder-text", !hasName);
-  updateAvatarInitials(full);
-}
-
-const savedFirstName = localStorage.getItem("canspot-firstname");
-const savedLastName = localStorage.getItem("canspot-lastname");
 const savedBirthdate = localStorage.getItem("canspot-birthdate");
 let savedAddress = null;
 try{ savedAddress = JSON.parse(localStorage.getItem("canspot-address") || "null"); }catch(e){ savedAddress = null; }
-if(savedFirstName) profileFirstNameInput.value = savedFirstName;
-if(savedLastName) profileLastNameInput.value = savedLastName;
-updateNameDisplays();
 /* Die E-Mail-Adresse kommt jetzt aus dem Konto (applyAuthState()). Eine
    früher nur lokal eingetragene Adresse wird nicht mehr gebraucht und
    deshalb entfernt (Datenminimierung). */
@@ -8979,7 +8917,7 @@ function setFieldEditing(field, editing){
   document.getElementById(`${field}EditRow`).style.display = editing ? "flex" : "none";
 }
 
-const FIELD_FOCUS_TARGET = {name:"profileFirstName", birthdate:"profileBirthdate", address:"profileStreet"};
+const FIELD_FOCUS_TARGET = {birthdate:"profileBirthdate", address:"profileStreet"};
 document.querySelectorAll("[data-edit]").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const field = btn.dataset.edit;
@@ -8988,7 +8926,7 @@ document.querySelectorAll("[data-edit]").forEach(btn=>{
   });
 });
 
-/* Ein aufgeklapptes Bearbeiten-Feld (Name/Geburtsdatum/Adresse)
+/* Ein aufgeklapptes Bearbeiten-Feld (Geburtsdatum/Adresse)
    klappt automatisch wieder ein, sobald irgendwo anders im Fenster getippt wird. Klicks INNERHALB des jeweiligen
    .field-block (Stift, Eingabefelder, Speichern-Button) lösen das bewusst
    NICHT aus, deren eigene Handler (s.o./[data-save]) kümmern sich darum. */
@@ -9005,15 +8943,7 @@ document.getElementById("accountManageOverlay").addEventListener("click", (e)=>{
 document.querySelectorAll("[data-save]").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const field = btn.dataset.save;
-    if(field==="name"){
-      const first = profileFirstNameInput.value.trim();
-      const last = profileLastNameInput.value.trim();
-      if(!first && !last) return;
-      updateNameDisplays();
-      localStorage.setItem("canspot-firstname", first);
-      localStorage.setItem("canspot-lastname", last);
-      showToast("Name aktualisiert.");
-    } else if(field==="birthdate"){
+    if(field==="birthdate"){
       const val = document.getElementById("profileBirthdate").value;
       if(!val) return;
       const profileBirthdateText = document.getElementById("profileBirthdateText");
@@ -9068,7 +8998,7 @@ function applyAvatarPhoto(blob){
     avatarRemoveBtn.style.display = "block";
   } else {
     profileAvatarEl.style.backgroundImage = "";
-    updateAvatarInitials(getFullName());
+    updateAvatarInitials();
     avatarRemoveBtn.style.display = "none";
   }
 }
@@ -11248,7 +11178,7 @@ function applyLoadedData(products_, stores, offers){
 }
 
 /* Wandelt einen Supabase-Nährwerte-Datensatz (snake_case Spalten, siehe
-   supabase/schema.sql: product_nutrition/brand_nutrition_defaults) in die
+   supabase/sql/schema.sql: product_nutrition/brand_nutrition_defaults) in die
    von getNutritionPer100ml() erwartete Form um. */
 function mapNutritionRow(n){
   return {

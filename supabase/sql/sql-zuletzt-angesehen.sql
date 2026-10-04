@@ -1,5 +1,5 @@
 -- "Zuletzt angesehen": einmal komplett im Supabase SQL Editor ausführen.
--- Entspricht den recently_viewed-Abschnitten in supabase/schema.sql.
+-- Entspricht den recently_viewed-Abschnitten in supabase/sql/schema.sql.
 
 create table public.recently_viewed (
   user_id     uuid not null references auth.users(id) on delete cascade,
