@@ -8405,6 +8405,7 @@ function openSheet(id){
 function closeSheet(id){
   document.getElementById(id).classList.remove("open");
   updateBottomNavVisibility();
+  if(id==="avatarCropOverlay") resetAvatarCrop();
   if(id==="profileOverlay"){
     const profileTab = document.querySelector('.navitem[data-nav="profile"]');
     if(profileTab && profileTab.classList.contains("active")) setActiveNav("home");
@@ -9952,8 +9953,8 @@ document.querySelectorAll("[data-save]").forEach(btn=>{
 /* ---------------- PROFILBILD ----------------
    Das Profilbild gehört zum Konto: privater Storage-Bucket "avatars", genau
    eine Datei <user_id>/avatar.jpg, lesen/schreiben/löschen darf nur der
-   Besitzer (RLS). Die App verkleinert jedes Bild auf 160x160 Pixel und
-   speichert es neu als JPEG; dabei fallen Metadaten wie Aufnahmeort, Datum
+   Besitzer (RLS). Vor dem Hochladen wählt man Ausschnitt und Zoom; die App
+   speichert diesen Ausschnitt in 160x160 Pixeln neu als JPEG; dabei fallen Metadaten wie Aufnahmeort, Datum
    und Kamera weg. Auf dem Gerät liegt es nur im Arbeitsspeicher
    (Object-URL), nicht im lokalen Speicher. */
 
@@ -10011,30 +10012,175 @@ async function loadAvatar(){
   applyAvatarPhoto(result.data);
 }
 
-/* Schneidet das Bild quadratisch zu, verkleinert es auf 160x160 Pixel und
-   kodiert es neu als JPEG (ohne Metadaten). Transparente Flächen werden
-   weiß statt schwarz. */
-function resizeAvatarImage(file){
+/* ---------- Zuschneiden ----------
+   Nach der Auswahl öffnet sich #avatarCropOverlay. Zustand: Zoom (1 = Bild
+   füllt den Kreis gerade aus) und der Bildpunkt in der Mitte der Fläche (in
+   Originalpixeln). Die Anzeige wird daraus bei jeder Änderung neu berechnet,
+   passt also auch nach einer Größenänderung des Fensters. */
+const AVATAR_CROP_MAX_ZOOM = 4;
+const avatarCropStage = document.getElementById("avatarCropStage");
+const avatarCropImg = document.getElementById("avatarCropImg");
+const avatarCropZoom = document.getElementById("avatarCropZoom");
+const avatarCropSaveBtn = document.getElementById("avatarCropSaveBtn");
+let avatarCrop = null; /* { url, w, h, zoom, cx, cy } */
+const avatarCropPointers = new Map();
+let avatarCropPinch = null;
+
+function loadAvatarSource(file){
   return new Promise((resolve, reject)=>{
-    const srcUrl = URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = ()=>{
-      URL.revokeObjectURL(srcUrl);
-      const canvas = document.createElement("canvas");
-      canvas.width = AVATAR_SIZE; canvas.height = AVATAR_SIZE;
-      const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, AVATAR_SIZE, AVATAR_SIZE);
-      const scale = Math.max(AVATAR_SIZE/img.width, AVATAR_SIZE/img.height);
-      const w = img.width*scale, h = img.height*scale;
-      ctx.drawImage(img, (AVATAR_SIZE-w)/2, (AVATAR_SIZE-h)/2, w, h);
-      canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error("encode")), "image/jpeg", 0.85);
-    };
-    img.onerror = ()=>{
-      URL.revokeObjectURL(srcUrl);
+      if(img.naturalWidth && img.naturalHeight) return resolve({ url, img });
+      URL.revokeObjectURL(url);
       reject(new Error("decode"));
     };
-    img.src = srcUrl;
+    img.onerror = ()=>{
+      URL.revokeObjectURL(url);
+      reject(new Error("decode"));
+    };
+    img.src = url;
+  });
+}
+
+/* Seitenlänge der Fläche und Maßstab Originalpixel -> Bildschirmpixel */
+function avatarCropMetrics(){
+  const size = avatarCropStage.clientWidth || 1;
+  const scale = size / Math.min(avatarCrop.w, avatarCrop.h) * avatarCrop.zoom;
+  return { size, scale };
+}
+
+function renderAvatarCrop(){
+  if(!avatarCrop) return;
+  const c = avatarCrop;
+  c.zoom = Math.min(AVATAR_CROP_MAX_ZOOM, Math.max(1, c.zoom));
+  const { size, scale } = avatarCropMetrics();
+  /* Ausschnitt nie über den Bildrand hinaus */
+  const half = size / scale / 2;
+  c.cx = Math.min(c.w - half, Math.max(half, c.cx));
+  c.cy = Math.min(c.h - half, Math.max(half, c.cy));
+  const base = scale / c.zoom;
+  avatarCropImg.style.width = (c.w * base) + "px";
+  avatarCropImg.style.height = (c.h * base) + "px";
+  const x = size/2 - c.cx*scale, y = size/2 - c.cy*scale;
+  avatarCropImg.style.transform = `translate(${x}px,${y}px) scale(${c.zoom})`;
+  avatarCropZoom.value = c.zoom;
+}
+
+/* Zoomt so, dass der Bildpunkt unter (px, py) an derselben Stelle bleibt. */
+function zoomAvatarCropAt(newZoom, px, py){
+  if(!avatarCrop) return;
+  const c = avatarCrop;
+  const { size, scale } = avatarCropMetrics();
+  const ix = c.cx + (px - size/2)/scale, iy = c.cy + (py - size/2)/scale;
+  c.zoom = Math.min(AVATAR_CROP_MAX_ZOOM, Math.max(1, newZoom));
+  const newScale = avatarCropMetrics().scale;
+  c.cx = ix - (px - size/2)/newScale;
+  c.cy = iy - (py - size/2)/newScale;
+  renderAvatarCrop();
+}
+
+function zoomAvatarCropCenter(newZoom){
+  const size = avatarCropStage.clientWidth;
+  zoomAvatarCropAt(newZoom, size/2, size/2);
+}
+
+function avatarCropPoint(e){
+  const r = avatarCropStage.getBoundingClientRect();
+  const k = avatarCropStage.clientWidth / (r.width || 1);
+  return { x:(e.clientX - r.left)*k, y:(e.clientY - r.top)*k };
+}
+
+function openAvatarCrop(src){
+  resetAvatarCrop();
+  const w = src.img.naturalWidth, h = src.img.naturalHeight;
+  avatarCrop = { url:src.url, w, h, zoom:1, cx:w/2, cy:h/2 };
+  avatarCropImg.src = src.url;
+  avatarCropSaveBtn.disabled = false;
+  openSheet("avatarCropOverlay");
+  renderAvatarCrop();
+}
+
+/* Gibt das Originalbild wieder frei (Abbrechen, Schließen, nach dem
+   Speichern). Aufruf auch aus closeSheet(). */
+function resetAvatarCrop(){
+  if(avatarCrop) URL.revokeObjectURL(avatarCrop.url);
+  avatarCrop = null;
+  avatarCropPointers.clear();
+  avatarCropPinch = null;
+  avatarCropStage.classList.remove("dragging");
+  avatarCropImg.removeAttribute("src");
+}
+
+avatarCropStage.addEventListener("pointerdown", e=>{
+  if(!avatarCrop) return;
+  try{ avatarCropStage.setPointerCapture(e.pointerId); }catch(err){}
+  avatarCropPointers.set(e.pointerId, avatarCropPoint(e));
+  avatarCropPinch = null;
+  avatarCropStage.classList.add("dragging");
+});
+
+avatarCropStage.addEventListener("pointermove", e=>{
+  if(!avatarCrop || !avatarCropPointers.has(e.pointerId)) return;
+  const prev = avatarCropPointers.get(e.pointerId);
+  const p = avatarCropPoint(e);
+  avatarCropPointers.set(e.pointerId, p);
+  if(avatarCropPointers.size === 1){
+    const { scale } = avatarCropMetrics();
+    avatarCrop.cx -= (p.x - prev.x)/scale;
+    avatarCrop.cy -= (p.y - prev.y)/scale;
+    renderAvatarCrop();
+    return;
+  }
+  /* Zwei Finger: der Abstand ändert den Zoom, die Mitte verschiebt mit. */
+  const [a, b] = [...avatarCropPointers.values()];
+  const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+  const mid = { x:(a.x + b.x)/2, y:(a.y + b.y)/2 };
+  if(avatarCropPinch){
+    zoomAvatarCropAt(avatarCrop.zoom * dist/avatarCropPinch.dist, mid.x, mid.y);
+    const { scale } = avatarCropMetrics();
+    avatarCrop.cx -= (mid.x - avatarCropPinch.mid.x)/scale;
+    avatarCrop.cy -= (mid.y - avatarCropPinch.mid.y)/scale;
+    renderAvatarCrop();
+  }
+  avatarCropPinch = { dist, mid };
+});
+
+function endAvatarCropPointer(e){
+  avatarCropPointers.delete(e.pointerId);
+  avatarCropPinch = null;
+  if(!avatarCropPointers.size) avatarCropStage.classList.remove("dragging");
+}
+avatarCropStage.addEventListener("pointerup", endAvatarCropPointer);
+avatarCropStage.addEventListener("pointercancel", endAvatarCropPointer);
+
+avatarCropStage.addEventListener("wheel", e=>{
+  if(!avatarCrop) return;
+  e.preventDefault();
+  const p = avatarCropPoint(e);
+  zoomAvatarCropAt(avatarCrop.zoom * Math.exp(-e.deltaY * 0.002), p.x, p.y);
+}, { passive:false });
+
+avatarCropZoom.addEventListener("input", ()=> zoomAvatarCropCenter(parseFloat(avatarCropZoom.value)));
+document.getElementById("avatarCropZoomOut").addEventListener("click", ()=>{ if(avatarCrop) zoomAvatarCropCenter(avatarCrop.zoom - 0.25); });
+document.getElementById("avatarCropZoomIn").addEventListener("click", ()=>{ if(avatarCrop) zoomAvatarCropCenter(avatarCrop.zoom + 0.25); });
+window.addEventListener("resize", renderAvatarCrop);
+
+/* Zeichnet den Ausschnitt auf 160x160 Pixel und kodiert ihn neu als JPEG
+   (ohne Metadaten). Transparente Flächen werden weiß statt schwarz. */
+function renderAvatarCropBlob(){
+  return new Promise((resolve, reject)=>{
+    const c = avatarCrop;
+    const { size, scale } = avatarCropMetrics();
+    const side = size / scale;
+    const canvas = document.createElement("canvas");
+    canvas.width = AVATAR_SIZE; canvas.height = AVATAR_SIZE;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, AVATAR_SIZE, AVATAR_SIZE);
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(avatarCropImg, c.cx - side/2, c.cy - side/2, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+    canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error("encode")), "image/jpeg", 0.85);
   });
 }
 
@@ -10049,14 +10195,31 @@ avatarFileInput.addEventListener("change", async ()=>{
     showToast("Bitte melde dich zuerst an.");
     return;
   }
-  const uid = currentUser.id;
-  let blob;
+  let src;
   try{
-    blob = await resizeAvatarImage(file);
+    src = await loadAvatarSource(file);
   }catch(e){
     showToast("Dieses Bild kann nicht gelesen werden. Bitte wähle ein anderes.");
     return;
   }
+  openAvatarCrop(src);
+});
+
+avatarCropSaveBtn.addEventListener("click", async ()=>{
+  if(!avatarCrop) return;
+  if(!supabaseClient || !currentUser){
+    showToast("Bitte melde dich zuerst an.");
+    return;
+  }
+  const uid = currentUser.id;
+  let blob;
+  try{
+    blob = await renderAvatarCropBlob();
+  }catch(e){
+    showToast("Dieses Bild kann nicht gelesen werden. Bitte wähle ein anderes.");
+    return;
+  }
+  avatarCropSaveBtn.disabled = true;
   avatarEditBtn.disabled = true;
   let error = null;
   try{
@@ -10067,11 +10230,13 @@ avatarFileInput.addEventListener("change", async ()=>{
   }catch(e){
     error = e;
   }
+  avatarCropSaveBtn.disabled = false;
   avatarEditBtn.disabled = false;
   if(error){
     showToast("Profilbild konnte nicht gespeichert werden. Bitte versuche es später erneut.");
     return;
   }
+  closeSheet("avatarCropOverlay");
   if(avatarUser !== uid) return;
   applyAvatarPhoto(blob);
   showToast("Profilbild gespeichert. Nur du kannst es sehen.");
