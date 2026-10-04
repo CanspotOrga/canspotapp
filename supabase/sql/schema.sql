@@ -587,6 +587,33 @@ $$;
 revoke execute on function public.get_all_product_rating_summaries() from public;
 grant execute on function public.get_all_product_rating_summaries() to anon, authenticated;
 
+-- Coming Soon = nur Angebote mit Start in der Zukunft, noch keines hat
+-- begonnen. Solche Produkte koennen noch nicht bewertet werden (genutzt in
+-- den RLS-Policies von ratings).
+create function public.is_product_rateable(p_product_id uuid)
+returns boolean
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select not (
+    exists (
+      select 1 from public.offers o
+      where o.product_id = p_product_id
+        and o.valid_from > (now() at time zone 'Europe/Berlin')::date
+    )
+    and not exists (
+      select 1 from public.offers o
+      where o.product_id = p_product_id
+        and o.valid_from <= (now() at time zone 'Europe/Berlin')::date
+    )
+  );
+$$;
+
+revoke execute on function public.is_product_rateable(uuid) from public, anon;
+grant execute on function public.is_product_rateable(uuid) to authenticated;
+
 
 -- ============================================================================
 -- 8. ROW LEVEL SECURITY
@@ -675,8 +702,24 @@ create policy "recently_viewed_all_own" on public.recently_viewed
 --      oben, NICHT ueber eine Policy auf dieser Tabelle. ----
 
 alter table public.ratings enable row level security;
-create policy "ratings_all_own" on public.ratings
-  for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- Einfuegen/Aendern nur, wenn das Produkt nicht mehr im Coming Soon ist
+-- (is_product_rateable(), siehe oben).
+create policy "ratings_select_own" on public.ratings
+  for select to authenticated
+  using ((select auth.uid()) = user_id);
+
+create policy "ratings_insert_own" on public.ratings
+  for insert to authenticated
+  with check ((select auth.uid()) = user_id and public.is_product_rateable(product_id));
+
+create policy "ratings_update_own" on public.ratings
+  for update to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id and public.is_product_rateable(product_id));
+
+create policy "ratings_delete_own" on public.ratings
+  for delete to authenticated
+  using ((select auth.uid()) = user_id);
 
 
 -- ---- price_feedback_reports: Einfuegen oeffentlich (auch anonym). KEIN

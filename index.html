@@ -4480,6 +4480,13 @@ white-space:nowrap
 .pd-rate-more{display:flex;align-items:center;justify-content:flex-end;margin-top:6px}
 .pd-rate-more .rating-summary{display:none}
 .pd-rate-box .rating-adv-toggle{margin-left:0;padding:4px 0}
+/* Coming Soon: noch nicht im Handel, daher nur Hinweis statt Bewertung */
+.pd-rate-soon{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;line-height:1.4;color:var(--text-secondary)}
+.pd-rate-soon .icon{width:18px;height:18px;flex-shrink:0;color:var(--brand-primary-blue)}
+.pd-rate-soon[hidden]{display:none}
+.pd-rate-box.is-soon .pd-rate-top,
+.pd-rate-box.is-soon .pd-rate-more,
+.pd-rate-box.is-soon .rating-adv{display:none}
 .pd-store-row{
 width:100%;
 display:flex;
@@ -5408,7 +5415,8 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
      wie gehabt. -->
 <div class="detail-rating" id="detailRating">
 <div class="field-label" style="margin-top:20px">Bewertung</div>
-<div class="pd-rate-box">
+<div class="pd-rate-box" id="pdRateBox">
+<div class="pd-rate-soon" id="pdRateSoon" hidden><svg class="icon"><use href="#i-rocket"/></svg><span>Noch nicht im Handel. Bewerten kannst du, sobald das Angebot startet.</span></div>
 <div class="pd-rate-top">
 <span class="pd-rate-q">Wie gefällt dir das Produkt?</span>
 <span class="pd-rate-btns">
@@ -11173,6 +11181,14 @@ function renderNutrition(product){
   };
 }
 
+/* Coming Soon = nur Angebote mit Start in der Zukunft, noch keines hat
+   begonnen. Solche Produkte können noch nicht bewertet werden (die
+   Datenbank prüft dasselbe über is_product_rateable()). */
+function isProductComingSoon(productId){
+  const own = deals.filter(d=>d.productId===productId);
+  return own.some(d=>daysUntil(d.validFrom) > 0) && !own.some(d=>daysUntil(d.validFrom) <= 0);
+}
+
 function paintProductRatingSummary(productId){
   const summary = getProductRatingSummary(productId);
   const summaryEl = document.getElementById("pdRatingSummary");
@@ -11188,6 +11204,9 @@ function renderProductRating(productId){
   const advInner = document.getElementById("pdRatingAdvInner");
 
   paintProductRatingSummary(productId);
+  const comingSoon = isProductComingSoon(productId);
+  document.getElementById("pdRateBox").classList.toggle("is-soon", comingSoon);
+  document.getElementById("pdRateSoon").hidden = !comingSoon;
 
   function applyVoteState(){
     const vote = (productRatings[productId] || {}).vote || null;
