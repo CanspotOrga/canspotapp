@@ -3987,7 +3987,8 @@ display:flex;
 align-items:center;
 justify-content:center;
 cursor:pointer;
-background:radial-gradient(circle at 50% 60%,var(--brand-primary-subtle-strong) 0%,var(--bg-surface-sunken) 72%)
+/* Heller Modus: kräftigerer Blauschimmer hinter der Dose, sonst kaum sichtbar */
+background:radial-gradient(circle at 50% 60%,rgba(51,99,172,.55) 0%,rgba(51,99,172,.24) 40%,rgba(51,99,172,.08) 62%,var(--bg-surface-sunken) 82%)
 }
 :root[data-theme="dark"] .np-media{background:radial-gradient(circle at 50% 60%,#223965 0%,#12151C 72%)}
 .np-media img{height:108px;max-width:50%;object-fit:contain}
