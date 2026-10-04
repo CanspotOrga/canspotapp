@@ -321,7 +321,6 @@ outline-offset:2px
 .iconbtn:focus-visible,
 .loc:focus-visible,
 .filter-btn:focus-visible,
-.view-btn:focus-visible,
 .navitem:focus-visible,
 .theme-option:focus-visible,
 .badge-best:focus-visible,
@@ -2151,36 +2150,6 @@ text-align:center
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ---------- VIEW TOGGLE ---------- */
-
-.view-toggle{
-display:flex;
-gap:8px;
-margin:2px 0 3px
-}
-.view-btn{
-flex:1;
-border:1px solid var(--border-subtle);
-background:var(--bg-surface);
-color:var(--text-muted);
-padding:6px;
-border-radius:var(--radius-md);
-font-size:12.5px;
-font-weight:700;
-cursor:pointer;
-display:flex;
-align-items:center;
-justify-content:center;
-gap:6px;
-transition:background .15s,color .15s,border-color .15s
-}
-.view-btn:hover{color:var(--text-primary)}
-.view-btn.on{
-background:var(--brand-primary-blue);
-border-color:var(--brand-primary-blue);
-color:#fff
-}
-
 /* ---------- MAP VIEW ---------- */
 
 /* isolation:isolate faengt ALLE z-index-Werte innerhalb der Kartenansicht in
@@ -3835,7 +3804,6 @@ clip-path:inset(0 round 0);
 transition:-webkit-clip-path .5s cubic-bezier(.32,.72,0,1),clip-path .5s cubic-bezier(.32,.72,0,1),opacity .08s linear,visibility 0s
 }
 body.np-lock{overflow:hidden}
-body.np-lock .view-toggle{visibility:hidden}
 .np-bar{
 position:sticky;
 top:0;
@@ -4349,31 +4317,9 @@ border-radius:var(--radius-md)
 }
 .controls{padding:8px 18px 0}
 
-/* Liste/Karte als schwebender Umschalter über der unteren Navigation.
-   z-index unter .overlay (40), damit geöffnete Sheets ihn verdecken. */
-.view-toggle{
-position:fixed;
-left:50%;
-bottom:calc(78px + env(safe-area-inset-bottom));
-transform:translateX(-50%);
-z-index:39;
-margin:0
-}
-.view-toggle .view-btn{
-flex:none;
-border:0;
-background:var(--text-primary);
-color:var(--bg-surface);
-padding:10px 18px;
-border-radius:var(--radius-pill);
-font-size:13px;
-box-shadow:var(--shadow-md)
-}
-.view-toggle .view-btn:hover{color:var(--bg-surface)}
-.view-toggle .view-btn.on{display:none}
-/* Platz für schwebenden Umschalter + untere Navigation, damit die letzte
-   Karte vollständig erreichbar bleibt. */
-main{padding-bottom:calc(150px + env(safe-area-inset-bottom))}
+/* Platz für die untere Navigation, damit die letzte Karte vollständig
+   erreichbar bleibt. */
+main{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 
 /* Bester Deal der Woche */
 .weekly-best{
@@ -4696,15 +4642,6 @@ Nicht der Preis.
 <div class="connection-banner" id="connectionBanner" style="display:none">
 <svg class="icon icon-sm"><use href="#i-wifi-off"/></svg>
 Du bist offline. Angebote werden möglicherweise nicht aktuell angezeigt.
-</div>
-
-<!-- Liste/Karte: schwebender Umschalter über der unteren Navigation. Beide
-     .view-btn bleiben im DOM (bestehender Klick-Handler unverändert), per CSS
-     ist immer nur der jeweils NICHT aktive Button sichtbar ("Karte" in der
-     Liste, "Liste" in der Karte). -->
-<div class="view-toggle">
-<button class="view-btn on" data-view="list"><svg class="icon icon-md"><use href="#i-list"/></svg> Liste</button>
-<button class="view-btn" data-view="map"><svg class="icon icon-md"><use href="#i-map"/></svg> Karte</button>
 </div>
 
 <!-- Text kommt aus app_settings.demo_notice (Supabase); ohne Wert bleibt der Hinweis ausgeblendet. -->
@@ -7271,34 +7208,6 @@ dealsContainer.addEventListener("click",(e)=>{
   }
 });
 
-/* ---------------- LISTE / KARTE UMSCHALTEN ---------------- */
-
-document.querySelectorAll(".view-btn").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.querySelectorAll(".view-btn").forEach(b=>b.classList.remove("on"));
-    btn.classList.add("on");
-    viewMode = btn.dataset.view;
-    render();
-    if(viewMode==="map"){
-      /* render() hat #mapView gerade erst sichtbar gemacht (vorher
-         display:none) - Leaflet muss seine Kachel-/Container-Größe danach
-         einmal neu ermitteln, sonst bleibt die Karte auf der Größe hängen,
-         die sie beim (unsichtbaren) ersten Aufbau hatte. */
-      if(leafletMap) leafletMap.invalidateSize();
-      /* Standort nur EINMAL pro Sitzung automatisch anfragen (nicht bei
-         jedem erneuten Wechsel auf den Karte-Tab) - weder erneut nach einer
-         Ablehnung (iOS fragt ohnehin nicht zweimal, siehe requestUserLocation())
-         noch wenn bereits ein Standort vorliegt. isMobileMapViewport() bricht
-         auf der Desktop-/Webapp-Ansicht ohnehin früh ab (siehe dort) - die
-         native Standortabfrage ist ausschließlich für die mobile iOS-App
-         gedacht. */
-      if(isMobileMapViewport() && !userLocation && !userLocationDenied && !userLocationRequestInFlight){
-        requestUserLocation();
-      }
-    }
-  });
-});
-
 /* Echte Karte (Leaflet + echter Standort) gilt ausdrücklich NUR für die
    mobile iOS-App - die alte Web-/Desktop-Version von index.html (relevant,
    da beide dieselbe Datei teilen) soll unverändert bleiben (siehe Anfrage).
@@ -7511,11 +7420,10 @@ function renderMap(filtered){
 }
 
 function renderMapMobile(filtered){
-  /* #mapView ist display:none, solange der Nutzer nicht auf dem Karte-Tab
-     ist - Leaflet auf einem unsichtbaren (0×0) Container zu (re-)erzeugen
-     würde eine kaputte Kachel-Anordnung ergeben, siehe invalidateSize() im
-     view-btn-Click-Handler weiter unten für den Größen-Nachtrag beim
-     Sichtbarwerden. */
+  /* #mapView ist display:none, solange viewMode nicht "map" ist - Leaflet
+     auf einem unsichtbaren (0×0) Container zu (re-)erzeugen würde eine
+     kaputte Kachel-Anordnung ergeben. Seit der Liste/Karte-Umschalter
+     entfernt ist, bleibt viewMode immer "list". */
   if(viewMode !== "map") return;
 
   ensureLeafletMap();
@@ -7625,7 +7533,6 @@ function showMapPopoverMobile(storeInfo){
     syncStoreChips();
     updateFilterCount();
     viewMode = "list";
-    document.querySelectorAll(".view-btn").forEach(b=>b.classList.toggle("on", b.dataset.view==="list"));
     render();
     updateStatus();
   });
@@ -7746,7 +7653,6 @@ function showMapPopoverDesktop(storeInfo){
     syncStoreChips();
     updateFilterCount();
     viewMode = "list";
-    document.querySelectorAll(".view-btn").forEach(b=>b.classList.toggle("on", b.dataset.view==="list"));
     render();
     updateStatus();
   });
@@ -7939,7 +7845,6 @@ function closeAllSheets(){
    Suchleiste und bleibt in jedem Tab sichtbar. */
 const tabsNav = document.querySelector(".brand-row");
 const controlsEl = document.querySelector(".controls");
-const viewToggleEl = document.querySelector(".view-toggle");
 const alertsView = document.getElementById("alertsView");
 const newViewEl = document.getElementById("newView");
 
@@ -7948,10 +7853,8 @@ const newViewEl = document.getElementById("newView");
    die Karte, der Tab-Wechsel wirkte dadurch wirkungslos. */
 function showDealsView(){
   viewMode = "list";
-  document.querySelectorAll(".view-btn").forEach(b=>b.classList.toggle("on", b.dataset.view==="list"));
   tabsNav.style.display = "flex";
   controlsEl.style.display = "flex";
-  viewToggleEl.style.display = "flex";
   alertsView.style.display = "none";
   newViewEl.style.display = "none";
   render();
@@ -7960,7 +7863,6 @@ function showDealsView(){
 function showAlertsView(){
   tabsNav.style.display = "none";
   controlsEl.style.display = "none";
-  viewToggleEl.style.display = "none";
   dealsContainer.style.display = "none";
   mapView.style.display = "none";
   newViewEl.style.display = "none";
@@ -7971,7 +7873,6 @@ function showAlertsView(){
 function showNewView(){
   tabsNav.style.display = "none";
   controlsEl.style.display = "none";
-  viewToggleEl.style.display = "none";
   dealsContainer.style.display = "none";
   mapView.style.display = "none";
   alertsView.style.display = "none";
@@ -11601,10 +11502,8 @@ function renderStoreDetailMapMobile(deal){
     storeDetailLeafletMap.setView([storeGeo.lat, storeGeo.lng], 14);
   }
 
-  /* Standort nur EINMAL pro Sitzung automatisch anfragen - identische
-     Bedingung wie beim Wechsel auf den großen Karte-Tab (siehe view-btn-
-     Click-Handler oben), damit iOS nicht wiederholt/unnötig um Erlaubnis
-     gefragt wird. */
+  /* Standort nur EINMAL pro Sitzung automatisch anfragen, damit iOS nicht
+     wiederholt/unnötig um Erlaubnis gefragt wird. */
   if(!userLocation && !userLocationDenied && !userLocationRequestInFlight){
     requestUserLocation();
   }
