@@ -31,6 +31,8 @@
       : t;
     document.documentElement.setAttribute("data-theme", resolved);
   }catch(e){}
+  /* Firefox braucht für flüssige Animationen eigene Regeln (.ua-firefox) */
+  if(/\bFirefox\//.test(navigator.userAgent)) document.documentElement.classList.add("ua-firefox");
 })();
 </script>
 
@@ -4056,16 +4058,32 @@ opacity:.5
 :root[data-theme="dark"] .np-media .np-media-bg{opacity:.62}
 /* jede zweite Karte versetzt, damit nichts im Gleichtakt läuft */
 .np-card:nth-child(2n) .np-media img{animation-delay:-4s}
-/* rotate(.01deg) verhindert, dass Browser die Position auf ganze Pixel
-   runden (sonst ruckelt eine langsame Bewegung sichtbar in Stufen) */
+/* Eine unsichtbar kleine Drehung verhindert, dass Browser die Position auf
+   ganze Pixel runden (sonst ruckelt die langsame Bewegung in Stufen).
+   Firefox wertet Drehungen unter ca. 0,014° noch als gerade und rundet
+   trotzdem, daher .03deg (verschiebt die Oberkante um 0,06px). */
 @keyframes npFloat{
-0%,100%{transform:translate3d(0,2px,0) rotate(.01deg)}
-50%{transform:translate3d(0,-4px,0) rotate(.01deg)}
+0%,100%{transform:translate3d(0,2px,0) rotate(.03deg)}
+50%{transform:translate3d(0,-4px,0) rotate(.03deg)}
+}
+/* Firefox: ohne eigene Grafikebene und mit reinem 2D-Transform zeichnet er
+   die Dose in jedem Bild an die exakte Position. Mit Ebene (will-change,
+   backface-visibility, translate3d) setzt er sie in Gerätepixel-Stufen,
+   das ruckelt bei langsamer Bewegung. */
+.ua-firefox .np-media img{
+animation-name:npFloatFx;
+will-change:auto;
+-webkit-backface-visibility:visible;
+backface-visibility:visible
+}
+@keyframes npFloatFx{
+0%,100%{transform:translateY(2px) rotate(.03deg)}
+50%{transform:translateY(-4px) rotate(.03deg)}
 }
 /* Karten außerhalb des sichtbaren Bereichs pausieren (npWatchMotion) */
 .np-media.np-idle img{animation-play-state:paused}
 @media (prefers-reduced-motion:reduce){
-.np-media img{animation:none}
+.np-media img,.ua-firefox .np-media img{animation:none}
 }
 .np-badge{
 position:absolute;
