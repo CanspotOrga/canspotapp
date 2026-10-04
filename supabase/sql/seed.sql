@@ -1,14 +1,17 @@
 -- ============================================================================
--- CanSpot — Inhalte (Stand der Live-Datenbank am 03.10.2026)
+-- CanSpot — Inhalte (Stand der Live-Datenbank am 04.10.2026)
 -- ============================================================================
 -- Additiv und mehrfach ausführbar: legt fehlende Zeilen an und setzt
 -- vorhandene (gleiche id) auf die Werte unten. Löscht nichts.
 -- Voraussetzung: schema.sql wurde ausgeführt.
 --
--- Inhalt: 2 Marken mit je 2 Produkten, 4 Filialen in Arnsberg, 4 Angebote,
+-- Inhalt: 2 Marken mit je 3 Produkten, 4 Filialen in Arnsberg, 6 Angebote,
 -- dazu app_settings (Startstandort Arnsberg, Demo-Hinweis, Version).
+-- Je ein Beispiel für Neuheiten (is_new = true, laufendes Angebot) und
+-- Coming Soon (Angebot mit Startdatum in der Zukunft).
 -- Preise, Zeiträume und Filialangaben sind DEMODATEN, keine erhobenen Preise.
--- Bilder und Logos sind bewusst leer (Datenquellen-Regel 5).
+-- Produktbilder: ein gemeinsames Beispielbild von canspot.de, Logos leer
+-- (Datenquellen-Regel 5).
 -- Neue Daten nur aus erlaubten Quellen.
 -- ============================================================================
 
@@ -63,12 +66,14 @@ on conflict (id) do update set
   closes_at = excluded.closes_at,
   closed_sunday = excluded.closed_sunday;
 
--- products (4)
+-- products (6)
 insert into public.products (id, brand_id, name, size_ml, packaging, image_url, is_new) values
-  ('73ab667f-75d7-4b02-a42e-47bae05ae065', '11111111-1111-4111-8111-111111111111', 'Red Bull Energy Drink', 250, 'Dose', null, false),
-  ('dbcfcbdf-05e9-4bd5-ba24-5362d09612d9', '11111111-1111-4111-8111-111111111111', 'Red Bull Sugarfree', 250, 'Dose', null, false),
-  ('1e86d7b4-fecc-4e2a-a930-a7e92f0067da', '040702a6-617f-49b7-ab82-bc82bb860a9c', 'Monster Energy Ultra', 500, 'Dose', null, false),
-  ('7dfb0a5d-354b-4845-af7e-8c2e9120020b', '040702a6-617f-49b7-ab82-bc82bb860a9c', 'Monster Energy Classic', 500, 'Dose', null, false)
+  ('73ab667f-75d7-4b02-a42e-47bae05ae065', '11111111-1111-4111-8111-111111111111', 'Red Bull Energy Drink', 250, 'Dose', 'https://canspot.de/wp-content/Produktbilder/monster-juiced-bad-apple-450x600.webp', false),
+  ('dbcfcbdf-05e9-4bd5-ba24-5362d09612d9', '11111111-1111-4111-8111-111111111111', 'Red Bull Sugarfree', 250, 'Dose', 'https://canspot.de/wp-content/Produktbilder/monster-juiced-bad-apple-450x600.webp', false),
+  ('1e86d7b4-fecc-4e2a-a930-a7e92f0067da', '040702a6-617f-49b7-ab82-bc82bb860a9c', 'Monster Energy Ultra', 500, 'Dose', 'https://canspot.de/wp-content/Produktbilder/monster-juiced-bad-apple-450x600.webp', false),
+  ('7dfb0a5d-354b-4845-af7e-8c2e9120020b', '040702a6-617f-49b7-ab82-bc82bb860a9c', 'Monster Energy Classic', 500, 'Dose', 'https://canspot.de/wp-content/Produktbilder/monster-juiced-bad-apple-450x600.webp', false),
+  ('67e34e31-a36f-48c3-bd29-fedfb4288732', '040702a6-617f-49b7-ab82-bc82bb860a9c', 'Monster Energy Juiced Bad Apple', 500, 'Dose', 'https://canspot.de/wp-content/Produktbilder/monster-juiced-bad-apple-450x600.webp', true),
+  ('d6a55d57-3b1b-4a2b-aff1-edeb0eb48399', '11111111-1111-4111-8111-111111111111', 'Red Bull Red Edition', 250, 'Dose', 'https://canspot.de/wp-content/Produktbilder/monster-juiced-bad-apple-450x600.webp', false)
 on conflict (id) do update set
   brand_id = excluded.brand_id,
   name = excluded.name,
@@ -92,12 +97,14 @@ on conflict (product_id) do update set
   caffeine_mg = excluded.caffeine_mg,
   taurine_mg = excluded.taurine_mg;
 
--- offers (4)
+-- offers (6)
 insert into public.offers (id, product_id, branch_id, units, regular_price, offer_price, deposit, valid_from, valid_until, link, bundle_image_url, last_checked_at) values
   ('c6ffb947-a172-42e5-b8b4-e5300b0f2881', '73ab667f-75d7-4b02-a42e-47bae05ae065', '19585656-b415-510e-8739-401bb2dd6a09', 1, '1.49', '0.99', '0.25', '2026-09-28', '2026-10-04', '#', null, '2026-10-03'),
   ('17a57e0d-509a-4da6-81f7-c254a5f13f87', 'dbcfcbdf-05e9-4bd5-ba24-5362d09612d9', '2b4e352e-9b52-4fab-b1d8-ea79c5a7ea48', 1, '1.35', '0.95', '0.25', '2026-10-02', '2026-10-15', '#', null, '2026-10-03'),
   ('651ab0a1-9972-4001-adee-75554c71da72', '1e86d7b4-fecc-4e2a-a930-a7e92f0067da', '50ff519a-4266-46a1-9f92-90d6fa370c87', 1, '1.99', '1.39', '0.25', '2026-09-30', '2026-10-13', '#', null, '2026-10-03'),
-  ('212d7448-4b90-492e-aad5-b90efd8775e5', '7dfb0a5d-354b-4845-af7e-8c2e9120020b', '512e4c21-5183-4576-9673-b8d9ba9bf409', 1, '1.79', '1.29', '0.25', '2026-10-03', '2026-10-16', '#', null, '2026-10-03')
+  ('212d7448-4b90-492e-aad5-b90efd8775e5', '7dfb0a5d-354b-4845-af7e-8c2e9120020b', '512e4c21-5183-4576-9673-b8d9ba9bf409', 1, '1.79', '1.29', '0.25', '2026-10-03', '2026-10-16', '#', null, '2026-10-03'),
+  ('fd2ca12a-f416-434a-9f5c-09bc11f1c652', '67e34e31-a36f-48c3-bd29-fedfb4288732', '19585656-b415-510e-8739-401bb2dd6a09', 1, '1.99', '1.49', '0.25', '2026-10-04', '2026-10-17', '#', null, '2026-10-04'),
+  ('95dc220e-ee8e-4f0a-b9e2-65fd4f01eb72', 'd6a55d57-3b1b-4a2b-aff1-edeb0eb48399', '50ff519a-4266-46a1-9f92-90d6fa370c87', 1, '1.49', '1.11', '0.25', '2026-10-12', '2026-10-17', '#', null, '2026-10-04')
 on conflict (id) do update set
   product_id = excluded.product_id,
   branch_id = excluded.branch_id,
