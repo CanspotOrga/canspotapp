@@ -2094,6 +2094,12 @@ padding:6px 8px;
 cursor:pointer
 }
 .auth-hint{font-size:11.5px;color:var(--text-muted);margin-top:5px}
+/* Pflichtfeld-Sternchen: nur in Modi mit req:true (Registrieren, Nutzername festlegen). */
+.auth-req{display:none;margin-left:2px;color:var(--status-error-text)}
+#authForm.show-req .auth-req{display:inline}
+.auth-req-note{font-size:11.5px;color:var(--text-muted);margin:-6px 0 12px}
+.auth-req-note[hidden]{display:none}
+.auth-req-note .auth-req{display:inline;margin:0}
 .auth-msg{border-radius:var(--radius-md);padding:10px 12px;font-size:12.5px;margin-bottom:12px}
 .auth-msg.error{background:var(--status-error-bg);color:var(--status-error-text);border:1px solid var(--status-error-border)}
 .auth-msg.info{background:var(--bg-surface-sunken);color:var(--text-primary);border:1px solid var(--border-subtle)}
@@ -5104,17 +5110,18 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 <div class="desc" id="authDesc" hidden></div>
 <form id="authForm" novalidate>
+<div class="auth-req-note" id="authReqNote" hidden><span class="auth-req" aria-hidden="true">*</span> Pflichtfeld</div>
 <div class="auth-field" id="authUsernameField" hidden>
-<label for="authUsername">Nutzername</label>
+<label for="authUsername">Nutzername<span class="auth-req" aria-hidden="true">*</span></label>
 <input class="profile-input" id="authUsername" name="nickname" type="text" autocomplete="nickname" autocapitalize="off" autocorrect="off" spellcheck="false" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required>
-<div class="auth-hint">Pflichtfeld. 3–20 Zeichen: Buchstaben, Zahlen und Unterstrich.</div>
+<div class="auth-hint">3–20 Zeichen: Buchstaben, Zahlen und Unterstrich.</div>
 </div>
 <div class="auth-field" id="authEmailField">
-<label for="authEmail">E-Mail-Adresse</label>
+<label for="authEmail">E-Mail-Adresse<span class="auth-req" aria-hidden="true">*</span></label>
 <input class="profile-input" id="authEmail" name="email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254" required>
 </div>
 <div class="auth-field" id="authPasswordField">
-<label for="authPassword">Passwort</label>
+<label for="authPassword">Passwort<span class="auth-req" aria-hidden="true">*</span></label>
 <div class="auth-pw-row">
 <input class="profile-input" id="authPassword" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="72" required>
 <button type="button" class="auth-pw-toggle" id="authPwToggle" aria-controls="authPassword" aria-pressed="false">Anzeigen</button>
@@ -9215,15 +9222,16 @@ const authEls = {
   resend: document.getElementById("authResendBtn"),
   forgot: document.getElementById("authForgotBtn"),
   back: document.getElementById("authBackBtn"),
-  legal: document.getElementById("authLegal")
+  legal: document.getElementById("authLegal"),
+  reqNote: document.getElementById("authReqNote")
 };
 
 const AUTH_MODES = {
   login:  {title:"Anmelden", submit:"Anmelden", tabs:true, username:false, email:true, password:true, pwAutocomplete:"current-password", hint:false, forgot:true, back:false, legal:false, desc:""},
-  signup: {title:"Registrieren", submit:"Konto erstellen", tabs:true, username:true, email:true, password:true, pwAutocomplete:"new-password", hint:true, forgot:false, back:false, legal:true, desc:""},
+  signup: {title:"Registrieren", submit:"Konto erstellen", tabs:true, username:true, email:true, password:true, pwAutocomplete:"new-password", hint:true, forgot:false, back:false, legal:true, req:true, desc:""},
   reset:  {title:"Passwort vergessen", submit:"Link senden", tabs:false, username:false, email:true, password:false, hint:false, forgot:false, back:true, legal:false, desc:"Gib die E-Mail-Adresse deines Kontos ein. Wir schicken dir einen Link, mit dem du ein neues Passwort festlegen kannst."},
   newpw:  {title:"Neues Passwort", submit:"Passwort speichern", tabs:false, username:false, email:false, password:true, pwAutocomplete:"new-password", hint:true, forgot:false, back:false, legal:false, desc:"Lege ein neues Passwort für dein Konto fest."},
-  username: {title:"Nutzername festlegen", submit:"Speichern", tabs:false, username:true, email:false, password:false, hint:false, forgot:false, back:false, legal:false, desc:"Für dein Konto fehlt noch ein Nutzername. Bitte lege einen fest."}
+  username: {title:"Nutzername festlegen", submit:"Speichern", tabs:false, username:true, email:false, password:false, hint:false, forgot:false, back:false, legal:false, req:true, desc:"Für dein Konto fehlt noch ein Nutzername. Bitte lege einen fest."}
 };
 
 function showAuthMsg(text, kind){
@@ -9251,6 +9259,8 @@ function setAuthMode(mode){
   authEls.forgot.hidden = !cfg.forgot;
   authEls.back.hidden = !cfg.back;
   authEls.legal.hidden = !cfg.legal;
+  authEls.form.classList.toggle("show-req", !!cfg.req);
+  authEls.reqNote.hidden = !cfg.req;
   authEls.password.value = "";
   setPasswordVisible(false);
   showAuthMsg("");
