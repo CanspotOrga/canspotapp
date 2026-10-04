@@ -3151,8 +3151,8 @@ overflow:hidden
 
 .profile-avatar-wrap{position:relative;flex-shrink:0}
 .profile-avatar{background-size:cover;background-position:center}
-/* Ohne Profilbild öffnet der ganze Kreis die Bildauswahl. */
-.profile-avatar.is-empty{cursor:pointer}
+/* Der ganze Kreis öffnet die Bildauswahl (mit und ohne Bild). */
+.profile-avatar{cursor:pointer}
 .avatar-edit-badge{
 position:absolute;
 bottom:-2px;
@@ -5112,7 +5112,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 
 <div class="profile-head" id="profileHead" hidden>
 <div class="profile-avatar-wrap">
-<div class="profile-avatar is-empty" id="profileAvatar" role="button" tabindex="0" aria-label="Profilbild hinzufügen">?</div>
+<div class="profile-avatar" id="profileAvatar" role="button" tabindex="0" aria-label="Profilbild hinzufügen">?</div>
 <button class="avatar-edit-badge" id="avatarEditBtn" aria-label="Profilbild ändern"><svg class="icon icon-xs"><use href="#i-camera"/></svg></button>
 <input type="file" accept="image/*" id="avatarFileInput" style="display:none">
 </div>
@@ -10018,22 +10018,9 @@ function applyAvatarPhoto(blob){
     updateAvatarInitials();
     avatarRemoveBtn.style.display = "none";
   }
-  setAvatarCircleClickable(!blob);
-}
-
-/* Ohne Profilbild ist der ganze Kreis ein Button zur Bildauswahl,
-   mit Bild nur noch das Kamera-Symbol. */
-function setAvatarCircleClickable(on){
-  profileAvatarEl.classList.toggle("is-empty", on);
-  if(on){
-    profileAvatarEl.setAttribute("role","button");
-    profileAvatarEl.setAttribute("tabindex","0");
-    profileAvatarEl.setAttribute("aria-label","Profilbild hinzufügen");
-  } else {
-    profileAvatarEl.removeAttribute("role");
-    profileAvatarEl.removeAttribute("tabindex");
-    profileAvatarEl.removeAttribute("aria-label");
-  }
+  /* Der ganze Kreis ist ein Button zur Bildauswahl, nicht nur das
+     kleine Kamera-Symbol. */
+  profileAvatarEl.setAttribute("aria-label", blob ? "Profilbild ändern" : "Profilbild hinzufügen");
 }
 
 /* Aufruf aus applyAuthState(): Bei Ab- oder Ummeldung wird das angezeigte
@@ -10235,10 +10222,10 @@ function renderAvatarCropBlob(){
 
 avatarEditBtn.addEventListener("click", ()=> avatarFileInput.click());
 profileAvatarEl.addEventListener("click", ()=>{
-  if(profileAvatarEl.classList.contains("is-empty") && !avatarEditBtn.disabled) avatarFileInput.click();
+  if(!avatarEditBtn.disabled) avatarFileInput.click();
 });
 profileAvatarEl.addEventListener("keydown", (e)=>{
-  if((e.key === "Enter" || e.key === " ") && profileAvatarEl.classList.contains("is-empty")){
+  if(e.key === "Enter" || e.key === " "){
     e.preventDefault();
     if(!avatarEditBtn.disabled) avatarFileInput.click();
   }
