@@ -7467,7 +7467,12 @@ const controlsEl = document.querySelector(".controls");
 const viewToggleEl = document.querySelector(".view-toggle");
 const alertsView = document.getElementById("alertsView");
 
+/* Start/Neuheiten/Favoriten wechseln immer zurück in die Listenansicht -
+   sonst blieb nach "Karte" viewMode auf "map" und render() zeigte weiter
+   die Karte, der Tab-Wechsel wirkte dadurch wirkungslos. */
 function showDealsView(){
+  viewMode = "list";
+  document.querySelectorAll(".view-btn").forEach(b=>b.classList.toggle("on", b.dataset.view==="list"));
   tabsNav.style.display = "flex";
   controlsEl.style.display = "flex";
   viewToggleEl.style.display = "flex";
