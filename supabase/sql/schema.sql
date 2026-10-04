@@ -230,7 +230,6 @@ create table public.profiles (
   username     text,
   first_name   text,
   last_name    text,
-  birthdate    date,
   street       text,
   postal_code  text,
   city         text,
@@ -255,37 +254,11 @@ create unique index profiles_username_lower_key on public.profiles (lower(userna
 comment on column public.profiles.username is 'Nutzername, 3-20 Zeichen (A-Z, a-z, 0-9, _), eindeutig ohne Ruecksicht auf Gross-/Kleinschreibung. Wird bei der Registrierung aus raw_user_meta_data.username gesetzt (handle_new_user). NULL nur bei Konten von vor dieser Spalte; die App fordert dann einen an.';
 comment on column public.profiles.first_name is 'Ungenutzt: Die App zeigt nur den Nutzernamen. Falls befuellt: 1-50 Zeichen ohne Steuerzeichen, nur fuer den Besitzer sichtbar (RLS).';
 comment on column public.profiles.last_name is 'Ungenutzt: Die App zeigt nur den Nutzernamen. Falls befuellt: 1-50 Zeichen ohne Steuerzeichen, nur fuer den Besitzer sichtbar (RLS).';
-comment on column public.profiles.birthdate is 'Geburtsdatum, Pflicht bei der Registrierung (aus raw_user_meta_data.birthdate, handle_new_user; danach aus den Metadaten entfernt). 1900-01-01 bis heute (check_profile_birthdate). NULL nur bei Konten von vor dieser Pflicht; die App fragt es dann ab. Nur fuer den Besitzer sichtbar, wird mit dem Konto per CASCADE geloescht.';
-comment on table public.profiles is 'Profildaten, 1:1 zu auth.users. Genutzt werden username und birthdate (nur fuer den Besitzer sichtbar). first_name, last_name, street, postal_code, city, country und avatar_url sind ungenutzt: Es gibt keinen Vor-/Nachnamen, die Adresse bleibt lokal auf dem Geraet, das Profilbild liegt im Bucket avatars.';
+comment on table public.profiles is 'Profildaten, 1:1 zu auth.users. Genutzt wird nur username (nur fuer den Besitzer sichtbar). first_name, last_name, street, postal_code, city, country und avatar_url sind ungenutzt: Es gibt keinen Vor-/Nachnamen und kein Geburtsdatum, die Adresse bleibt lokal auf dem Geraet, das Profilbild liegt im Bucket avatars.';
 
 create trigger trg_profiles_updated_at
   before update on public.profiles
   for each row execute function public.set_updated_at();
-
--- Geburtsdatum: 1900-01-01 bis heute; einmal gesetzt nicht wieder leerbar.
-create function public.check_profile_birthdate()
-returns trigger
-language plpgsql
-set search_path = ''
-as $$
-begin
-  if new.birthdate is null then
-    if tg_op = 'UPDATE' and old.birthdate is not null then
-      raise exception 'birthdate required' using errcode = '23502';
-    end if;
-    return new;
-  end if;
-  if new.birthdate < date '1900-01-01' or new.birthdate > current_date then
-    raise exception 'birthdate out of range' using errcode = '23514';
-  end if;
-  return new;
-end;
-$$;
-revoke execute on function public.check_profile_birthdate() from public, anon, authenticated;
-
-create trigger trg_profiles_check_birthdate
-  before insert or update of birthdate on public.profiles
-  for each row execute function public.check_profile_birthdate();
 
 
 -- ----------------------------------------------------------------------------
@@ -445,9 +418,8 @@ comment on table public.account_deletion_feedback is 'Entspricht canspot-delete-
 -- registriert (auth.users-Insert), werden automatisch eine profiles-Zeile
 -- (mit dem Nutzernamen aus raw_user_meta_data.username) und eine
 -- notification_settings-Zeile angelegt, damit die App nie gegen eine
--- fehlende 1:1-Zeile pruefen muss. Ohne Nutzernamen oder Geburtsdatum
--- (raw_user_meta_data.birthdate, JJJJ-MM-TT) wird die Registrierung
--- abgelehnt (Pflichtfelder, auch bei direktem API-Aufruf).
+-- fehlende 1:1-Zeile pruefen muss. Ohne Nutzernamen wird die Registrierung
+-- abgelehnt (Pflichtfeld, auch bei direktem API-Aufruf).
 
 create function public.handle_new_user()
 returns trigger
@@ -456,24 +428,12 @@ security definer set search_path = ''
 as $$
 declare
   v_username text := nullif(btrim(new.raw_user_meta_data->>'username'), '');
-  v_birthdate_raw text := nullif(btrim(new.raw_user_meta_data->>'birthdate'), '');
-  v_birthdate date;
 begin
   if v_username is null then
     raise exception 'username required' using errcode = '23502';
   end if;
-  if v_birthdate_raw is null or v_birthdate_raw !~ '^\d{4}-\d{2}-\d{2}$' then
-    raise exception 'birthdate required' using errcode = '23502';
-  end if;
-  begin
-    v_birthdate := v_birthdate_raw::date;
-  exception when others then
-    raise exception 'birthdate invalid' using errcode = '22007';
-  end;
-  insert into public.profiles (id, username, birthdate) values (new.id, v_username, v_birthdate);
+  insert into public.profiles (id, username) values (new.id, v_username);
   insert into public.notification_settings (user_id) values (new.id);
-  -- Geburtsdatum nur in profiles halten, nicht zusaetzlich in den Metadaten.
-  update auth.users set raw_user_meta_data = raw_user_meta_data - 'birthdate' where id = new.id;
   return new;
 end;
 $$;

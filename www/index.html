@@ -4624,7 +4624,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <button class="sheet-close" data-close="accountManageOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
 <div class="handle"></div>
 <h2>Konto verwalten</h2>
-<div class="desc">Dein Nutzername, dein Geburtsdatum, deine E-Mail-Adresse und dein Profilbild gehören zu deinem Konto. Nur du kannst sie sehen.</div>
+<div class="desc">Dein Nutzername, deine E-Mail-Adresse und dein Profilbild gehören zu deinem Konto. Nur du kannst sie sehen.</div>
 
 <div class="field-label" style="margin-top:22px">Persönliche Daten</div>
 <div class="field-block" id="usernameBlock">
@@ -4639,18 +4639,6 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <!-- Nur Anzeige: kommt aus dem Supabase-Konto (applyAuthState()). -->
 <div class="field-view">
 <span id="profileEmailText"></span>
-</div>
-</div>
-<div class="field-block" id="birthdateBlock">
-<div class="field-mini-label">Geburtsdatum</div>
-<!-- Kommt aus public.profiles.birthdate (loadMyProfile()), Speichern per Update. -->
-<div class="field-view" data-edit="birthdate">
-<span id="profileBirthdateText" class="placeholder-text">TT.MM.JJJJ</span>
-<button class="field-edit-btn" data-edit="birthdate" aria-label="Geburtsdatum bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
-</div>
-<div class="field-edit-row" id="birthdateEditRow" style="display:none">
-<input class="profile-input" id="profileBirthdate" type="date" min="1900-01-01">
-<button class="btn primary field-save-btn" data-save="birthdate">Speichern</button>
 </div>
 </div>
 
@@ -4709,11 +4697,6 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <input class="profile-input" id="authUsername" name="nickname" type="text" autocomplete="nickname" autocapitalize="off" autocorrect="off" spellcheck="false" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required>
 <div class="auth-hint">Pflichtfeld. 3–20 Zeichen: Buchstaben, Zahlen und Unterstrich.</div>
 </div>
-<div class="auth-field" id="authBirthdateField" hidden>
-<label for="authBirthdate">Geburtsdatum</label>
-<input class="profile-input" id="authBirthdate" name="bday" type="date" autocomplete="bday" min="1900-01-01" required>
-<div class="auth-hint">Pflichtfeld.</div>
-</div>
 <div class="auth-field" id="authEmailField">
 <label for="authEmail">E-Mail-Adresse</label>
 <input class="profile-input" id="authEmail" name="email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254" required>
@@ -4732,7 +4715,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <button type="button" class="auth-link" id="authResendBtn" hidden>Keine E-Mail erhalten? Neuen Bestätigungslink senden</button>
 <button type="button" class="auth-link" id="authForgotBtn">Passwort vergessen?</button>
 <button type="button" class="auth-link" id="authBackBtn" hidden>Zurück zur Anmeldung</button>
-<div class="auth-legal" id="authLegal" hidden>Mit der Registrierung legst du ein CanSpot-Konto an. Dafür speichern wir deinen Nutzernamen, dein Geburtsdatum, deine E-Mail-Adresse und dein Passwort (nie im Klartext). Mehr dazu in der <a href="datenschutz.html#konto">Datenschutzerklärung</a>. Es gelten die <a href="impressum.html#nutzung">Nutzungsbedingungen</a>.</div>
+<div class="auth-legal" id="authLegal" hidden>Mit der Registrierung legst du ein CanSpot-Konto an. Dafür speichern wir deinen Nutzernamen, deine E-Mail-Adresse und dein Passwort (nie im Klartext). Mehr dazu in der <a href="datenschutz.html#konto">Datenschutzerklärung</a>. Es gelten die <a href="impressum.html#nutzung">Nutzungsbedingungen</a>.</div>
 </div>
 </div>
 </div>
@@ -8365,7 +8348,6 @@ function showToast(msg){
 let currentUser = null;
 let authMode = "login";
 let currentUsername = null;
-let currentBirthdate = null;
 let profileLoadedFor = null;
 /* Profilbild (siehe Abschnitt PROFILBILD): Konto, zu dem das angezeigte Bild
    gehört, und dessen Object-URL. Hier deklariert, weil initAuth() schon vor
@@ -8381,8 +8363,6 @@ const authEls = {
   form: document.getElementById("authForm"),
   usernameField: document.getElementById("authUsernameField"),
   username: document.getElementById("authUsername"),
-  birthdateField: document.getElementById("authBirthdateField"),
-  birthdate: document.getElementById("authBirthdate"),
   emailField: document.getElementById("authEmailField"),
   email: document.getElementById("authEmail"),
   passwordField: document.getElementById("authPasswordField"),
@@ -8397,14 +8377,12 @@ const authEls = {
   legal: document.getElementById("authLegal")
 };
 
-/* username/birthdate: true = Feld zeigen, "missing" = nur zeigen, wenn die
-   Angabe im Profil noch fehlt (Konten von vor der jeweiligen Pflicht). */
 const AUTH_MODES = {
-  login:  {title:"Anmelden", submit:"Anmelden", tabs:true, username:false, birthdate:false, email:true, password:true, pwAutocomplete:"current-password", hint:false, forgot:true, back:false, legal:false, desc:""},
-  signup: {title:"Registrieren", submit:"Konto erstellen", tabs:true, username:true, birthdate:true, email:true, password:true, pwAutocomplete:"new-password", hint:true, forgot:false, back:false, legal:true, desc:""},
-  reset:  {title:"Passwort vergessen", submit:"Link senden", tabs:false, username:false, birthdate:false, email:true, password:false, hint:false, forgot:false, back:true, legal:false, desc:"Gib die E-Mail-Adresse deines Kontos ein. Wir schicken dir einen Link, mit dem du ein neues Passwort festlegen kannst."},
-  newpw:  {title:"Neues Passwort", submit:"Passwort speichern", tabs:false, username:false, birthdate:false, email:false, password:true, pwAutocomplete:"new-password", hint:true, forgot:false, back:false, legal:false, desc:"Lege ein neues Passwort für dein Konto fest."},
-  complete: {title:"Konto vervollständigen", submit:"Speichern", tabs:false, username:"missing", birthdate:"missing", email:false, password:false, hint:false, forgot:false, back:false, legal:false, desc:"Für dein Konto fehlen noch Pflichtangaben. Bitte ergänze sie."}
+  login:  {title:"Anmelden", submit:"Anmelden", tabs:true, username:false, email:true, password:true, pwAutocomplete:"current-password", hint:false, forgot:true, back:false, legal:false, desc:""},
+  signup: {title:"Registrieren", submit:"Konto erstellen", tabs:true, username:true, email:true, password:true, pwAutocomplete:"new-password", hint:true, forgot:false, back:false, legal:true, desc:""},
+  reset:  {title:"Passwort vergessen", submit:"Link senden", tabs:false, username:false, email:true, password:false, hint:false, forgot:false, back:true, legal:false, desc:"Gib die E-Mail-Adresse deines Kontos ein. Wir schicken dir einen Link, mit dem du ein neues Passwort festlegen kannst."},
+  newpw:  {title:"Neues Passwort", submit:"Passwort speichern", tabs:false, username:false, email:false, password:true, pwAutocomplete:"new-password", hint:true, forgot:false, back:false, legal:false, desc:"Lege ein neues Passwort für dein Konto fest."},
+  username: {title:"Nutzername festlegen", submit:"Speichern", tabs:false, username:true, email:false, password:false, hint:false, forgot:false, back:false, legal:false, desc:"Für dein Konto fehlt noch ein Nutzername. Bitte lege einen fest."}
 };
 
 function showAuthMsg(text, kind){
@@ -8423,9 +8401,7 @@ function setAuthMode(mode){
   authEls.tabs.querySelectorAll(".auth-tab").forEach(t=>t.classList.toggle("on", t.dataset.authMode===mode));
   authEls.desc.textContent = cfg.desc;
   authEls.desc.hidden = !cfg.desc;
-  authEls.usernameField.hidden = !(cfg.username==="missing" ? !currentUsername : cfg.username);
-  authEls.birthdateField.hidden = !(cfg.birthdate==="missing" ? !currentBirthdate : cfg.birthdate);
-  authEls.birthdate.max = localIsoDate(new Date());
+  authEls.usernameField.hidden = !cfg.username;
   authEls.emailField.hidden = !cfg.email;
   authEls.passwordField.hidden = !cfg.password;
   if(cfg.password) authEls.password.setAttribute("autocomplete", cfg.pwAutocomplete);
@@ -8484,36 +8460,6 @@ function usernameProblem(name){
   return null;
 }
 
-/* Datum als JJJJ-MM-TT in lokaler Zeit (wie <input type="date">). */
-function localIsoDate(d){
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-
-/* Gleiche Grenzen wie check_profile_birthdate() in der Datenbank. */
-function birthdateProblem(val){
-  if(!val) return "Bitte gib dein Geburtsdatum ein.";
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(val) || val < "1900-01-01" || val > localIsoDate(new Date())) return "Bitte gib ein gültiges Geburtsdatum ein.";
-  return null;
-}
-
-/* Fehlt Nutzername oder Geburtsdatum, bietet "Mein Bereich" das Ergänzen an. */
-function updateProfileCompleteBtn(){
-  const btn = document.getElementById("profileUsernameSetBtn");
-  const loaded = !!currentUser && profileLoadedFor === currentUser.id;
-  btn.hidden = !(loaded && (!currentUsername || !currentBirthdate));
-  btn.textContent = !currentUsername ? "Nutzername festlegen" : "Geburtsdatum ergänzen";
-}
-
-function applyBirthdate(val){
-  currentBirthdate = val || null;
-  document.getElementById("profileBirthdate").value = currentBirthdate || "";
-  document.getElementById("profileBirthdate").max = localIsoDate(new Date());
-  const text = document.getElementById("profileBirthdateText");
-  text.textContent = currentBirthdate ? formatSingleDate(currentBirthdate) : "TT.MM.JJJJ";
-  text.classList.toggle("placeholder-text", !currentBirthdate);
-  updateProfileCompleteBtn();
-}
-
 function applyUsername(name){
   currentUsername = name || null;
   const hasName = !!currentUsername;
@@ -8521,24 +8467,23 @@ function applyUsername(name){
   const el = document.getElementById("profileUsername");
   el.textContent = hasName ? "@" + currentUsername : "";
   el.hidden = !hasName;
-  updateProfileCompleteBtn();
+  /* Nur anbieten, wenn das Profil geladen ist und wirklich keiner existiert. */
+  document.getElementById("profileUsernameSetBtn").hidden = !(loggedIn && !hasName && profileLoadedFor === currentUser.id);
   document.getElementById("profileUsernameText").textContent = hasName ? "@" + currentUsername : "–";
   updateAvatarInitials();
 }
 
-/* Liest Nutzername und Geburtsdatum aus public.profiles (RLS: nur die
-   eigene Zeile). Fehlt eins davon (Konto von vor der Pflicht), wird es
-   abgefragt. */
+/* Liest den eigenen Nutzernamen aus public.profiles (RLS: nur die eigene
+   Zeile). Fehlt er (Konto von vor der Pflicht), wird er abgefragt. */
 async function loadMyProfile(){
   if(!supabaseClient || !currentUser) return;
   const uid = currentUser.id;
-  const { data, error } = await supabaseClient.from("profiles").select("username, birthdate").eq("id", uid).maybeSingle();
+  const { data, error } = await supabaseClient.from("profiles").select("username").eq("id", uid).maybeSingle();
   if(error || !currentUser || currentUser.id !== uid) return;
   profileLoadedFor = uid;
   applyUsername(data && data.username);
-  applyBirthdate(data && data.birthdate);
-  if((!currentUsername || !currentBirthdate) && !document.getElementById("authOverlay").classList.contains("open")){
-    openAuthSheet("complete");
+  if(!currentUsername && !document.getElementById("authOverlay").classList.contains("open")){
+    openAuthSheet("username");
   }
 }
 
@@ -8552,9 +8497,8 @@ function applyAuthState(user){
   document.getElementById("profileAccountEmail").textContent = email;
   document.getElementById("profileEmailText").textContent = email;
   if(!loggedIn || (profileLoadedFor && profileLoadedFor !== currentUser.id)) profileLoadedFor = null;
-  if(!loggedIn){ currentUsername = null; currentBirthdate = null; }
+  if(!loggedIn) currentUsername = null;
   applyUsername(currentUsername);
-  applyBirthdate(currentBirthdate);
   syncRecentWithAuth();
   syncAvatarWithAuth();
   /* Ohne Konto gibt es nichts zu verwalten: offene Konto-Fenster schließen. */
@@ -8651,7 +8595,7 @@ authEls.resend.addEventListener("click", async ()=>{
 });
 
 document.getElementById("authOpenBtn").addEventListener("click", ()=>openAuthSheet("login"));
-document.getElementById("profileUsernameSetBtn").addEventListener("click", ()=>openAuthSheet("complete"));
+document.getElementById("profileUsernameSetBtn").addEventListener("click", ()=>openAuthSheet("username"));
 
 authEls.form.addEventListener("submit", async (e)=>{
   e.preventDefault();
@@ -8663,22 +8607,11 @@ authEls.form.addEventListener("submit", async (e)=>{
   const email = authEls.email.value.trim();
   const password = authEls.password.value;
   const username = authEls.username.value.trim();
-  const birthdate = authEls.birthdate.value;
-  const needUsername = !authEls.usernameField.hidden;
-  const needBirthdate = !authEls.birthdateField.hidden;
-  if(needUsername){
+  if(cfg.username){
     const problem = usernameProblem(username);
     if(problem){
       showAuthMsg(problem);
       authEls.username.focus();
-      return;
-    }
-  }
-  if(needBirthdate){
-    const problem = birthdateProblem(birthdate);
-    if(problem){
-      showAuthMsg(problem);
-      authEls.birthdate.focus();
       return;
     }
   }
@@ -8718,12 +8651,11 @@ authEls.form.addEventListener("submit", async (e)=>{
         authEls.username.focus();
         return;
       }
-      /* Nutzername und Geburtsdatum gehen als Metadaten mit; der
-         Datenbank-Trigger handle_new_user() legt damit das Profil an, lehnt
-         die Registrierung ohne beides ab und entfernt das Geburtsdatum danach
-         wieder aus den Metadaten. */
+      /* Der Nutzername geht als Metadatum mit; der Datenbank-Trigger
+         handle_new_user() legt damit das Profil an und lehnt die
+         Registrierung ohne gültigen Nutzernamen ab. */
       const { data, error } = await supabaseClient.auth.signUp({
-        email, password, options:{ emailRedirectTo: authRedirectUrl(), data:{ username, birthdate } }
+        email, password, options:{ emailRedirectTo: authRedirectUrl(), data:{ username } }
       });
       if(error){
         /* Fehler aus dem Trigger (z. B. Name gerade eben vergeben) meldet
@@ -8759,26 +8691,19 @@ authEls.form.addEventListener("submit", async (e)=>{
       if(error){ showAuthMsg(authErrorText(error)); return; }
       closeSheet("authOverlay");
       showToast("Dein neues Passwort ist gespeichert.");
-    } else if(authMode==="complete"){
+    } else if(authMode==="username"){
       if(!currentUser){ closeSheet("authOverlay"); return; }
-      const changes = {};
-      if(needUsername) changes.username = username;
-      if(needBirthdate) changes.birthdate = birthdate;
-      if(!Object.keys(changes).length){ closeSheet("authOverlay"); return; }
       const { data, error } = await supabaseClient.from("profiles")
-        .update(changes).eq("id", currentUser.id).select("username, birthdate").maybeSingle();
+        .update({ username }).eq("id", currentUser.id).select("username").maybeSingle();
       if(error){
         showAuthMsg(error.code==="23505"
           ? "Dieser Nutzername ist schon vergeben. Bitte wähle einen anderen."
-          : error.code==="23514"
-            ? (needUsername ? "Dieser Nutzername ist nicht erlaubt oder das Geburtsdatum ist ungültig." : "Bitte gib ein gültiges Geburtsdatum ein.")
-            : authErrorText(error));
+          : error.code==="23514" ? "Dieser Nutzername ist nicht erlaubt." : authErrorText(error));
         return;
       }
       applyUsername(data && data.username);
-      applyBirthdate(data && data.birthdate);
       closeSheet("authOverlay");
-      showToast("Deine Angaben sind gespeichert.");
+      showToast("Dein Nutzername ist gespeichert.");
     }
   } catch(err){
     showAuthMsg(authErrorText(err));
@@ -8880,8 +8805,7 @@ function resetDeleteFeedbackForm(){
    nicht per CASCADE am Konto: Die App entfernt es vorher selbst über die
    Storage-API; klappt das nicht, räumt der Datenbank-Auslöser nach dem
    Löschen des Kontos auf (Edge Function avatar-cleanup). Danach werden auch
-   die nur lokal gespeicherte Adresse auf diesem Gerät entfernt. Nutzername
-   und Geburtsdatum liegen in profiles und gehen mit dem Konto. */
+   die nur lokal gespeicherte Adresse auf diesem Gerät entfernt. */
 const deleteFeedbackButtons = [document.getElementById("skipDeleteFeedbackBtn"), document.getElementById("confirmDeleteFeedbackBtn")];
 async function finalizeAccountDeletion(reason){
   if(!supabaseClient || !currentUser){
@@ -8915,8 +8839,8 @@ async function finalizeAccountDeletion(reason){
 }
 
 /* Entfernt die nur lokal gespeicherte Adresse und setzt ihre Anzeige
-   zurück. Nutzername, Geburtsdatum und Profilbild gehören zum Konto und
-   verschwinden mit applyAuthState(null). Favoriten, Alarme,
+   zurück. Nutzername und Profilbild gehören zum Konto und verschwinden
+   mit applyAuthState(null). Favoriten, Alarme,
    Bewertungen und Einstellungen funktionieren auch ohne Konto und bleiben. */
 function clearLocalProfileData(){
   try{ localStorage.removeItem("canspot-address"); }catch(e){}
@@ -8948,8 +8872,8 @@ function updateAvatarInitials(){
   try{ localStorage.removeItem(key); }catch(e){}
 });
 
-/* Das Geburtsdatum liegt jetzt im Konto (profiles.birthdate). Ein früher
-   nur lokal gespeichertes wird nicht mehr gebraucht (Datenminimierung). */
+/* Ein Geburtsdatum wird nicht mehr erfasst. Ein früher lokal gespeichertes
+   wird entfernt (Datenminimierung). */
 try{ localStorage.removeItem("canspot-birthdate"); }catch(e){}
 let savedAddress = null;
 try{ savedAddress = JSON.parse(localStorage.getItem("canspot-address") || "null"); }catch(e){ savedAddress = null; }
@@ -8975,7 +8899,7 @@ function setFieldEditing(field, editing){
   document.getElementById(`${field}EditRow`).style.display = editing ? "flex" : "none";
 }
 
-const FIELD_FOCUS_TARGET = {birthdate:"profileBirthdate", address:"profileStreet"};
+const FIELD_FOCUS_TARGET = {address:"profileStreet"};
 document.querySelectorAll("[data-edit]").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const field = btn.dataset.edit;
@@ -8984,7 +8908,7 @@ document.querySelectorAll("[data-edit]").forEach(btn=>{
   });
 });
 
-/* Ein aufgeklapptes Bearbeiten-Feld (Geburtsdatum/Adresse)
+/* Ein aufgeklapptes Bearbeiten-Feld (Adresse)
    klappt automatisch wieder ein, sobald irgendwo anders im Fenster getippt wird. Klicks INNERHALB des jeweiligen
    .field-block (Stift, Eingabefelder, Speichern-Button) lösen das bewusst
    NICHT aus, deren eigene Handler (s.o./[data-save]) kümmern sich darum. */
@@ -8999,28 +8923,9 @@ document.getElementById("accountManageOverlay").addEventListener("click", (e)=>{
 });
 
 document.querySelectorAll("[data-save]").forEach(btn=>{
-  btn.addEventListener("click", async ()=>{
+  btn.addEventListener("click", ()=>{
     const field = btn.dataset.save;
-    if(field==="birthdate"){
-      const val = document.getElementById("profileBirthdate").value;
-      const problem = birthdateProblem(val);
-      if(problem){ showToast(problem); return; }
-      if(!supabaseClient || !currentUser) return;
-      if(val !== currentBirthdate){
-        btn.disabled = true;
-        const uid = currentUser.id;
-        const { data, error } = await supabaseClient.from("profiles")
-          .update({ birthdate: val }).eq("id", uid).select("birthdate").maybeSingle();
-        btn.disabled = false;
-        if(!currentUser || currentUser.id !== uid) return;
-        if(error || !data){
-          showToast("Das Geburtsdatum konnte gerade nicht gespeichert werden. Bitte versuche es später erneut.");
-          return;
-        }
-        applyBirthdate(data.birthdate);
-        showToast("Geburtsdatum aktualisiert.");
-      }
-    } else if(field==="address"){
+    if(field==="address"){
       const address = {
         street: document.getElementById("profileStreet").value.trim(),
         zip: document.getElementById("profileZip").value.trim(),
