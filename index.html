@@ -3694,7 +3694,7 @@ transition:max-height .3s ease
 .menu-acc-panel.open{max-height:2000px}
 .menu-acc-panel-inner{padding:2px 14px 14px}
 
-/* "NEU"-Badge für Neuheiten-Einträge (siehe renderNewArrivals()). */
+/* "NEU"-Badge für Neuheiten-Einträge. */
 .new-badge{
 display:inline-block;
 font-size:9px;
@@ -3713,6 +3713,412 @@ vertical-align:middle
    gedacht (in beiden Themes #fff) - dieselbe Lösung wie bei anderen
    Schriftzügen auf farbigem Grund in der App. */
 .fav-row .fav-txt .new-badge{color:var(--brand-primary-contrast)}
+
+/* Neuheiten / Coming Soon!: Leiste im Header (.hero-links) öffnet die
+   eigene Seite #newSoonPage (zwei Reiter), siehe openNewSoonPage(). Header,
+   obere Leiste der Seite und Radar-Kopf bleiben in beiden Themes
+   dunkelblau, deshalb dort feste Farbwerte. */
+.hero-links{
+display:flex;
+margin-top:14px;
+background:rgba(255,255,255,.06);
+border:1px solid rgba(112,146,197,.3);
+border-radius:var(--radius-md);
+overflow:hidden
+}
+.hero-link{
+flex:1;
+position:relative;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:7px;
+padding:10px 8px;
+background:transparent;
+border:none;
+color:#fff;
+font-family:inherit;
+font-size:13px;
+font-weight:700;
+cursor:pointer;
+transition:background .15s ease
+}
+.hero-link + .hero-link::before,
+.np-tab + .np-tab::before{
+content:"";
+position:absolute;
+left:0;
+top:9px;
+bottom:9px;
+width:1px;
+background:rgba(112,146,197,.35)
+}
+@media (hover:hover){
+.hero-link:hover{background:rgba(255,255,255,.06)}
+}
+.hero-link .icon{width:16px;height:16px;color:#7092c5}
+.hero-link-count{
+min-width:18px;
+height:18px;
+padding:0 5px;
+border-radius:var(--radius-pill);
+background:#3363ac;
+color:#fff;
+font-size:10.5px;
+font-weight:800;
+display:inline-flex;
+align-items:center;
+justify-content:center
+}
+.hero-link-count[hidden]{display:none}
+
+.np-page{
+position:fixed;
+top:0;
+bottom:0;
+left:0;
+right:0;
+width:100%;
+max-width:560px;
+margin:0 auto;
+z-index:35;
+background:var(--bg-page);
+overflow-y:auto;
+overscroll-behavior:contain;
+-webkit-overflow-scrolling:touch;
+padding-bottom:calc(96px + env(safe-area-inset-bottom));
+box-sizing:border-box;
+visibility:hidden;
+transform:translateX(100%);
+transition:transform .28s cubic-bezier(.32,.72,0,1),visibility 0s linear .28s
+}
+.np-page.open{
+visibility:visible;
+transform:none;
+transition:transform .28s cubic-bezier(.32,.72,0,1),visibility 0s
+}
+body.np-lock{overflow:hidden}
+body.np-lock .view-toggle{visibility:hidden}
+.np-bar{
+position:sticky;
+top:0;
+z-index:5;
+display:flex;
+align-items:center;
+gap:6px;
+padding:calc(8px + env(safe-area-inset-top)) 10px 0;
+background:#1b213f;
+border-bottom:1px solid rgba(112,146,197,.22)
+}
+.np-back{
+width:38px;
+height:38px;
+margin-bottom:4px;
+display:flex;
+align-items:center;
+justify-content:center;
+flex-shrink:0;
+border:none;
+border-radius:var(--radius-md);
+background:rgba(255,255,255,.08);
+color:#fff;
+cursor:pointer
+}
+.np-back .icon{width:18px;height:18px}
+.np-tabs{flex:1;display:flex;justify-content:center;margin-right:44px}
+.np-tab{
+position:relative;
+display:flex;
+align-items:center;
+gap:7px;
+padding:12px 14px 15px;
+background:transparent;
+border:none;
+color:rgba(255,255,255,.7);
+font-family:inherit;
+font-size:13.5px;
+font-weight:700;
+cursor:pointer;
+white-space:nowrap
+}
+.np-tab .icon{width:17px;height:17px;color:#7092c5}
+.np-tab-label{position:relative}
+.np-tab[aria-selected="true"]{color:#fff}
+.np-tab[aria-selected="true"] .np-tab-label::after{
+content:"";
+position:absolute;
+left:0;
+right:0;
+bottom:-6px;
+height:2px;
+border-radius:2px;
+background:#7092c5
+}
+.np-pane[hidden]{display:none}
+.np-pane{animation:menuViewEnterRight .2s ease}
+
+.np-intro{padding:16px 18px 2px}
+.np-eyebrow{
+font-size:11px;
+font-weight:800;
+letter-spacing:.12em;
+text-transform:uppercase;
+color:var(--brand-primary-blue)
+}
+.np-h1{
+margin:4px 0 6px;
+font-size:29px;
+line-height:1.04;
+font-weight:800;
+letter-spacing:-.03em;
+color:var(--text-primary)
+}
+.np-h1 span{color:var(--brand-primary-blue)}
+.np-lead{font-size:12.5px;line-height:1.45;color:var(--text-muted)}
+:root[data-theme="dark"] .np-eyebrow,
+:root[data-theme="dark"] .np-h1 span{color:var(--brand-primary-light)}
+.np-chips{
+display:flex;
+gap:8px;
+overflow-x:auto;
+padding:12px 18px 2px;
+scrollbar-width:none
+}
+.np-chips::-webkit-scrollbar{display:none}
+.np-chips .chip{flex-shrink:0}
+.np-list{display:grid;gap:12px;padding:12px 18px 0}
+.np-empty{
+margin:14px 18px 0;
+padding:22px 18px;
+text-align:center;
+font-size:13px;
+line-height:1.5;
+color:var(--text-muted);
+background:var(--bg-surface);
+border:1px dashed var(--border-default);
+border-radius:var(--radius-lg)
+}
+
+.np-card{
+overflow:hidden;
+background:var(--bg-surface);
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-xl);
+box-shadow:var(--shadow-sm)
+}
+.np-media{
+position:relative;
+height:132px;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+background:radial-gradient(circle at 50% 60%,var(--brand-primary-subtle-strong) 0%,var(--bg-surface-sunken) 72%)
+}
+:root[data-theme="dark"] .np-media{background:radial-gradient(circle at 50% 60%,#223965 0%,#12151C 72%)}
+.np-media img{height:108px;max-width:50%;object-fit:contain}
+.np-badge{
+position:absolute;
+top:10px;
+left:10px;
+display:inline-flex;
+align-items:center;
+gap:4px;
+padding:4px 9px;
+border-radius:var(--radius-pill);
+background:var(--brand-primary-blue);
+color:#fff;
+font-size:9.5px;
+font-weight:800;
+letter-spacing:.06em;
+text-transform:uppercase
+}
+.np-badge .icon{width:11px;height:11px}
+.np-fav{
+position:absolute;
+top:8px;
+right:8px;
+width:36px;
+height:36px;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:50%;
+background:var(--bg-surface);
+border:1px solid var(--border-subtle);
+color:var(--text-primary);
+cursor:pointer
+}
+.np-fav .icon{width:18px;height:18px}
+.np-fav.active{color:#ef4444}
+.np-fav.active .icon{fill:currentColor;stroke:none}
+.np-body{padding:12px 14px 14px}
+.np-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer}
+.np-brand{font-size:11.5px;color:var(--text-muted)}
+.np-name{
+margin-top:1px;
+font-size:17px;
+line-height:1.2;
+font-weight:800;
+letter-spacing:-.01em;
+color:var(--text-primary)
+}
+.np-tag{
+display:inline-flex;
+align-items:center;
+gap:4px;
+padding:4px 8px;
+border-radius:var(--radius-sm);
+background:var(--brand-primary-subtle);
+color:var(--brand-primary-blue);
+font-size:10.5px;
+font-weight:700;
+white-space:nowrap;
+flex-shrink:0
+}
+:root[data-theme="dark"] .np-tag{color:#9fb4d8}
+.np-tag .icon{width:12px;height:12px}
+.np-cta{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:6px;
+width:100%;
+margin-top:12px;
+padding:11px;
+border:none;
+border-radius:var(--radius-md);
+background:var(--brand-primary-blue);
+color:#fff;
+font-family:inherit;
+font-size:13.5px;
+font-weight:800;
+cursor:pointer;
+transition:background .15s
+}
+.np-cta:hover{background:var(--brand-primary-hover)}
+.np-cta .icon{width:15px;height:15px;transform:rotate(-90deg)}
+.np-stores{margin-top:12px;border-top:1px solid var(--border-subtle)}
+.np-store{
+display:flex;
+align-items:center;
+gap:9px;
+width:100%;
+padding:8px 0;
+background:transparent;
+border:none;
+border-bottom:1px solid var(--border-subtle);
+font-family:inherit;
+text-align:left;
+color:inherit;
+cursor:pointer
+}
+.np-store:last-child{border-bottom:0;padding-bottom:0}
+.np-store .store-logo{width:28px;height:28px;padding:2px}
+.np-store-name{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.np-store-km{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text-muted);white-space:nowrap}
+.np-store-km .icon{width:11px;height:11px;color:var(--brand-primary-light)}
+.np-store-price{min-width:56px;text-align:right;font-size:15px;font-weight:800;color:var(--text-primary)}
+.np-store-chev{width:15px;height:15px;color:var(--text-disabled);transform:rotate(-90deg)}
+.np-note{margin-top:6px;font-size:10.5px;color:var(--text-muted)}
+.np-nutri{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.np-nutri div{
+padding:6px 2px;
+text-align:center;
+border-radius:var(--radius-sm);
+background:var(--bg-surface-sunken);
+border:1px solid var(--border-subtle)
+}
+.np-nutri b{display:block;font-size:12px;color:var(--text-primary);white-space:nowrap}
+.np-nutri span{display:block;margin-top:1px;font-size:9px;color:var(--text-muted)}
+
+.np-hero{
+position:relative;
+overflow:hidden;
+display:flex;
+align-items:center;
+gap:12px;
+margin:14px 18px 0;
+padding:18px 12px 18px 16px;
+border-radius:var(--radius-xl);
+background:radial-gradient(circle at 86% 50%,#2a3a7a 0%,#1b213f 52%,#141a33 100%);
+color:#fff;
+box-shadow:var(--shadow-sm)
+}
+.np-hero-txt{flex:1;min-width:0}
+.np-hero .np-eyebrow{font-size:10px;letter-spacing:.1em;color:#9fb4d8}
+.np-hero .np-h1{margin:5px 0 6px;font-size:21px;line-height:1.1;color:#fff}
+.np-hero .np-h1 span{color:#7092c5}
+.np-hero .np-lead{font-size:12px;line-height:1.4;color:#c9d3e6}
+.np-radar{position:relative;width:112px;height:112px;flex-shrink:0}
+.np-ring,.np-sweep,.np-core{
+position:absolute;
+left:50%;
+top:50%;
+border-radius:50%;
+transform:translate(-50%,-50%)
+}
+.np-ring{border:1px solid rgba(112,146,197,.28)}
+.np-ring.r1{width:110px;height:110px;border-style:dashed;border-color:rgba(112,146,197,.35)}
+.np-ring.r2{width:80px;height:80px}
+.np-ring.r3{width:50px;height:50px}
+.np-axis{position:absolute;background:rgba(112,146,197,.18)}
+.np-axis.h{left:1px;right:1px;top:50%;height:1px}
+.np-axis.v{top:1px;bottom:1px;left:50%;width:1px}
+.np-sweep{
+width:110px;
+height:110px;
+background:conic-gradient(from 0deg,rgba(112,146,197,0) 0deg,rgba(112,146,197,0) 290deg,rgba(112,146,197,.5) 360deg);
+animation:npSweep 4.5s linear infinite
+}
+@keyframes npSweep{
+from{transform:translate(-50%,-50%) rotate(0deg)}
+to{transform:translate(-50%,-50%) rotate(360deg)}
+}
+.np-core{
+width:36px;
+height:36px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:#1b213f;
+border:1px solid rgba(112,146,197,.55);
+box-shadow:0 0 0 5px rgba(51,99,172,.18),0 0 16px rgba(51,99,172,.55)
+}
+.np-core svg{width:14px;height:auto}
+.np-blip{
+position:absolute;
+width:5px;
+height:5px;
+border-radius:50%;
+background:#7092c5;
+box-shadow:0 0 6px rgba(112,146,197,.9);
+animation:npBlip 2.4s ease-in-out infinite
+}
+.np-blip.b1{left:66%;top:20%}
+.np-blip.b2{left:22%;top:64%;animation-delay:.8s}
+.np-blip.b3{left:74%;top:72%;animation-delay:1.6s}
+@keyframes npBlip{0%,100%{opacity:.35}50%{opacity:1}}
+
+.np-section-head{
+display:flex;
+align-items:baseline;
+justify-content:space-between;
+gap:8px;
+padding:20px 18px 0
+}
+.np-section-head b{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--text-primary)}
+.np-week{display:flex;align-items:flex-start;gap:10px;padding:12px 18px 0}
+.np-week .period-header-accent{min-height:32px}
+.np-week-txt{flex:1;min-width:0}
+.np-week-title{font-size:12.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--text-primary)}
+.np-week-range{margin-top:1px;font-size:11.5px;color:var(--text-muted)}
+.np-count{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
+
+@media (prefers-reduced-motion:reduce){
+.np-sweep,.np-blip,.np-pane{animation:none}
+.np-page,.np-page.open{transition:none}
+}
 
 /* Mini-Navigation innerhalb des Menüs (Menü ↔ Neuigkeiten ↔ Detailansicht),
    siehe showMenuView() im Script. Dezente Slide-Animation statt Öffnen eines
@@ -4139,6 +4545,7 @@ gap:6px
 <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.2a2.7 2.7 0 015.2 1c0 2.1-2.5 2.1-2.5 4.3"/><line x1="12" y1="17.4" x2="12" y2="17.5"/></symbol>
 <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.2"/><line x1="12" y1="7.5" x2="12" y2="7.6"/></symbol>
 <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 3v3M17.5 4.5h3"/><path d="M5 17v2.5M3.75 18.25h2.5"/></symbol>
+<symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></symbol>
 <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></symbol>
 <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
@@ -4188,6 +4595,10 @@ gap:6px
 Der Energy soll kicken.<br>
 Nicht der Preis.
 </div>
+<nav class="hero-links" aria-label="Neuheiten und Coming Soon">
+<button class="hero-link" id="heroNewBtn"><svg class="icon"><use href="#i-sparkle"/></svg>Neuheiten</button>
+<button class="hero-link" id="heroSoonBtn"><svg class="icon"><use href="#i-rocket"/></svg>Coming Soon!<span class="hero-link-count" id="heroSoonCount" hidden></span></button>
+</nav>
 </div>
 
 <div class="hero-search-sticky" id="heroSearchSticky">
@@ -4273,6 +4684,20 @@ CanSpot ist ein unabhängiger Preisvergleich und nicht mit den genannten Händle
 </main>
 
 </div>
+
+<!-- NEUHEITEN / COMING SOON (eigene Seite über der Startseite, geöffnet über
+     die Header-Leiste, siehe openNewSoonPage()) -->
+<section class="np-page" id="newSoonPage" aria-label="Neuheiten und Coming Soon" aria-hidden="true">
+<div class="np-bar">
+<button class="np-back" id="npBack" aria-label="Zurück"><svg class="icon"><use href="#i-arrow-left"/></svg></button>
+<div class="np-tabs" role="tablist">
+<button class="np-tab" id="npTabNew" role="tab" aria-selected="true" aria-controls="npPaneNew"><svg class="icon"><use href="#i-sparkle"/></svg><span class="np-tab-label">Neuheiten</span></button>
+<button class="np-tab" id="npTabSoon" role="tab" aria-selected="false" aria-controls="npPaneSoon"><svg class="icon"><use href="#i-rocket"/></svg><span class="np-tab-label">Coming Soon!</span></button>
+</div>
+</div>
+<div class="np-pane" id="npPaneNew" role="tabpanel"></div>
+<div class="np-pane" id="npPaneSoon" role="tabpanel" hidden></div>
+</section>
 
 <div class="toast" id="toast"></div>
 
@@ -5140,19 +5565,6 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </button>
 
 <div class="field-label" style="margin-top:22px">Mein CanSpot</div>
-
-<div class="menu-acc">
-<button class="profile-row menu-acc-toggle" id="menuNewRow" aria-expanded="false" aria-controls="menuNewPanel">
-<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-sparkle"/></svg></div>
-<div class="profile-row-txt"><b>Neuheiten</b></div>
-<svg class="icon icon-md menu-acc-chevron"><use href="#i-chevron-down"/></svg>
-</button>
-<div class="menu-acc-panel" id="menuNewPanel">
-<div class="menu-acc-panel-inner">
-<div id="newArrivalsList"></div>
-</div>
-</div>
-</div>
 
 <div class="menu-acc">
 <button class="profile-row menu-acc-toggle" id="menuStoresRow" aria-expanded="false" aria-controls="menuStoresPanel">
@@ -8023,10 +8435,6 @@ function toggleMenuAccordion(rowId, panelId){
   row.setAttribute("aria-expanded", String(!wasOpen));
 }
 
-document.getElementById("menuNewRow").addEventListener("click",()=>{
-  renderNewArrivals();
-  toggleMenuAccordion("menuNewRow","menuNewPanel");
-});
 document.getElementById("menuStoresRow").addEventListener("click",()=>{
   renderStoreListSheet();
   toggleMenuAccordion("menuStoresRow","menuStoresPanel");
@@ -8137,29 +8545,264 @@ function renderStoreListSheet(){
   });
 }
 
-/* Listet Produkte mit products[].isNew === true (aus deals.json) - rein
-   informativ, keine eigene Angebots-/Detaillogik nötig. Wiederverwendet die
-   bestehenden .fav-row/-emoji/-txt-Klassen aus "Mein Bereich"/Favoriten. */
-function renderNewArrivals(){
-  const container = document.getElementById("newArrivalsList");
-  const items = products.filter(p=>p.isNew);
-  if(items.length===0){
-    container.innerHTML = `<div class="fav-empty">Aktuell keine neuen Produkte im Sortiment.</div>`;
-    return;
-  }
-  container.innerHTML = items.map(p=>`
-    <div class="fav-row">
-      <img class="fav-emoji" src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
-      <div class="fav-txt">
-        <b>${escapeHtml(p.name)}<span class="new-badge">NEU</span></b>
-        <span>${escapeHtml(p.brand)} · ${p.sizeMl} ml</span>
+
+
+/* ---------------- NEUHEITEN / COMING SOON (eigene Seite) ----------------
+   Neuheiten = products[].isNew mit ihren laufenden Angeboten, Coming Soon =
+   Angebote mit Startdatum in der Zukunft (validFrom), nach Startwoche
+   gruppiert. Die Seite liegt über der Startseite, die untere Navigation
+   bleibt sichtbar und schließt sie. */
+const NP_MARK = `<svg viewBox="0 0 240 345" aria-hidden="true"><path fill="#3363ac" d="M84.3,310.5c-11.9-15.9-21.4-32.3-29.2-50.1-4.6-10.5-7.5-20.7-8-32.4-1.1-24.7,9.2-49.1,28.1-65.4,15.7-13.6,35.4-20.3,55.9-21.4,24.3-1.3,48.8-2.2,70.4-13.5,11.4-6,20.8-13.8,28.6-24.8,7.5,38.1-4.8,83.2-20.1,118.1-18.3,41.6-42,80-70.1,115.5l-9.6,10.4c-4.2,4.5-11.5,5.1-15.9.4l-13.4-14.5-16.7-22.4ZM123.5,266.4c10.5,0,20.5-4.9,27.4-13.3,15.4-18.8,14.1-46-4.2-62.2-12.6-11.2-31.1-11.5-44.3-1.1-11.3,8.9-17.7,23-16.8,37.5,1.3,21,17,39,37.9,39.1Z"/>
+  <path fill="#fff" d="M227.8,94.7c-10.5,17.9-31.2,28.5-51.4,33.1-24.7,5.7-46.5,1.9-71,8.8-24.8,7-44.8,23.8-56.4,46.7-5.9,11.6-10.2,23.7-10,36.9l.2,18.7c-10.4-14.7-18-29.7-24.5-46C2.4,162.4-4.4,130.4,3.3,97.9c3.3-13.9,9-26.6,15.8-39.2,5.2,6.3,10.5,11.1,17.3,14.6,7.1,3.7,14.2,7,21.9,9.4,20.8,6.6,42,8.5,63.9,8.3,24.5-.2,48.1-3.8,70.7-12.9,10.4-4.2,18.9-9.8,26.7-18.8,2.7,5.4,4.5,10.5,6.2,16.1,1.7,6.4,2.4,12.6,2,19.3Z"/>
+  <path fill="#fff" d="M197.4,67.6c-36.8,18.8-90.8,19.2-130.9,9.2-15.8-4-33.6-10.7-42.5-23.9-7.5-11.3-.9-23.2,10-31,9.3-6.6,19.5-10.8,30.6-13.7,14.3-3.8,28.5-6.5,43.3-7.5,27.8-2,57.6.9,83.2,11.8,8.3,3.5,15.8,8.6,21.6,15.1,7.5,8.3,7.9,19.1.9,27.7-4.3,5.4-9.9,9.2-16.3,12.4ZM153.8,35.5l-15.7,29.8c19.4-1.4,39.6-4.5,54.6-14.8,2.3-2.3,4.4-5,4.6-7.7,2.3-25-98.8-38.5-145.9-12.1-4.3,2.4-7.6,5.7-9,10.3.5,4.2,2.9,7.7,6.4,10.1,9.7,6.6,20.5,9.8,32.4,11.5l21.2-33.5c2.2-3.4,5.8-5.3,9.7-6.7,14.9-3.7,45.1-1.9,41.8,13.1ZM137.6,33.9c-1.4-6.8-22.5-6.5-23.3.8-.8,7.8,24.8,6.7,23.3-.8ZM126.7,55.4c-1.9-8.1-26.6-6-26.3,1.5,0,1,1.5,3,2.4,3.4,12,5.4,24.9-.7,23.9-5Z"/></svg>`;
+const NP_WEEKDAYS = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+let npTab = "new";
+let npBrand = "Alle";
+
+function getNewProductEntries(){
+  return products.filter(p=>p.isNew).map(p=>({
+    product: p,
+    offers: deals
+      .filter(d=>d.productId===p.id && daysUntil(d.validFrom)<=0 && daysUntil(d.validUntil)>=0)
+      .sort((a,b)=>a.offerPrice-b.offerPrice)
+  }));
+}
+
+function getUpcomingDeals(){
+  return deals
+    .filter(d=>daysUntil(d.validFrom) > 0)
+    .sort((a,b)=>a.validFrom.localeCompare(b.validFrom) || a.offerPrice-b.offerPrice);
+}
+
+function npShortDate(dateStr){
+  const [y,m,d] = dateStr.split("-");
+  const wd = NP_WEEKDAYS[new Date(+y, +m-1, +d).getDay()];
+  return `${wd}, ${d}.${m}.`;
+}
+
+function npGrams(n){
+  return n.toLocaleString("de-DE", {minimumFractionDigits:1, maximumFractionDigits:1}) + " g";
+}
+
+/* Nährwerte pro Dose aus den Werten pro 100 ml; ohne Daten null. */
+function npNutritionPerCan(d){
+  const per100 = getNutritionPer100ml({id:d.productId, brand:d.brand});
+  if(!per100) return null;
+  const f = d.sizeMl / 100;
+  const rows = [];
+  if(typeof per100.kcal==="number") rows.push([`${Math.round(per100.kcal*f)} kcal`, "Kalorien"]);
+  if(typeof per100.sugarG==="number") rows.push([npGrams(per100.sugarG*f), "Zucker"]);
+  if(typeof per100.caffeineMg==="number") rows.push([`${Math.round(per100.caffeineMg*f)} mg`, "Koffein"]);
+  if(typeof per100.carbsG==="number") rows.push([npGrams(per100.carbsG*f), "Kohlenhydr."]);
+  return rows.length ? rows : null;
+}
+
+function npStoreRow(d){
+  return `
+    <button class="np-store" data-np-open="${escapeHtml(d.productId)}" data-np-deal="${escapeHtml(d.id)}">
+      <img class="store-logo" src="${escapeHtml(storeLogos[d.store] || STORE_FALLBACK_IMG)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+      <span class="np-store-name">${escapeHtml(d.store)}</span>
+      ${hasDistance(d) ? `<span class="np-store-km"><svg class="icon"><use href="#i-pin"/></svg>${d.distanceKm} km</span>` : ""}
+      <span class="np-store-price">${euro(d.offerPrice)} €</span>
+      <svg class="icon np-store-chev"><use href="#i-chevron-down"/></svg>
+    </button>`;
+}
+
+function npPfandNote(d){
+  return typeof d.pfand==="number" && d.pfand>0
+    ? `<div class="np-note">zzgl. ${euro(d.pfand)} € Pfand pro Dose</div>` : "";
+}
+
+function renderNewPane(){
+  const pane = document.getElementById("npPaneNew");
+  const entries = getNewProductEntries();
+  const brands = [...new Set(entries.map(e=>e.product.brand))].sort((a,b)=>a.localeCompare(b,"de"));
+  if(npBrand!=="Alle" && !brands.includes(npBrand)) npBrand = "Alle";
+  const shown = entries
+    .filter(e=>npBrand==="Alle" || e.product.brand===npBrand)
+    .sort((a,b)=>(b.offers.length>0)-(a.offers.length>0) || ((a.offers[0]?.offerPrice ?? 0)-(b.offers[0]?.offerPrice ?? 0)));
+
+  const cards = shown.map(({product:p, offers})=>{
+    const best = offers[0];
+    const key = favKeyFor(p.id, best ? best.units : UNITS_FALLBACK);
+    const fav = favorites.has(key);
+    const openAttrs = `data-np-open="${escapeHtml(p.id)}"${best ? ` data-np-deal="${escapeHtml(best.id)}"` : ""}`;
+    return `
+    <article class="np-card">
+      <div class="np-media" ${openAttrs}>
+        <span class="np-badge">Neu</span>
+        <button class="np-fav${fav ? " active" : ""}" data-np-fav="${escapeHtml(key)}" data-np-name="${escapeHtml(p.name)}" aria-label="${fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}"><svg class="icon"><use href="#i-heart"/></svg></button>
+        <img src="${escapeHtml(p.img || FALLBACK_IMG)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
+      </div>
+      <div class="np-body">
+        <div class="np-head" ${openAttrs}>
+          <div>
+            <div class="np-brand">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
+            <div class="np-name">${escapeHtml(p.name)}</div>
+          </div>
+          <span class="np-tag"><svg class="icon"><use href="#i-sparkle"/></svg>Neu entdeckt</span>
+        </div>
+        ${offers.length
+          ? `<div class="np-stores">${offers.slice(0,3).map(npStoreRow).join("")}</div>${npPfandNote(best)}`
+          : `<div class="np-note">Aktuell kein Angebot in deiner Nähe.</div>`}
+        <button class="np-cta" ${openAttrs}>${offers.length ? "Angebote ansehen" : "Produktdetails"} <svg class="icon"><use href="#i-chevron-down"/></svg></button>
+      </div>
+    </article>`;
+  }).join("");
+
+  pane.innerHTML = `
+    <div class="np-intro">
+      <div class="np-eyebrow">Neuheiten</div>
+      <h1 class="np-h1">Frisch im Regal<span>.</span></h1>
+      <div class="np-lead">Neue Energy-Drink-Sorten entdecken und Angebote in deiner Nähe vergleichen.</div>
+    </div>
+    ${brands.length > 1 ? `<div class="np-chips">${["Alle", ...brands].map(b=>`<button class="chip${b===npBrand ? " on" : ""}" data-np-brand="${escapeHtml(b)}">${b==="Alle" ? "Alle Marken" : escapeHtml(b)}</button>`).join("")}</div>` : ""}
+    ${shown.length ? `<div class="np-list">${cards}</div>` : `<div class="np-empty">Aktuell keine neuen Produkte im Sortiment.<br>Neue Sorten erscheinen hier, sobald sie gelistet sind.</div>`}`;
+}
+
+function renderSoonPane(){
+  const pane = document.getElementById("npPaneSoon");
+  const items = getUpcomingDeals();
+  const groups = new Map();
+  items.forEach(d=>{
+    const w = weekIndexOf(d.validFrom);
+    if(!groups.has(w)) groups.set(w, []);
+    groups.get(w).push(d);
+  });
+
+  const list = [...groups.entries()].map(([w, g])=>{
+    const first = g[0].validFrom.split("-"), last = g[g.length-1].validFrom.split("-");
+    return `
+      <div class="np-week">
+        <div class="period-header-accent"></div>
+        <div class="np-week-txt">
+          <div class="np-week-title">${periodGroupLabel(w)}</div>
+          <div class="np-week-range">${g[0].validFrom===g[g.length-1].validFrom ? `Start ${first[2]}.${first[1]}.` : `${first[2]}.${first[1]}. – ${last[2]}.${last[1]}.`}</div>
+        </div>
+        <span class="np-count">${g.length} ${g.length===1 ? "Drink" : "Drinks"}</span>
+      </div>
+      <div class="np-list">${g.map(d=>{
+        const key = favKeyForDeal(d);
+        const fav = favorites.has(key);
+        const nutri = npNutritionPerCan(d);
+        const size = d.units > 1 ? `${d.units} × ${d.sizeMl} ml` : `${d.sizeMl} ml`;
+        return `
+        <article class="np-card">
+          <div class="np-media" data-np-open="${escapeHtml(d.productId)}" data-np-deal="${escapeHtml(d.id)}">
+            <span class="np-badge"><svg class="icon"><use href="#i-rocket"/></svg>Startet bald</span>
+            <button class="np-fav${fav ? " active" : ""}" data-np-fav="${escapeHtml(key)}" data-np-name="${escapeHtml(d.product)}" aria-label="${fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}"><svg class="icon"><use href="#i-heart"/></svg></button>
+            <img src="${escapeHtml(d.img || FALLBACK_IMG)}" alt="${escapeHtml(d.product)}" loading="lazy" referrerpolicy="no-referrer">
+          </div>
+          <div class="np-body">
+            <div class="np-head" data-np-open="${escapeHtml(d.productId)}" data-np-deal="${escapeHtml(d.id)}">
+              <div>
+                <div class="np-brand">${escapeHtml(d.brand)} · ${size}</div>
+                <div class="np-name">${escapeHtml(d.product)}</div>
+              </div>
+              <span class="np-tag"><svg class="icon"><use href="#i-calendar"/></svg>${npShortDate(d.validFrom)}</span>
+            </div>
+            <div class="np-stores">${npStoreRow(d)}</div>
+            ${nutri ? `<div class="np-nutri">${nutri.map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join("")}</div><div class="np-note">Nährwerte pro Dose</div>` : ""}
+            <button class="np-cta" data-np-open="${escapeHtml(d.productId)}" data-np-deal="${escapeHtml(d.id)}">Produktdetails <svg class="icon"><use href="#i-chevron-down"/></svg></button>
+          </div>
+        </article>`;
+      }).join("")}</div>`;
+  }).join("");
+
+  pane.innerHTML = `
+    <div class="np-hero">
+      <div class="np-hero-txt">
+        <div class="np-eyebrow">Deals früher sehen</div>
+        <h1 class="np-h1">Deals <span>erkennen,</span><br>bevor sie starten.</h1>
+        <div class="np-lead">Kommende Angebote vergleichen und vormerken.</div>
+      </div>
+      <div class="np-radar" aria-hidden="true">
+        <div class="np-ring r1"></div><div class="np-ring r2"></div><div class="np-ring r3"></div>
+        <div class="np-axis h"></div><div class="np-axis v"></div>
+        <div class="np-sweep"></div>
+        <span class="np-blip b1"></span><span class="np-blip b2"></span><span class="np-blip b3"></span>
+        <div class="np-core">${NP_MARK}</div>
       </div>
     </div>
-  `).join("");
-  container.querySelectorAll("img.fav-emoji").forEach(img=>{
-    img.addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
+    <div class="np-section-head" id="npSoonList"><b>Demnächst im Angebot</b></div>
+    ${items.length ? list : `<div class="np-empty">Aktuell sind keine kommenden Angebote bekannt.<br>Sobald ein Angebot angekündigt ist, erscheint es hier.</div>`}`;
+}
+
+function renderNewSoonPage(){
+  if(npTab==="soon") renderSoonPane(); else renderNewPane();
+  document.querySelectorAll("#newSoonPage img").forEach(img=>{
+    img.addEventListener("error", function(){ this.src = img.classList.contains("store-logo") ? STORE_FALLBACK_IMG : FALLBACK_IMG; }, {once:true});
   });
 }
+
+function showNewSoonTab(tab){
+  npTab = tab;
+  const soon = tab==="soon";
+  document.getElementById("npTabNew").setAttribute("aria-selected", String(!soon));
+  document.getElementById("npTabSoon").setAttribute("aria-selected", String(soon));
+  document.getElementById("npPaneNew").hidden = soon;
+  document.getElementById("npPaneSoon").hidden = !soon;
+  renderNewSoonPage();
+  document.getElementById("newSoonPage").scrollTop = 0;
+}
+
+function openNewSoonPage(tab){
+  const page = document.getElementById("newSoonPage");
+  showNewSoonTab(tab);
+  page.classList.add("open");
+  page.setAttribute("aria-hidden","false");
+  document.body.classList.add("np-lock");
+}
+
+function closeNewSoonPage(){
+  const page = document.getElementById("newSoonPage");
+  if(!page.classList.contains("open")) return;
+  page.classList.remove("open");
+  page.setAttribute("aria-hidden","true");
+  document.body.classList.remove("np-lock");
+}
+
+function updateHeroSoonCount(){
+  const n = getUpcomingDeals().length;
+  const el = document.getElementById("heroSoonCount");
+  el.textContent = n;
+  el.hidden = n===0;
+}
+
+document.getElementById("heroNewBtn").addEventListener("click", ()=>openNewSoonPage("new"));
+document.getElementById("heroSoonBtn").addEventListener("click", ()=>openNewSoonPage("soon"));
+document.getElementById("npTabNew").addEventListener("click", ()=>showNewSoonTab("new"));
+document.getElementById("npTabSoon").addEventListener("click", ()=>showNewSoonTab("soon"));
+document.getElementById("npBack").addEventListener("click", closeNewSoonPage);
+document.querySelector(".bottomnav").addEventListener("click", closeNewSoonPage, true);
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape" && !document.querySelector(".overlay.open")) closeNewSoonPage();
+});
+
+document.getElementById("newSoonPage").addEventListener("click", e=>{
+  const brandBtn = e.target.closest("[data-np-brand]");
+  if(brandBtn){
+    npBrand = brandBtn.dataset.npBrand;
+    renderNewSoonPage();
+    return;
+  }
+  const favBtn = e.target.closest("[data-np-fav]");
+  if(favBtn){
+    const key = favBtn.dataset.npFav;
+    const wasFav = favorites.has(key);
+    if(wasFav) favorites.delete(key); else favorites.add(key);
+    saveFavorites();
+    render();
+    updateNotifDot();
+    renderNewSoonPage();
+    showToast(wasFav ? `${favBtn.dataset.npName} aus Favoriten entfernt` : `${favBtn.dataset.npName} zu Favoriten hinzugefügt`);
+    return;
+  }
+  const openBtn = e.target.closest("[data-np-open]");
+  if(openBtn && products.some(p=>p.id===openBtn.dataset.npOpen)){
+    openProductDetail(openBtn.dataset.npOpen, openBtn.dataset.npDeal || undefined);
+  }
+});
 
 /* ---------------- PROFILE / MEIN BEREICH ---------------- */
 /* Zugang nur noch über den "Mein Bereich"-Tab in der unteren Navigation
@@ -11128,6 +11771,7 @@ function renderDynamicFilters(){
 function finishInit(){
   renderDynamicFilters();
   render();
+  updateHeroSoonCount();
   updateNotifDot();
   updateStatus();
   updateAlertsDot();
