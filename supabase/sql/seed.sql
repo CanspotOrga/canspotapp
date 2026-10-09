@@ -120,6 +120,22 @@ on conflict (id) do update set
   bundle_image_url = excluded.bundle_image_url,
   last_checked_at = excluded.last_checked_at;
 
+-- regular_prices (6) — Normalpreise ohne Aktion, übernommen aus offers.regular_price
+insert into public.regular_prices (id, product_id, branch_id, units, price, deposit, last_checked_at) values
+  ('24e25299-1361-4175-ae2b-8aaf17eb7b57', '7dfb0a5d-354b-4845-af7e-8c2e9120020b', '512e4c21-5183-4576-9673-b8d9ba9bf409', 1, '1.79', '0.25', '2026-10-03'),
+  ('522b94d7-7017-4135-b75e-85ddfcc2f7ba', '67e34e31-a36f-48c3-bd29-fedfb4288732', '19585656-b415-510e-8739-401bb2dd6a09', 1, '1.99', '0.25', '2026-10-04'),
+  ('dd6fff99-5563-4673-a083-c36e814e1215', '1e86d7b4-fecc-4e2a-a930-a7e92f0067da', '50ff519a-4266-46a1-9f92-90d6fa370c87', 1, '1.99', '0.25', '2026-10-03'),
+  ('0a2103d7-c8df-4694-b1ba-ee5dc8eee3ca', '73ab667f-75d7-4b02-a42e-47bae05ae065', '19585656-b415-510e-8739-401bb2dd6a09', 1, '1.49', '0.25', '2026-10-03'),
+  ('7141976d-d5fc-4ad9-904d-fb86bb23f68c', '82319af1-c3ef-4e85-8835-b64a76e76410', '2b4e352e-9b52-4fab-b1d8-ea79c5a7ea48', 1, '1.99', '0.25', '2026-10-04'),
+  ('e1eadffb-7559-4ce5-a523-6ede34ed1900', 'dbcfcbdf-05e9-4bd5-ba24-5362d09612d9', '2b4e352e-9b52-4fab-b1d8-ea79c5a7ea48', 1, '1.35', '0.25', '2026-10-03')
+on conflict (id) do update set
+  product_id = excluded.product_id,
+  branch_id = excluded.branch_id,
+  units = excluded.units,
+  price = excluded.price,
+  deposit = excluded.deposit,
+  last_checked_at = excluded.last_checked_at;
+
 -- app_settings (1) — genau eine Zeile, id = 1
 insert into public.app_settings (id, default_location_label, default_latitude, default_longitude, default_radius_km, demo_notice, app_version, ios_rating_url, android_rating_url) values
   (1, '59821 Arnsberg', 51.4013, 8.0658, 10,
@@ -147,4 +163,5 @@ select
   (select count(*) from public.product_nutrition) as product_nutrition,
   (select count(*) from public.offers) as offers,
   (select count(*) from public.price_history) as price_history,
+  (select count(*) from public.regular_prices) as regular_prices,
   (select count(*) from public.app_settings) as app_settings;

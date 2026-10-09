@@ -3649,6 +3649,17 @@ transition:transform .1s ease
 .profile-input{font-size:16px;font-weight:400}
 }
 
+.menu-alerts-dot{
+display:none;
+width:7px;
+height:7px;
+border-radius:50%;
+background:var(--status-error-text);
+flex-shrink:0;
+margin-left:-4px
+}
+.menu-alerts-dot.show{display:block}
+
 .menu-news-dot{
 display:none;
 width:7px;
@@ -3953,6 +3964,62 @@ font-weight:800
 #newView .np-chips{margin:0 -18px;padding:12px 18px 2px}
 #newView .np-list{padding:12px 0 0}
 #newView .np-empty{margin:14px 0 0}
+#productsView .np-intro{padding:6px 0 2px}
+#productsView .np-chips{margin:0 -18px;padding:12px 18px 2px}
+#productsView .np-list{padding:12px 0 0}
+#productsView .np-empty{margin:14px 0 0}
+
+/* Alle Produkte (Tab der unteren Navigation): kompakte Produktkarte im Stil
+   der Neuheiten-Karten, darunter je Händler eine .np-store-Zeile mit Preis. */
+.ap-card{
+padding:12px 14px;
+background:var(--bg-surface);
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-xl);
+box-shadow:var(--shadow-sm)
+}
+.ap-head{display:flex;align-items:center;gap:12px;cursor:pointer}
+.ap-head .thumb{width:52px;padding:4px}
+.ap-head-txt{flex:1;min-width:0}
+.ap-name{
+margin-top:1px;
+font-size:15.5px;
+line-height:1.2;
+font-weight:800;
+letter-spacing:-.01em;
+color:var(--text-primary)
+}
+.ap-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ap-tags:empty{display:none}
+.ap-tag-new{
+display:inline-flex;
+align-items:center;
+padding:3px 7px;
+border-radius:var(--radius-xs);
+background:var(--brand-primary-subtle);
+color:var(--brand-primary-blue);
+font-size:10px;
+font-weight:800
+}
+:root[data-theme="dark"] .ap-tag-new{color:#9fb4d8}
+.ap-from{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;line-height:1.15}
+.ap-from span{font-size:10.5px;color:var(--text-muted)}
+.ap-from b{font-size:19px;font-weight:900;color:var(--text-primary);white-space:nowrap}
+.ap-store .np-store-name{display:flex;align-items:center;gap:5px}
+.ap-pack{
+flex-shrink:0;
+padding:1px 5px;
+border-radius:var(--radius-xs);
+background:var(--bg-surface-sunken);
+font-size:10px;
+font-weight:700;
+color:var(--text-muted)
+}
+.ap-price{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:64px;text-align:right}
+.ap-price-main{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:800;color:var(--text-primary);white-space:nowrap}
+.ap-price-main .saving-percent{font-size:9.5px;padding:2px 5px}
+.ap-price-none{font-size:13px;font-weight:700;color:var(--text-muted)}
+.ap-price-sub{font-size:10.5px;color:var(--text-muted);white-space:nowrap}
 
 .np-intro{padding:16px 18px 2px}
 .np-eyebrow{
@@ -4911,6 +4978,7 @@ Du bist offline. Angebote werden möglicherweise nicht aktuell angezeigt.
 <div id="mapView" class="map-view" style="display:none"></div>
 <div id="alertsView" style="display:none"></div>
 <div id="newView" style="display:none"></div>
+<div id="productsView" style="display:none"></div>
 
 <div class="note">
 CanSpot ist ein unabhängiger Preisvergleich und nicht mit den genannten Händlern oder Herstellern verbunden. Marken- und Produktnamen gehören den jeweiligen Unternehmen.
@@ -4942,9 +5010,8 @@ CanSpot ist ein unabhängiger Preisvergleich und nicht mit den genannten Händle
 <button class="navitem" id="navFav" data-nav="fav">
 <span class="navicon"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8.4 2 4.5 6 4c2.2-.3 4 1 6 3 2-2 3.8-3.3 6-3 4 .5 5.5 4.4 4 7.7C19.5 16.4 12 21 12 21z"/></svg></span>Favoriten
 </button>
-<button class="navitem" id="navAlerts" data-nav="alerts">
-<span class="navicon"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg></span>Alarme
-<span class="dot-badge" id="navAlertsDot"></span>
+<button class="navitem" id="navProducts" data-nav="products">
+<span class="navicon"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg></span>Alle Produkte
 </button>
 <button class="navitem" id="navProfile" data-nav="profile">
 <span class="navicon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg></span>Mein Bereich
@@ -5823,6 +5890,16 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 
 <div class="field-label" style="margin-top:22px">Mein CanSpot</div>
 
+<!-- Alarme (früher eigener Tab der unteren Navigation): öffnet wie zuvor die
+     Alarme-Ansicht (#alertsView) auf der Startseite, deshalb "›" statt
+     Accordion-Chevron. Roter Punkt = mindestens ein aktiver Preisalarm. -->
+<button class="profile-row" id="menuAlertsRow">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-target"/></svg></div>
+<div class="profile-row-txt"><b>Alarme</b></div>
+<span class="menu-alerts-dot" id="menuAlertsDot"></span>
+<div class="profile-row-arrow">›</div>
+</button>
+
 <div class="menu-acc">
 <button class="profile-row menu-acc-toggle" id="menuStoresRow" aria-expanded="false" aria-controls="menuStoresPanel">
 <div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-store"/></svg></div>
@@ -6282,6 +6359,12 @@ function buildDeals(offers){
    meist noch unbekannt = null). */
 let deals = [];
 let soonDeals = [];
+/* Alle Angebote inkl. abgelaufener, kommender und solcher ohne Preis - nur
+   für "Alle Produkte" (Normalpreis auch ohne laufendes Angebot). */
+let allOffers = [];
+/* Normalpreise (public.regular_prices): je Produkt, Händler und Gebinde der
+   Regalpreis ohne Aktion - nur für "Alle Produkte". */
+let regularPrices = [];
 /* true ab dem ersten erfolgreichen loadDeals(); vorher zeigt die Liste das Ladegerüst. */
 let dealsReady = false;
 
@@ -7608,6 +7691,7 @@ async function requestUserLocation(){
   }finally{
     userLocationRequestInFlight = false;
     render();
+    if(isProductsViewShown()) renderProductsView();
     /* Falls die Händler-Detailansicht bereits (mit noch unbekanntem Standort)
        geöffnet wurde, jetzt mit dem eingetroffenen echten Standort
        nachträglich aktualisieren - siehe Aufruf in renderStoreDetailMapMobile(). */
@@ -8132,6 +8216,7 @@ const tabsNav = document.querySelector(".brand-row");
 const controlsEl = document.querySelector(".controls");
 const alertsView = document.getElementById("alertsView");
 const newViewEl = document.getElementById("newView");
+const productsViewEl = document.getElementById("productsView");
 
 /* Start/Neuheiten/Favoriten wechseln immer zurück in die Listenansicht -
    sonst blieb nach "Karte" viewMode auf "map" und render() zeigte weiter
@@ -8142,6 +8227,7 @@ function showDealsView(){
   controlsEl.style.display = "flex";
   alertsView.style.display = "none";
   newViewEl.style.display = "none";
+  productsViewEl.style.display = "none";
   render();
 }
 
@@ -8151,6 +8237,7 @@ function showAlertsView(){
   dealsContainer.style.display = "none";
   mapView.style.display = "none";
   newViewEl.style.display = "none";
+  productsViewEl.style.display = "none";
   alertsView.style.display = "block";
   renderAlertsView();
 }
@@ -8161,8 +8248,20 @@ function showNewView(){
   dealsContainer.style.display = "none";
   mapView.style.display = "none";
   alertsView.style.display = "none";
+  productsViewEl.style.display = "none";
   newViewEl.style.display = "block";
   renderNewView();
+}
+
+function showProductsView(){
+  tabsNav.style.display = "none";
+  controlsEl.style.display = "none";
+  dealsContainer.style.display = "none";
+  mapView.style.display = "none";
+  alertsView.style.display = "none";
+  newViewEl.style.display = "none";
+  productsViewEl.style.display = "block";
+  renderProductsView();
 }
 
 document.getElementById("navHome").addEventListener("click", ()=>{
@@ -8213,7 +8312,18 @@ document.getElementById("navFav").addEventListener("click", ()=>{
   window.scrollTo({top:0, behavior:"smooth"});
 });
 
-document.getElementById("navAlerts").addEventListener("click", ()=>{
+document.getElementById("navProducts").addEventListener("click", ()=>{
+  closeAllSheets();
+  viewFavoritesOnly = false;
+  viewNewOnly = false;
+  showProductsView();
+  setActiveNav("products");
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+/* Alarme sitzen jetzt im Burger-Menü unter "Mein CanSpot" (früher eigener
+   Tab). Gleiche Ansicht wie vorher, nur ohne markierten Tab unten. */
+document.getElementById("menuAlertsRow").addEventListener("click", ()=>{
   closeAllSheets();
   showAlertsView();
   setActiveNav("alerts");
@@ -8226,13 +8336,13 @@ document.getElementById("navProfile").addEventListener("click", ()=>{
   setActiveNav("profile");
 });
 
-/* ---------------- ALARME-TAB ---------------- */
+/* ---------------- ALARME (Burger-Menü "Mein CanSpot") ---------------- */
 
-const navAlertsDot = document.getElementById("navAlertsDot");
+const menuAlertsDot = document.getElementById("menuAlertsDot");
 
 function updateAlertsDot(){
   const hasActive = Object.values(priceAlerts).some(a=>a.enabled);
-  navAlertsDot.classList.toggle("show", hasActive);
+  menuAlertsDot.classList.toggle("show", hasActive);
 }
 
 /* computeFavoriteEvents(): gleiche zugrunde liegende Regeln wie zuvor
@@ -9171,6 +9281,162 @@ function npHandleClick(e){
 }
 document.getElementById("newSoonPage").addEventListener("click", npHandleClick);
 newViewEl.addEventListener("click", npHandleClick);
+
+/* ---------------- ALLE PRODUKTE (Tab der unteren Navigation) ----------------
+   Das ganze Sortiment aus products[], egal ob gerade ein Angebot läuft. Je
+   Händler und Gebinde eine Zeile: laufendes Angebot (allOffers) ->
+   Angebotspreis mit Ersparnis und durchgestrichenem "statt"-Preis; sonst der
+   Normalpreis aus public.regular_prices ("Normalpreis" bzw. "Angebot ab
+   TT.MM." bei geplanter Aktion); ohne beides "Preis folgt". */
+let apBrand = "Alle";
+
+function isProductsViewShown(){ return productsViewEl.style.display !== "none"; }
+
+function apDistanceKm(d){
+  if(userLocation){
+    const branch = storeBranches[d.store];
+    const geo = branch ? parseGeo(branch.geo) : null;
+    if(geo) return Math.round(haversineKm(userLocation, geo) * 10) / 10;
+  }
+  return typeof d.distanceKm === "number" ? d.distanceKm : null;
+}
+
+function apShortDate(dateStr){
+  const [, m, d] = dateStr.split("-");
+  return `${d}.${m}.`;
+}
+
+/* Laufendes Angebot vor Normalpreis vor "Preis folgt"; innerhalb davon
+   günstigster Preis pro Dose zuerst. */
+function getProductStoreRows(productId){
+  const groups = new Map();
+  const groupFor = (store, units)=>{
+    const key = `${store}__${units}`;
+    if(!groups.has(key)) groups.set(key, {store, units, offers:[], regular:null});
+    return groups.get(key);
+  };
+  allOffers.filter(d=>d.productId===productId).forEach(d=>groupFor(d.store, d.units).offers.push(d));
+  regularPrices.filter(r=>r.productId===productId).forEach(r=>{ groupFor(r.store, r.units).regular = r; });
+
+  const rows = [...groups.values()].map(g=>{
+    const active = g.offers
+      .filter(d=>daysUntil(d.validFrom)<=0 && daysUntil(d.validUntil)>=0 && d.offerPrice!==null && d.regularPrice!==null)
+      .sort((a,b)=>a.offerPrice-b.offerPrice)[0] || null;
+    const upcoming = g.offers.filter(d=>daysUntil(d.validFrom)>0).sort((a,b)=>a.validFrom.localeCompare(b.validFrom))[0] || null;
+    const ref = active || g.regular || upcoming || g.offers[0];
+    const base = {
+      productId, store: g.store, units: g.units, upcoming,
+      distanceKm: ref.distanceKm,
+      pfand: typeof ref.pfand==="number" ? ref.pfand : (g.regular ? g.regular.pfand : null)
+    };
+    if(active) return {...base, kind:"offer", offer:active, price:active.offerPrice};
+    if(g.regular) return {...base, kind:"regular", offer:null, price:g.regular.price};
+    return {...base, kind:"none", offer:null, price:null};
+  });
+  const rank = {offer:0, regular:1, none:2};
+  return rows.sort((a,b)=>
+    rank[a.kind]-rank[b.kind] ||
+    ((a.price ?? 0)/a.units - (b.price ?? 0)/b.units) ||
+    a.store.localeCompare(b.store, "de"));
+}
+
+function apStoreRow(r){
+  const km = apDistanceKm(r);
+  const openDeal = r.offer || r.upcoming;
+  let priceHtml;
+  if(r.kind==="offer"){
+    const d = r.offer;
+    const pct = Math.round((1 - d.offerPrice/d.regularPrice) * 100);
+    priceHtml = `
+      <span class="ap-price-main">${pct>0 ? `<span class="saving-percent">−${pct} %</span>` : ""}${euro(d.offerPrice)} €</span>
+      <span class="ap-price-sub"><span class="old-price">${euro(d.regularPrice)} €</span></span>`;
+  } else if(r.kind==="regular"){
+    priceHtml = `
+      <span class="ap-price-main">${euro(r.price)} €</span>
+      <span class="ap-price-sub">${r.upcoming ? `Angebot ab ${apShortDate(r.upcoming.validFrom)}` : "Normalpreis"}</span>`;
+  } else {
+    priceHtml = `
+      <span class="ap-price-main ap-price-none">Preis folgt</span>
+      ${r.upcoming ? `<span class="ap-price-sub">Angebot ab ${apShortDate(r.upcoming.validFrom)}</span>` : ""}`;
+  }
+  return `
+    <button class="np-store ap-store" data-ap-open="${escapeHtml(r.productId)}"${openDeal ? ` data-ap-deal="${escapeHtml(openDeal.id)}"` : ""}>
+      <img class="store-logo" src="${escapeHtml(storeLogos[r.store] || STORE_FALLBACK_IMG)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+      <span class="np-store-name"><span>${escapeHtml(r.store)}</span>${r.units>1 ? `<span class="ap-pack">${r.units}er</span>` : ""}</span>
+      ${km!==null ? `<span class="np-store-km"><svg class="icon"><use href="#i-pin"/></svg>${km} km</span>` : ""}
+      <span class="ap-price">${priceHtml}</span>
+      <svg class="icon np-store-chev"><use href="#i-chevron-down"/></svg>
+    </button>`;
+}
+
+function renderProductsView(){
+  const brands = [...new Set(products.map(p=>p.brand))].sort((a,b)=>a.localeCompare(b,"de"));
+  if(apBrand!=="Alle" && !brands.includes(apBrand)) apBrand = "Alle";
+  const shown = products
+    .filter(p=>apBrand==="Alle" || p.brand===apBrand)
+    .sort((a,b)=>a.brand.localeCompare(b.brand,"de") || a.name.localeCompare(b.name,"de") || a.sizeMl-b.sizeMl);
+
+  const cards = shown.map(p=>{
+    const rows = getProductStoreRows(p.id);
+    const priced = rows.filter(r=>r.price!==null && r.units===1);
+    /* "ab"-Preis oben nur bei mehreren Händlern, sonst steht er doppelt da. */
+    const from = priced.length ? Math.min(...priced.map(r=>r.price)) : null;
+    const onOffer = rows.some(r=>r.kind==="offer");
+    const withPfand = rows.find(r=>typeof r.pfand==="number" && r.pfand>0);
+    return `
+    <article class="ap-card">
+      <div class="ap-head" data-ap-open="${escapeHtml(p.id)}" role="button" tabindex="0">
+        <img class="thumb" src="${escapeHtml(p.img || FALLBACK_IMG)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
+        <div class="ap-head-txt">
+          <div class="np-brand">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
+          <div class="ap-name">${escapeHtml(p.name)}</div>
+          <div class="ap-tags">${onOffer ? `<span class="info-badge green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> Im Angebot</span>` : ""}${p.isNew ? `<span class="ap-tag-new">Neu</span>` : ""}</div>
+        </div>
+        ${priced.length>1 ? `<div class="ap-from"><span>ab</span><b>${euro(from)} €</b></div>` : ""}
+      </div>
+      ${rows.length
+        ? `<div class="np-stores">${rows.map(apStoreRow).join("")}</div>${withPfand ? `<div class="np-note">Preise zzgl. ${euro(withPfand.pfand)} € Pfand pro Dose</div>` : ""}`
+        : `<div class="np-note">Aktuell bei keinem Händler mit Preis gelistet.</div>`}
+    </article>`;
+  }).join("");
+
+  productsViewEl.innerHTML = `
+    <div class="np-intro">
+      <div class="np-eyebrow">Sortiment</div>
+      <h1 class="np-h1">Alle Produkte</h1>
+      <div class="np-lead">Alle Energy Drinks bei den Händlern – mit Angebotspreis, wenn gerade eins läuft, sonst mit Normalpreis.</div>
+    </div>
+    ${brands.length > 1 ? `<div class="np-chips">${["Alle", ...brands].map(b=>`<button class="chip${b===apBrand ? " on" : ""}" data-ap-brand="${escapeHtml(b)}">${b==="Alle" ? "Alle Marken" : escapeHtml(b)}</button>`).join("")}</div>` : ""}
+    ${shown.length ? `<div class="np-list">${cards}</div>` : `<div class="np-empty">Noch keine Produkte im Sortiment.</div>`}`;
+
+  productsViewEl.querySelectorAll(".thumb").forEach(img=>{
+    img.addEventListener("error", function(){
+      this.src = FALLBACK_IMG;
+      this.classList.add("thumb-fallback");
+    }, {once:true});
+  });
+  productsViewEl.querySelectorAll(".store-logo").forEach(img=>{
+    img.addEventListener("error", function(){ this.src = STORE_FALLBACK_IMG; }, {once:true});
+  });
+}
+
+productsViewEl.addEventListener("click", (e)=>{
+  const brandBtn = e.target.closest("[data-ap-brand]");
+  if(brandBtn){
+    apBrand = brandBtn.dataset.apBrand;
+    renderProductsView();
+    return;
+  }
+  const openEl = e.target.closest("[data-ap-open]");
+  if(openEl) openProductDetail(openEl.dataset.apOpen, openEl.dataset.apDeal || undefined);
+});
+productsViewEl.addEventListener("keydown", (e)=>{
+  const head = e.target.closest(".ap-head");
+  if(head && (e.key === "Enter" || e.key === " ")){
+    e.preventDefault();
+    openProductDetail(head.dataset.apOpen);
+  }
+});
 
 /* ---------------- PROFILE / MEIN BEREICH ---------------- */
 /* Zugang nur noch über den "Mein Bereich"-Tab in der unteren Navigation
@@ -12525,6 +12791,7 @@ function finishInit(){
   render();
   updateHeroSoonCount();
   if(isNewViewShown()) renderNewView();
+  if(isProductsViewShown()) renderProductsView();
   updateNotifDot();
   updateStatus();
   updateAlertsDot();
@@ -12553,8 +12820,9 @@ function showLoadError(){
 /* Übernimmt Produkte/Händler/Filialen/Angebote (bereits in der von der App
    erwarteten Form - siehe loadFromSupabase()) in die module-globalen
    products/storeLogos/storeBranches/deals-Variablen. */
-function applyLoadedData(products_, stores, offers){
+function applyLoadedData(products_, stores, offers, regularPrices_){
   products = products_;
+  regularPrices = regularPrices_ || [];
   storeLogos = {};
   storeBranches = {};
   for(const name in (stores || {})){
@@ -12562,6 +12830,7 @@ function applyLoadedData(products_, stores, offers){
     storeBranches[name] = stores[name].branch;
   }
   const all = buildDeals(offers);
+  allOffers = all;
   soonDeals = all.filter(d=>daysUntil(d.validFrom) > 0);
   deals = all.filter(d=>{
     if(daysUntil(d.validFrom) > 0) return false;
@@ -12633,7 +12902,7 @@ function applyAppSettings(row){
 async function loadFromSupabase(){
   if(!supabaseClient) throw new Error("Supabase-Client nicht initialisiert");
 
-  const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes, settingsRes] = await Promise.all([
+  const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes, settingsRes, regularPricesRes] = await Promise.all([
       supabaseClient.from("products").select("id,name,size_ml,packaging,image_url,is_new,brand:brands(name)"),
       supabaseClient.from("product_nutrition").select("*"),
       supabaseClient.from("brand_nutrition_defaults").select("*,brand:brands(name)"),
@@ -12641,7 +12910,8 @@ async function loadFromSupabase(){
       supabaseClient.from("offers").select("id,product_id,branch_id,units,regular_price,offer_price,deposit,valid_from,valid_until,link,bundle_image_url,last_checked_at"),
       supabaseClient.from("price_history").select("product_id,branch_id,units,price,deposit,recorded_at,available"),
       supabaseClient.rpc("get_all_product_rating_summaries"),
-      supabaseClient.from("app_settings").select("*").eq("id", 1).maybeSingle()
+      supabaseClient.from("app_settings").select("*").eq("id", 1).maybeSingle(),
+      supabaseClient.from("regular_prices").select("product_id,branch_id,units,price,deposit,last_checked_at")
     ]);
 
   // products/branches/offers sind Pflicht; Nährwerte, Preisverlauf und
@@ -12656,6 +12926,8 @@ async function loadFromSupabase(){
   const rawBrandNutrition = brandNutritionRes.error ? [] : (brandNutritionRes.data || []);
   const rawPriceHistory = priceHistoryRes.error ? [] : (priceHistoryRes.data || []);
   const rawRatings = ratingsRes.error ? [] : (ratingsRes.data || []);
+  // Normalpreise sind ergänzend: ein Fehler lässt sie in "Alle Produkte" nur weg.
+  const rawRegularPrices = regularPricesRes.error ? [] : (regularPricesRes.data || []);
 
   // Einstellungen sind ergänzend: ein Fehler lässt nur Startstandort,
   // Hinweis, Version und Store-Links weg. Muss vor offers[] laufen, weil
@@ -12756,7 +13028,23 @@ async function loadFromSupabase(){
       };
     });
 
-  return {products: mappedProducts, stores, offers: mappedOffers};
+  // ---- regularPrices[] (App-Form wie offers: store statt branch_id) ----
+  const mappedRegularPrices = rawRegularPrices
+    .filter(r => r && r.product_id && r.branch_id && branchIdToStoreName[r.branch_id] && r.price !== null)
+    .map(r => {
+      const geo = parseGeo(branchIdToGeo[r.branch_id]);
+      return {
+        productId: r.product_id,
+        store: branchIdToStoreName[r.branch_id],
+        units: r.units,
+        price: Number(r.price),
+        pfand: r.deposit === null ? null : Number(r.deposit),
+        distanceKm: (defaultLocationGeo && geo) ? Math.round(haversineKm(defaultLocationGeo, geo) * 10) / 10 : null,
+        lastCheckedAt: r.last_checked_at || null
+      };
+    });
+
+  return {products: mappedProducts, stores, offers: mappedOffers, regularPrices: mappedRegularPrices};
 }
 
 /* Lädt die Stammdaten aus Supabase. Die Mindestwartezeit von 500ms
@@ -12767,7 +13055,7 @@ function loadDeals(){
     console.info(
       `CanSpot: Stammdaten aus Supabase geladen (${data.products.length} Produkte, ${data.offers.length} Angebote, ${Object.keys(data.stores).length} Händler).`
     );
-    applyLoadedData(data.products, data.stores, data.offers);
+    applyLoadedData(data.products, data.stores, data.offers, data.regularPrices);
     dealsReady = true;
     finishInit();
   }).catch(err => {

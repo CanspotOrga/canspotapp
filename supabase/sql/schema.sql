@@ -197,6 +197,24 @@ create table public.price_history (
 );
 comment on table public.price_history is 'Echtes Preis-Zeitreihen-Log, entkoppelt von offers (Entscheidung 2). Nur echte, zulaessig erhobene Preise.';
 
+-- Aktueller Normalpreis (Regalpreis ohne Aktion) je Produkt, Filiale und
+-- Gebinde - unabhaengig davon, ob gerade ein Angebot laeuft. Genau eine Zeile
+-- pro Kombination; der Verlauf gehoert in price_history. Die App zeigt ihn in
+-- "Alle Produkte". Einmalige Einrichtung: supabase/sql/sql-normalpreise.sql.
+create table public.regular_prices (
+  id               uuid primary key default gen_random_uuid(),
+  product_id       uuid not null references public.products(id) on delete restrict,
+  branch_id        uuid not null references public.branches(id) on delete restrict,
+  units            integer not null default 1 check (units > 0),
+  price            numeric(10,2) not null check (price >= 0),
+  deposit          numeric(10,2) not null default 0 check (deposit >= 0),
+  last_checked_at  date,
+  created_at       timestamptz not null default now(),
+  constraint regular_prices_product_branch_units_key unique (product_id, branch_id, units)
+);
+create index regular_prices_branch_id_idx on public.regular_prices(branch_id);
+comment on table public.regular_prices is 'Aktueller Normalpreis (Regalpreis ohne Aktion) je Produkt, Filiale und Gebinde. Genau eine Zeile pro Kombination; Verlauf gehört in price_history.';
+
 
 -- App-weite Einstellungen, die die App beim Start liest (statt sie fest in
 -- index.html zu halten): Startstandort, Standard-Umkreis, Beispieldaten-
@@ -667,6 +685,10 @@ alter table public.price_history enable row level security;
 create policy "price_history_public_read" on public.price_history
   for select to anon, authenticated using (true);
 
+alter table public.regular_prices enable row level security;
+create policy "regular_prices_public_read" on public.regular_prices
+  for select to anon, authenticated using (true);
+
 alter table public.app_settings enable row level security;
 create policy "app_settings_public_read" on public.app_settings
   for select to anon, authenticated using (true);
@@ -793,6 +815,7 @@ grant select on public.retailers               to anon, authenticated;
 grant select on public.branches                to anon, authenticated;
 grant select on public.offers                  to anon, authenticated;
 grant select on public.price_history           to anon, authenticated;
+grant select on public.regular_prices          to anon, authenticated;
 grant select on public.app_settings            to anon, authenticated;
 
 

@@ -28,6 +28,7 @@ begin
 end $$;
 
 delete from public.offers;
+delete from public.regular_prices;
 delete from public.price_history;
 delete from public.product_nutrition;
 delete from public.brand_nutrition_defaults;
