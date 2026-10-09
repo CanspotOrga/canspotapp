@@ -1,4 +1,4 @@
-const CACHE_NAME = "canspot-cache-v211";
+const CACHE_NAME = "canspot-cache-v212";
 
 const APP_SHELL = [
   "./",
