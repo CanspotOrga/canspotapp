@@ -2,7 +2,10 @@
 -- Einmal im Supabase SQL Editor ausführen (nicht mehrfach: cron.schedule mit
 -- gleichem Namen überschreibt zwar, create table würde aber fehlschlagen).
 -- Entspricht dem Abschnitt report_runs in supabase/sql/schema.sql.
--- pg_cron rechnet in UTC: '0 6 * * 1' = Montag 8:00 Uhr Sommerzeit, 7:00 Uhr Winterzeit.
+-- Versand jeden Freitag um 13:00 Uhr deutscher Zeit. pg_cron rechnet in UTC und
+-- kennt keine Sommerzeit: Der Job läuft freitags um 11:00 und 12:00 UTC und ruft
+-- die Funktion nur auf, wenn es in Europe/Berlin gerade 13 Uhr ist.
+-- Nur den Zeitplan ändern: Abschnitt 2 (cron.schedule) allein ausführen.
 
 -- 1. Protokoll der versendeten Berichte (Sperre gegen Mehrfachversand)
 create table public.report_runs (
@@ -22,12 +25,13 @@ create extension if not exists pg_cron;
 
 select cron.schedule(
   'wochenbericht-loeschgruende',
-  '0 6 * * 1',
+  '0 11,12 * * 5',
   $$select net.http_post(
       url := 'https://kyksbqrdtdusdbqwvazw.supabase.co/functions/v1/wochenbericht-loeschgruende',
       headers := '{"Content-Type": "application/json"}'::jsonb,
       body := '{}'::jsonb
-    )$$
+    )
+    where extract(hour from now() at time zone 'Europe/Berlin') = 13$$
 );
 
 select cron.schedule(
