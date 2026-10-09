@@ -1,12 +1,14 @@
 -- ============================================================================
--- CanSpot — Inhalte (Stand der Live-Datenbank am 04.10.2026)
+-- CanSpot — Inhalte (Stand der Live-Datenbank am 10.10.2026)
 -- ============================================================================
 -- Additiv und mehrfach ausführbar: legt fehlende Zeilen an und setzt
 -- vorhandene (gleiche id) auf die Werte unten. Löscht nichts.
 -- Voraussetzung: schema.sql wurde ausgeführt.
 --
--- Inhalt: 2 Marken mit je 3 Produkten, 4 Filialen in Arnsberg, 6 Angebote,
--- dazu app_settings (Startstandort Arnsberg, Demo-Hinweis, Version).
+-- Inhalt: 3 Marken (Red Bull 4 Produkte, Monster Energy 3, Gönrgy noch ohne
+-- Produkte), 4 Filialen in Arnsberg, 7 Angebote, 6 Normalpreise
+-- (regular_prices), dazu app_settings (Startstandort Arnsberg, Demo-Hinweis,
+-- Version).
 -- Je ein Beispiel für Neuheiten (is_new = true, laufendes Angebot) und
 -- Coming Soon (Angebot mit Startdatum in der Zukunft).
 -- Preise, Zeiträume und Filialangaben sind DEMODATEN, keine erhobenen Preise.
@@ -27,10 +29,11 @@ on conflict (id) do update set
   name = excluded.name,
   logo_url = excluded.logo_url;
 
--- brands (2)
+-- brands (3)
 insert into public.brands (id, name) values
   ('11111111-1111-4111-8111-111111111111', 'Red Bull'),
-  ('040702a6-617f-49b7-ab82-bc82bb860a9c', 'Monster')
+  ('040702a6-617f-49b7-ab82-bc82bb860a9c', 'Monster Energy'),
+  ('caad03ca-26e6-425c-b75c-710c48fa6137', 'Gönrgy')
 on conflict (id) do update set
   name = excluded.name;
 

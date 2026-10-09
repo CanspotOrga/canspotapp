@@ -3966,6 +3966,62 @@ font-weight:800
 #newView .np-empty{margin:14px 0 0}
 #productsView .np-intro{padding:6px 0 2px}
 #productsView .np-chips{margin:0 -18px;padding:12px 18px 2px}
+
+/* Marken-Auswahl in "Alle Produkte": volle Breite wie die Produktkarten,
+   klappt per Pfeil eine Liste auf (Top-Marken, Trennstrich, Rest A-Z). */
+.ap-brand-select{position:relative;margin-top:12px}
+.ap-brand-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;font-family:inherit;text-align:left}
+.ap-brand-btn span{overflow:hidden;text-overflow:ellipsis}
+.ap-brand-chev{width:16px;height:16px;flex-shrink:0;transition:transform .2s ease}
+.ap-brand-select.open .ap-brand-chev{transform:rotate(180deg)}
+.ap-brand-menu{
+position:absolute;
+left:0;
+right:0;
+top:calc(100% + 6px);
+z-index:20;
+max-height:320px;
+overflow-y:auto;
+padding:6px;
+background:var(--bg-surface-elevated);
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-lg);
+box-shadow:var(--shadow-lg);
+opacity:0;
+transform:translateY(-4px);
+visibility:hidden;
+pointer-events:none;
+transition:opacity .15s ease,transform .15s ease,visibility 0s linear .15s
+}
+.ap-brand-select.open .ap-brand-menu{
+opacity:1;
+transform:none;
+visibility:visible;
+pointer-events:auto;
+transition:opacity .15s ease,transform .15s ease
+}
+.ap-brand-opt{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+width:100%;
+padding:10px 12px;
+border:0;
+border-radius:var(--radius-md);
+background:none;
+font-family:inherit;
+font-size:14px;
+font-weight:700;
+text-align:left;
+color:var(--text-primary);
+cursor:pointer
+}
+.ap-brand-opt:hover{background:var(--bg-surface-sunken)}
+.ap-brand-opt.on{color:var(--brand-primary-blue)}
+:root[data-theme="dark"] .ap-brand-opt.on{color:var(--brand-primary-light)}
+.ap-brand-opt .icon{width:16px;height:16px;flex-shrink:0}
+.ap-brand-sep{height:1px;margin:6px 8px;background:var(--border-subtle)}
 #productsView .np-list{padding:12px 0 0}
 #productsView .np-empty{margin:14px 0 0}
 
@@ -5011,7 +5067,7 @@ CanSpot ist ein unabhängiger Preisvergleich und nicht mit den genannten Händle
 <span class="navicon"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8.4 2 4.5 6 4c2.2-.3 4 1 6 3 2-2 3.8-3.3 6-3 4 .5 5.5 4.4 4 7.7C19.5 16.4 12 21 12 21z"/></svg></span>Favoriten
 </button>
 <button class="navitem" id="navProducts" data-nav="products">
-<span class="navicon"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg></span>Alle Produkte
+<span class="navicon"><svg viewBox="0 0 24 24"><path d="M10 2.5h4l1.25 1.75v15.5L14 21.5h-4l-1.25-1.75V4.25z"/><path d="M8.75 6h6.5"/><path d="M6 6H4l-1.25 1.75v10L4 19.5h2"/><path d="M18 6h2l1.25 1.75v10L20 19.5h-2"/></svg></span>Alle Produkte
 </button>
 <button class="navitem" id="navProfile" data-nav="profile">
 <span class="navicon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg></span>Mein Bereich
@@ -5894,7 +5950,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
      Alarme-Ansicht (#alertsView) auf der Startseite, deshalb "›" statt
      Accordion-Chevron. Roter Punkt = mindestens ein aktiver Preisalarm. -->
 <button class="profile-row" id="menuAlertsRow">
-<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-target"/></svg></div>
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-bell"/></svg></div>
 <div class="profile-row-txt"><b>Alarme</b></div>
 <span class="menu-alerts-dot" id="menuAlertsDot"></span>
 <div class="profile-row-arrow">›</div>
@@ -9289,6 +9345,11 @@ newViewEl.addEventListener("click", npHandleClick);
    Normalpreis aus public.regular_prices ("Normalpreis" bzw. "Angebot ab
    TT.MM." bei geplanter Aktion); ohne beides "Preis folgt". */
 let apBrand = "Alle";
+/* Feste Reihenfolge oben in der Marken-Auswahl; danach alle übrigen Marken
+   aus products[] alphabetisch. Erscheinen nur, wenn es Produkte dieser Marke
+   gibt - neue Marken genügen also in Supabase (brands/products). Namen hier
+   sind die Anzeigenamen (siehe BRAND_DISPLAY_NAMES). */
+const AP_TOP_BRANDS = ["Red Bull", "Monster Energy", "Rockstar Energy", "Effect", "Gönrgy"];
 
 function isProductsViewShown(){ return productsViewEl.style.display !== "none"; }
 
@@ -9369,6 +9430,43 @@ function apStoreRow(r){
     </button>`;
 }
 
+function apBrandSelectHtml(brands){
+  const top = AP_TOP_BRANDS.filter(b=>brands.includes(b));
+  const rest = brands.filter(b=>!AP_TOP_BRANDS.includes(b)).sort((a,b)=>a.localeCompare(b,"de"));
+  const opt = b => `
+    <button class="ap-brand-opt${b===apBrand ? " on" : ""}" role="option" aria-selected="${b===apBrand}" data-ap-brand="${escapeHtml(b)}">
+      <span>${b==="Alle" ? "Alle Marken" : escapeHtml(b)}</span>
+      ${b===apBrand ? `<svg class="icon"><use href="#i-check"/></svg>` : ""}
+    </button>`;
+  return `
+    <div class="ap-brand-select">
+      <button class="chip on ap-brand-btn" data-ap-brand-toggle aria-haspopup="listbox" aria-expanded="false">
+        <span>${apBrand==="Alle" ? "Alle Marken" : escapeHtml(apBrand)}</span>
+        <svg class="icon ap-brand-chev"><use href="#i-chevron-down"/></svg>
+      </button>
+      <div class="ap-brand-menu" role="listbox">
+        ${opt("Alle")}
+        ${top.map(opt).join("")}
+        ${top.length && rest.length ? `<div class="ap-brand-sep" role="separator"></div>` : ""}
+        ${rest.map(opt).join("")}
+      </div>
+    </div>`;
+}
+
+function setApBrandMenuOpen(open){
+  const wrap = productsViewEl.querySelector(".ap-brand-select");
+  if(!wrap) return;
+  wrap.classList.toggle("open", open);
+  wrap.querySelector("[data-ap-brand-toggle]").setAttribute("aria-expanded", String(open));
+}
+
+document.addEventListener("click", (e)=>{
+  if(!e.target.closest(".ap-brand-select")) setApBrandMenuOpen(false);
+});
+document.addEventListener("keydown", (e)=>{
+  if(e.key==="Escape") setApBrandMenuOpen(false);
+});
+
 function renderProductsView(){
   const brands = [...new Set(products.map(p=>p.brand))].sort((a,b)=>a.localeCompare(b,"de"));
   if(apBrand!=="Alle" && !brands.includes(apBrand)) apBrand = "Alle";
@@ -9406,7 +9504,7 @@ function renderProductsView(){
       <h1 class="np-h1">Alle Produkte</h1>
       <div class="np-lead">Alle Energy Drinks bei den Händlern – mit Angebotspreis, wenn gerade eins läuft, sonst mit Normalpreis.</div>
     </div>
-    ${brands.length > 1 ? `<div class="np-chips">${["Alle", ...brands].map(b=>`<button class="chip${b===apBrand ? " on" : ""}" data-ap-brand="${escapeHtml(b)}">${b==="Alle" ? "Alle Marken" : escapeHtml(b)}</button>`).join("")}</div>` : ""}
+    ${brands.length > 1 ? apBrandSelectHtml(brands) : ""}
     ${shown.length ? `<div class="np-list">${cards}</div>` : `<div class="np-empty">Noch keine Produkte im Sortiment.</div>`}`;
 
   productsViewEl.querySelectorAll(".thumb").forEach(img=>{
@@ -9421,6 +9519,11 @@ function renderProductsView(){
 }
 
 productsViewEl.addEventListener("click", (e)=>{
+  const toggle = e.target.closest("[data-ap-brand-toggle]");
+  if(toggle){
+    setApBrandMenuOpen(!toggle.closest(".ap-brand-select").classList.contains("open"));
+    return;
+  }
   const brandBtn = e.target.closest("[data-ap-brand]");
   if(brandBtn){
     apBrand = brandBtn.dataset.apBrand;
@@ -12845,6 +12948,12 @@ function applyLoadedData(products_, stores, offers, regularPrices_){
 /* Wandelt einen Supabase-Nährwerte-Datensatz (snake_case Spalten, siehe
    supabase/sql/schema.sql: product_nutrition/brand_nutrition_defaults) in die
    von getNutritionPer100ml() erwartete Form um. */
+/* Anzeigenamen für Marken - nur in der App, die Datenbank behält ihre Namen
+   (brands.name). Wird beim Laden auf products[] und die Marken-Nährwerte
+   angewendet, damit Filter, Suche und Vergleiche überall denselben Namen sehen. */
+const BRAND_DISPLAY_NAMES = {"Monster": "Monster Energy", "Rockstar": "Rockstar Energy"};
+function brandDisplayName(name){ return BRAND_DISPLAY_NAMES[name] || name; }
+
 function mapNutritionRow(n){
   return {
     kcal: n.kcal, carbsG: n.carbs_g, sugarG: n.sugar_g, fatG: n.fat_g,
@@ -12940,7 +13049,7 @@ async function loadFromSupabase(){
   });
   rawBrandNutrition.forEach(n=>{
     const brandName = n && n.brand && n.brand.name;
-    if(brandName) NUTRITION_BY_BRAND[brandName] = mapNutritionRow(n);
+    if(brandName) NUTRITION_BY_BRAND[brandDisplayName(brandName)] = mapNutritionRow(n);
   });
 
   // ---- Bewertungs-Aggregate (siehe getProductRatingSummary()) ----
@@ -12952,7 +13061,7 @@ async function loadFromSupabase(){
     .map(p => ({
       id: p.id,
       name: p.name,
-      brand: p.brand.name,
+      brand: brandDisplayName(p.brand.name),
       sizeMl: p.size_ml,
       img: p.image_url || FALLBACK_IMG,
       isNew: !!p.is_new,
