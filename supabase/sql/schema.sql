@@ -129,7 +129,7 @@ create table public.retailers (
   created_at timestamptz not null default now(),
   constraint retailers_name_unique unique (name)
 );
-comment on table public.retailers is 'Haendlerketten. logo_url nur mit Erlaubnis des Rechteinhabers (siehe DATENQUELLEN.md).';
+comment on table public.retailers is 'Haendlerketten. logo_url nur mit Erlaubnis des Rechteinhabers (siehe Datenquellen-Regeln).';
 
 
 -- Konkrete Filiale einer Kette, beliebig viele pro Kette (retailer_id).
