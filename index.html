@@ -6421,6 +6421,9 @@ let allOffers = [];
 /* Normalpreise (public.regular_prices): je Produkt, Händler und Gebinde der
    Regalpreis ohne Aktion - nur für "Alle Produkte". */
 let regularPrices = [];
+/* Alle Marken aus public.brands (Anzeigenamen), auch ohne Produkte - nur für
+   die Marken-Auswahl in "Alle Produkte". */
+let allBrandNames = [];
 /* true ab dem ersten erfolgreichen loadDeals(); vorher zeigt die Liste das Ladegerüst. */
 let dealsReady = false;
 
@@ -9347,8 +9350,8 @@ newViewEl.addEventListener("click", npHandleClick);
 let apBrand = "Alle";
 /* Feste Reihenfolge oben in der Marken-Auswahl; danach alle übrigen Marken
    aus products[] alphabetisch. Erscheinen nur, wenn es Produkte dieser Marke
-   gibt - neue Marken genügen also in Supabase (brands/products). Namen hier
-   sind die Anzeigenamen (siehe BRAND_DISPLAY_NAMES). */
+   gibt oder sie in public.brands steht - neue Marken genügen also in
+   Supabase. Namen hier sind die Anzeigenamen (siehe BRAND_DISPLAY_NAMES). */
 const AP_TOP_BRANDS = ["Red Bull", "Monster Energy", "Rockstar Energy", "Effect", "Gönrgy"];
 
 function isProductsViewShown(){ return productsViewEl.style.display !== "none"; }
@@ -9468,7 +9471,7 @@ document.addEventListener("keydown", (e)=>{
 });
 
 function renderProductsView(){
-  const brands = [...new Set(products.map(p=>p.brand))].sort((a,b)=>a.localeCompare(b,"de"));
+  const brands = [...new Set([...products.map(p=>p.brand), ...allBrandNames])].sort((a,b)=>a.localeCompare(b,"de"));
   if(apBrand!=="Alle" && !brands.includes(apBrand)) apBrand = "Alle";
   const shown = products
     .filter(p=>apBrand==="Alle" || p.brand===apBrand)
@@ -9505,7 +9508,7 @@ function renderProductsView(){
       <div class="np-lead">Alle Energy Drinks bei den Händlern – mit Angebotspreis, wenn gerade eins läuft, sonst mit Normalpreis.</div>
     </div>
     ${brands.length > 1 ? apBrandSelectHtml(brands) : ""}
-    ${shown.length ? `<div class="np-list">${cards}</div>` : `<div class="np-empty">Noch keine Produkte im Sortiment.</div>`}`;
+    ${shown.length ? `<div class="np-list">${cards}</div>` : `<div class="np-empty">${apBrand==="Alle" ? "Noch keine Produkte im Sortiment." : `Von ${escapeHtml(apBrand)} sind noch keine Produkte gelistet.<br>Sie erscheinen hier, sobald sie eingetragen sind.`}</div>`}`;
 
   productsViewEl.querySelectorAll(".thumb").forEach(img=>{
     img.addEventListener("error", function(){
@@ -12923,9 +12926,10 @@ function showLoadError(){
 /* Übernimmt Produkte/Händler/Filialen/Angebote (bereits in der von der App
    erwarteten Form - siehe loadFromSupabase()) in die module-globalen
    products/storeLogos/storeBranches/deals-Variablen. */
-function applyLoadedData(products_, stores, offers, regularPrices_){
+function applyLoadedData(products_, stores, offers, regularPrices_, brandNames_){
   products = products_;
   regularPrices = regularPrices_ || [];
+  allBrandNames = brandNames_ || [];
   storeLogos = {};
   storeBranches = {};
   for(const name in (stores || {})){
@@ -13011,7 +13015,7 @@ function applyAppSettings(row){
 async function loadFromSupabase(){
   if(!supabaseClient) throw new Error("Supabase-Client nicht initialisiert");
 
-  const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes, settingsRes, regularPricesRes] = await Promise.all([
+  const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes, settingsRes, regularPricesRes, brandsRes] = await Promise.all([
       supabaseClient.from("products").select("id,name,size_ml,packaging,image_url,is_new,brand:brands(name)"),
       supabaseClient.from("product_nutrition").select("*"),
       supabaseClient.from("brand_nutrition_defaults").select("*,brand:brands(name)"),
@@ -13020,7 +13024,8 @@ async function loadFromSupabase(){
       supabaseClient.from("price_history").select("product_id,branch_id,units,price,deposit,recorded_at,available"),
       supabaseClient.rpc("get_all_product_rating_summaries"),
       supabaseClient.from("app_settings").select("*").eq("id", 1).maybeSingle(),
-      supabaseClient.from("regular_prices").select("product_id,branch_id,units,price,deposit,last_checked_at")
+      supabaseClient.from("regular_prices").select("product_id,branch_id,units,price,deposit,last_checked_at"),
+      supabaseClient.from("brands").select("name")
     ]);
 
   // products/branches/offers sind Pflicht; Nährwerte, Preisverlauf und
@@ -13037,6 +13042,10 @@ async function loadFromSupabase(){
   const rawRatings = ratingsRes.error ? [] : (ratingsRes.data || []);
   // Normalpreise sind ergänzend: ein Fehler lässt sie in "Alle Produkte" nur weg.
   const rawRegularPrices = regularPricesRes.error ? [] : (regularPricesRes.data || []);
+  // Marken-Liste ist ergänzend: ohne sie zeigt die Auswahl nur Marken mit Produkten.
+  const brandNames = brandsRes.error ? [] : (brandsRes.data || [])
+    .filter(b => b && b.name)
+    .map(b => brandDisplayName(b.name));
 
   // Einstellungen sind ergänzend: ein Fehler lässt nur Startstandort,
   // Hinweis, Version und Store-Links weg. Muss vor offers[] laufen, weil
@@ -13153,7 +13162,7 @@ async function loadFromSupabase(){
       };
     });
 
-  return {products: mappedProducts, stores, offers: mappedOffers, regularPrices: mappedRegularPrices};
+  return {products: mappedProducts, stores, offers: mappedOffers, regularPrices: mappedRegularPrices, brandNames};
 }
 
 /* Lädt die Stammdaten aus Supabase. Die Mindestwartezeit von 500ms
@@ -13164,7 +13173,7 @@ function loadDeals(){
     console.info(
       `CanSpot: Stammdaten aus Supabase geladen (${data.products.length} Produkte, ${data.offers.length} Angebote, ${Object.keys(data.stores).length} Händler).`
     );
-    applyLoadedData(data.products, data.stores, data.offers, data.regularPrices);
+    applyLoadedData(data.products, data.stores, data.offers, data.regularPrices, data.brandNames);
     dealsReady = true;
     finishInit();
   }).catch(err => {
