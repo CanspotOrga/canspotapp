@@ -833,6 +833,8 @@ grant usage, select on sequence public.price_feedback_reports_id_seq to anon, au
 
 -- ---- report_runs: ebenfalls kein Grant an anon/authenticated. ----
 revoke all on public.report_runs from anon, authenticated;
+grant select, insert on public.report_runs to service_role;
+grant usage on sequence public.report_runs_id_seq to service_role;
 
 
 -- ---- service_role: bypasst RLS ohnehin, braucht aber trotzdem explizite

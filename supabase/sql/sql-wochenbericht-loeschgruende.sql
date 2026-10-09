@@ -13,6 +13,8 @@ create table public.report_runs (
 create index report_runs_report_sent_idx on public.report_runs(report, sent_at desc);
 alter table public.report_runs enable row level security;
 revoke all on public.report_runs from anon, authenticated;
+grant select, insert on public.report_runs to service_role;
+grant usage on sequence public.report_runs_id_seq to service_role;
 comment on table public.report_runs is 'Versandprotokoll der Edge Function wochenbericht-loeschgruende. Keine Policies: nur der Server-Schlüssel liest und schreibt.';
 
 -- 2. Zeitpläne
