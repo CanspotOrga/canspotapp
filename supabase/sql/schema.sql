@@ -414,6 +414,17 @@ create table public.account_deletion_feedback (
 );
 comment on table public.account_deletion_feedback is 'Entspricht canspot-delete-feedback, aber ohne jeden Personenbezug (Entscheidung 6). Kein FK zu auth.users.';
 
+-- Versandprotokoll der Edge Function wochenbericht-loeschgruende: verhindert,
+-- dass ein fremder Aufruf mehr als eine Mail pro 6 Tage auslöst. Zeitpläne
+-- (pg_cron) siehe supabase/sql/sql-wochenbericht-loeschgruende.sql.
+create table public.report_runs (
+  id       bigserial primary key,
+  report   text not null,
+  sent_at  timestamptz not null default now()
+);
+create index report_runs_report_sent_idx on public.report_runs(report, sent_at desc);
+comment on table public.report_runs is 'Versandprotokoll der Edge Function wochenbericht-loeschgruende. Keine Policies: nur der Server-Schlüssel liest und schreibt.';
+
 
 -- ----------------------------------------------------------------------------
 -- 6. AUTH-TRIGGER: profiles/notification_settings automatisch anlegen
@@ -750,6 +761,11 @@ create policy "price_feedback_insert_anyone" on public.price_feedback_reports
 alter table public.account_deletion_feedback enable row level security;
 -- Bewusst keine create policy-Anweisung fuer anon/authenticated.
 
+-- ---- report_runs: wie account_deletion_feedback nur serverseitig
+--      (Edge Function wochenbericht-loeschgruende). ----
+alter table public.report_runs enable row level security;
+-- Bewusst keine create policy-Anweisung fuer anon/authenticated.
+
 
 -- ============================================================================
 -- 9. EXPLIZITE DATA-API-GRANTS
@@ -814,6 +830,9 @@ grant usage, select on sequence public.price_feedback_reports_id_seq to anon, au
 --      serverseitig (service_role bzw. eine SECURITY DEFINER Edge Function). ----
 
 -- (keine GRANTs an anon/authenticated fuer diese Tabelle)
+
+-- ---- report_runs: ebenfalls kein Grant an anon/authenticated. ----
+revoke all on public.report_runs from anon, authenticated;
 
 
 -- ---- service_role: bypasst RLS ohnehin, braucht aber trotzdem explizite
