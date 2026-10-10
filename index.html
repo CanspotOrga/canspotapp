@@ -2448,17 +2448,21 @@ max-width:560px;
 background:var(--bg-surface-elevated);
 border-top:1px solid var(--border-subtle);
 display:flex;
-padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+justify-content:space-evenly;
+padding:8px 0 calc(8px + env(safe-area-inset-bottom));
 z-index:45;
 box-shadow:var(--shadow-lg)
 }
-/* Beschriftungen bleiben immer einzeilig: auf schmalen Displays wird die
-   Schrift nur so weit verkleinert, dass "Alle Produkte" (längstes Wort,
-   ca. 6,9 Schriftgrößen breit) mit etwas Abstand in ein Fünftel der
-   Leiste passt; ab ca. 400 px Breite bleibt es bei 10,5 px. */
+/* Beschriftungen bleiben immer einzeilig (nowrap). Die Schrift ist 10,5 px
+   und wird nur auf sehr schmalen Displays (unter ca. 345 px) leicht kleiner,
+   damit rechts von Favoriten ("Alle Produkte", "Account") genug Abstand
+   bleibt; bei 320 px ca. 9,5 px.
+   Jeder Reiter ist nur so breit wie sein Inhalt; Favoriten steht mittig,
+   die beiden .nav-side-Gruppen links/rechts verteilen ihren Platz
+   gleichmäßig (space-evenly). ::after vergrößert
+   die Tippfläche unsichtbar, ohne das Layout zu verändern. */
 .navitem{
-flex:1;
-min-width:0;
+flex:0 0 auto;
 border:0;
 background:none;
 display:flex;
@@ -2466,7 +2470,7 @@ flex-direction:column;
 align-items:center;
 gap:3px;
 padding:6px 0;
-font-size:min(10.5px, calc((100vw - 32px) / 5 * .145));
+font-size:min(10.5px, calc(4.35vw - 4.4px));
 white-space:nowrap;
 font-weight:700;
 color:var(--text-disabled);
@@ -2476,6 +2480,10 @@ position:relative;
 font-family:inherit;
 transition:color .15s
 }
+.navitem::after{content:"";position:absolute;top:0;bottom:0;left:-10px;right:-10px}
+/* Favoriten steht genau in der Mitte: links und rechts davon je eine gleich
+   breite Gruppe (.nav-side), in der die Reiter gleichmäßig verteilt sind. */
+.nav-side{flex:1 1 0;min-width:0;display:flex;justify-content:space-evenly}
 .navitem:hover{color:var(--text-muted)}
 .navitem .navicon{font-size:19px;line-height:1}
 .navitem .navicon svg{width:22px;height:22px;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -5063,21 +5071,25 @@ CanSpot ist ein unabhängiger Preisvergleich und nicht mit den genannten Händle
 <div class="toast" id="toast"></div>
 
 <nav class="bottomnav">
+<div class="nav-side">
 <button class="navitem active" id="navHome" data-nav="home">
 <span class="navicon"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span>Start
 </button>
 <button class="navitem" id="navNeu" data-nav="neu">
 <span class="navicon"><svg viewBox="0 0 24 24"><use href="#i-sparkle"/></svg></span>Neuheiten
 </button>
+</div>
 <button class="navitem" id="navFav" data-nav="fav">
 <span class="navicon"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8.4 2 4.5 6 4c2.2-.3 4 1 6 3 2-2 3.8-3.3 6-3 4 .5 5.5 4.4 4 7.7C19.5 16.4 12 21 12 21z"/></svg></span>Favoriten
 </button>
+<div class="nav-side">
 <button class="navitem" id="navProducts" data-nav="products">
 <span class="navicon"><svg viewBox="0 0 24 24"><path d="M3.25 5L2.5 6.5v11a3 1.25 0 0 0 6 0v-11L7.75 5"/><ellipse cx="5.5" cy="5" rx="2.25" ry="1.25"/><path d="M16.25 5L15.5 6.5v11a3 1.25 0 0 0 6 0v-11L20.75 5"/><ellipse cx="18.5" cy="5" rx="2.25" ry="1.25"/><path style="fill:var(--bg-surface-elevated)" d="M9 7.25L8 9v11a4 1.5 0 0 0 8 0V9l-1-1.75a3 1.5 0 0 0-6 0z"/><ellipse cx="12" cy="7.25" rx="3" ry="1.5"/><path d="M8 12.5a4 1.5 0 0 0 8 0"/></svg></span>Alle Produkte
 </button>
 <button class="navitem" id="navProfile" data-nav="profile">
-<span class="navicon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg></span>Mein Bereich
+<span class="navicon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg></span>Account
 </button>
+</div>
 </nav>
 
 <!-- LOCATION / UMKREIS SHEET -->
