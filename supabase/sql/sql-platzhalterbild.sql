@@ -9,7 +9,7 @@
 -- ============================================================================
 
 update public.products p
-   set image_url = 'https://canspot.de/wp-content/Produktbilder/platzhalter-foto-folgt-450x600.webp',
+   set image_url = 'https://canspot.de/wp-content/Produktbilder/platzhalter-foto-folgt/platzhalter-foto-folgt-450x600.webp',
        image_is_example = false
   from public.brands b
  where b.id = p.brand_id
