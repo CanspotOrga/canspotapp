@@ -4817,25 +4817,38 @@ white-space:nowrap
 .pd-rating-line .icon{width:11px;height:11px}
 .pd-rating-line b{color:var(--text-secondary);font-weight:700}
 .pd-offer{margin-top:16px}
-.pd-pricebox{background:var(--bg-surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:14px}
+.pd-pricebox{background:var(--bg-surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:12px 14px}
 .pd-price-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .pd-price{font-size:28px;font-weight:900;letter-spacing:-.01em;color:var(--text-primary)}
 .pd-price-row .old-price{font-size:13px}
 .pd-price-row .saving-percent{font-size:11px}
-.pd-kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-.pd-kv{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:8px 10px}
-.pd-kv span{display:block;font-size:10.5px;color:var(--text-muted)}
-.pd-kv b{font-size:13.5px;color:var(--text-primary)}
-.pd-kv b.expired{color:var(--status-error-text)}
-.pd-checked{font-size:11px;color:var(--text-muted);margin-top:10px}
+/* Preisübersicht kompakt: Preiszeile, darunter Gültigkeit und zwei kleine
+   Hinweise (zuletzt geprüft, regionale Abweichungen). */
+.pd-valid{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:var(--text-muted)}
+.pd-valid .icon{width:14px;height:14px;flex-shrink:0;color:var(--brand-primary-light)}
+.pd-valid b{font-weight:700;color:var(--text-primary)}
+.pd-valid b.expired{color:var(--status-error-text)}
+.pd-checked{font-size:10.5px;color:var(--text-disabled);margin-top:10px}
 .pd-checked:empty{display:none}
+.pd-region-note{font-size:10.5px;color:var(--text-disabled);margin:6px 2px 0}
 .pd-rate-box{background:var(--bg-surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:12px 14px}
 .pd-rate-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .pd-rate-q{font-size:13px;font-weight:600;color:var(--text-secondary)}
 .pd-rate-btns{display:flex;gap:8px;flex-shrink:0}
-.pd-rate-more{display:flex;align-items:center;justify-content:flex-end;margin-top:6px}
+/* "Erweitert bewerten" als eigene, volle Zeile unter einer Trennlinie
+   (Aufbau wie die übrigen Zeilen der Detailansicht: Symbol, Titel mit
+   Untertitel, Pfeil rechts); aufgeklappt folgen die Sterne-Kriterien. */
+.pd-rate-more{display:flex;align-items:center;margin-top:10px;padding-top:4px;border-top:1px solid var(--border-default)}
 .pd-rate-more .rating-summary{display:none}
-.pd-rate-box .rating-adv-toggle{margin-left:0;padding:4px 0}
+.pd-rate-box .rating-adv-toggle{flex:1;gap:10px;margin-left:0;padding:6px 0 0;text-align:left;color:var(--text-muted)}
+.pd-rate-adv-icon{display:flex;align-items:center;justify-content:center;width:26px;height:26px;flex-shrink:0;border-radius:var(--radius-pill);background:var(--brand-primary-subtle);color:var(--brand-primary-blue)}
+:root[data-theme="dark"] .pd-rate-adv-icon{color:var(--brand-primary-light)}
+.pd-rate-box .rating-adv-toggle .pd-rate-adv-icon .icon{width:13px;height:13px;transform:none}
+.pd-rate-adv-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pd-rate-adv-txt b{font-size:13px;font-weight:600;color:var(--text-secondary)}
+.pd-rate-box .rating-adv{margin-top:6px}
+.pd-rate-box .rating-save-btn{display:flex;justify-content:center;width:100%;margin-top:12px}
+.pd-rate-box .rating-adv-toggle > .icon{width:14px;height:14px;flex-shrink:0;color:var(--text-disabled)}
 /* Coming Soon: noch nicht im Handel, daher nur Hinweis statt Bewertung */
 .pd-rate-soon{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;line-height:1.4;color:var(--text-secondary)}
 .pd-rate-soon .icon{width:18px;height:18px;flex-shrink:0;color:var(--brand-primary-blue)}
@@ -5775,14 +5788,10 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <span class="old-price" id="pdOldPrice"></span>
 <span class="saving-percent" id="pdSaving"></span>
 </div>
-<div class="pd-kv-grid">
-<div class="pd-kv"><span>Pro Liter</span><b id="pdLiter">–</b></div>
-<div class="pd-kv"><span>Pfand</span><b id="pdPfand">–</b></div>
-<div class="pd-kv"><span>Gesamt an der Kasse</span><b id="pdTotal">–</b></div>
-<div class="pd-kv"><span>Gültig</span><b id="pdValid">–</b></div>
-</div>
+<div class="pd-valid"><svg class="icon"><use href="#i-calendar"/></svg><span>Gültig</span><b id="pdValid">–</b></div>
 <div class="pd-checked" id="pdChecked"></div>
 </div>
+<div class="pd-region-note">Angebote und Preise können je nach Region abweichen.</div>
 </div>
 
 <!-- Bewertung als eigener, ruhiger Abschnitt (wie bisher nur mobil, siehe
@@ -5806,7 +5815,8 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
      vorhandenem "Erweitert bewerten" auf schmalen Screens nicht umbricht. -->
 <span class="rating-summary" id="pdRatingSummary"><svg class="icon"><use href="#i-thumb-up"/></svg><b>–</b></span>
 <button class="rating-adv-toggle" id="pdRatingAdvToggle" aria-expanded="false" aria-controls="pdRatingAdv">
-<span>Erweitert bewerten</span>
+<span class="pd-rate-adv-icon"><svg class="icon"><use href="#i-star"/></svg></span>
+<span class="pd-rate-adv-txt"><b>Erweitert bewerten</b></span>
 <svg class="icon"><use href="#i-chevron-down"/></svg>
 </button>
 </div>
@@ -11934,7 +11944,6 @@ function renderProductOffer(deal){
   /* Coming Soon: Angebot startet erst, Preis meist noch unbekannt (null). */
   const isSoon = daysUntil(deal.validFrom) > 0;
   const priceKnown = deal.offerPrice !== null;
-  const literPrice = priceKnown ? deal.offerPrice / (deal.totalMl/1000) : null;
   const savingPct = priceKnown && deal.regularPrice ? Math.round((1 - deal.offerPrice/deal.regularPrice) * 100) : null;
   const isExpired = daysUntil(deal.validUntil) < 0;
   const key = favKeyForDeal(deal);
@@ -11944,9 +11953,6 @@ function renderProductOffer(deal){
   const savingEl = document.getElementById("pdSaving");
   savingEl.textContent = savingPct !== null ? `−${savingPct} %` : "";
   savingEl.style.display = savingPct !== null ? "" : "none";
-  document.getElementById("pdLiter").textContent = priceKnown ? `${euro(literPrice)} €` : "–";
-  document.getElementById("pdPfand").textContent = `+ ${euro(deal.pfand)} €`;
-  document.getElementById("pdTotal").textContent = priceKnown ? `${euro(deal.offerPrice + deal.pfand)} €` : "–";
   const validEl = document.getElementById("pdValid");
   validEl.textContent = formatDateRange(deal.validFrom, deal.validUntil) + (isExpired ? " · abgelaufen" : "");
   validEl.classList.toggle("expired", isExpired);
