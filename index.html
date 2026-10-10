@@ -5896,6 +5896,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </span>
 <svg class="icon icon-md pd-row-arrow"><use href="#i-chevron-down"/></svg>
 </button>
+<div class="pd-region-note">Alle Angaben ohne Gewähr. Preise, Märkte und Produktdaten können abweichen.</div>
 
 <div class="field-label" style="margin-top:24px">Ähnliche Produkte</div>
 <div class="similar-scroll" id="pdSimilar"></div>
@@ -12179,8 +12180,8 @@ function renderProductStoreOnly(product){
     logo.alt = "";
     document.getElementById("pdStoreName").textContent = shops.length ? shops.join(", ") : "Noch kein Händler erfasst";
     const subEl = document.getElementById("pdStoreSub");
-    subEl.textContent = shops.length ? "Laut Meldungen erhältlich, ohne Gewähr" : "";
-    subEl.hidden = !shops.length;
+    subEl.textContent = "";
+    subEl.hidden = true;
     storeRow.onclick = null;
     storeRow.querySelector(".pd-row-arrow").style.visibility = "hidden";
     renderMoreStores(null);
