@@ -4,7 +4,7 @@
 -- Quelle: Open Food Facts (Feld stores) und Open Prices (prices.openfoodfacts.org),
 -- beide Open Database License (ODbL) 1.0. Nur Angaben aus Deutschland,
 -- Schreibweisen vereinheitlicht, Märkte aus dem Ausland entfernt.
--- Ø-Normalpreis nur aus Preismeldungen ohne Aktion der letzten 12 Monate.
+-- Ø-Normalpreis aus Preismeldungen ohne Aktion.
 -- Die App zeigt beides nur bei Produkten ohne Händlerpreis; ohne Ø-Normalpreis
 -- steht dort „Preis folgt“.
 -- Mehrfach ausführbar (Tabellen, Policies und Daten werden neu gesetzt).
@@ -160,7 +160,7 @@ insert into public.product_retailers (product_id, retailer_id, source) values
   ('f6607c05-9a11-5031-9efc-356d56153d3d', '4a0685d2-e243-4b2e-b9b7-100a501e2917', 'open_food_facts')
 on conflict (product_id, retailer_id) do update set source = excluded.source;
 
--- Ø-Normalpreis je Produkt (Open Prices, ohne Aktion, Deutschland, ab 10.10.2025)
+-- Ø-Normalpreis je Produkt (Open Prices, ohne Aktion, Deutschland)
 delete from public.product_avg_prices where source = 'open_prices';
 insert into public.product_avg_prices (product_id, avg_regular_price, report_count, source) values
   ('2b1fdf4b-8d58-5813-a4d3-ef6079224214', 1.49, 1, 'open_prices'),
@@ -169,7 +169,11 @@ insert into public.product_avg_prices (product_id, avg_regular_price, report_cou
   ('7f1a0915-479a-546d-a45b-39200567ce19', 1.49, 1, 'open_prices'),
   ('a136dbf5-773a-5a7e-b51a-754c47e9c2dc', 1.09, 1, 'open_prices'),
   ('ad15f3b7-f645-51a8-a7ee-8cb2b7717c62', 1.49, 1, 'open_prices'),
-  ('d4efabe2-2974-5cbe-a448-df4d50096fc2', 1.49, 1, 'open_prices')
+  ('d4efabe2-2974-5cbe-a448-df4d50096fc2', 1.49, 1, 'open_prices'),
+  ('1191be29-2b12-5d3f-8078-7c27bae12c92', 0.39, 1, 'open_prices'),
+  ('3359af5e-6876-53ee-b6b1-209d8c3a7275', 1.49, 1, 'open_prices'),
+  ('1af72b33-8894-5ceb-855c-4d4addf0473d', 1.89, 1, 'open_prices'),
+  ('25bbbcc2-bd4d-5a2f-aca3-e9861dc57b63', 0.88, 1, 'open_prices')
 on conflict (product_id) do update set avg_regular_price = excluded.avg_regular_price,
   report_count = excluded.report_count, source = excluded.source, updated_at = now();
 

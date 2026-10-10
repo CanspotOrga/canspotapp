@@ -7,7 +7,7 @@
 --
 -- Inhalt: 35 Marken (18 davon mit Produkten), 119 Produkte, 116 Nährwert-Zeilen
 -- (davon 114 aus Open Food Facts, ODbL 1.0), 4 Filialen in Arnsberg, 7 Angebote, 6 Normalpreise
--- (regular_prices), 16 Händlerketten, 97 Markt-Zuordnungen und 7 Ø-Normalpreise
+-- (regular_prices), 16 Händlerketten, 97 Markt-Zuordnungen und 11 Ø-Normalpreise
 -- (Open Food Facts / Open Prices, ODbL 1.0), dazu app_settings (Startstandort Arnsberg, Demo-Hinweis,
 -- Version).
 -- Je ein Beispiel für Neuheiten (is_new = true, laufendes Angebot) und
@@ -387,13 +387,13 @@ on conflict (product_id) do update set
 
 -- offers (7)
 insert into public.offers (id, product_id, branch_id, units, regular_price, offer_price, deposit, valid_from, valid_until, link, bundle_image_url, last_checked_at) values
-  ('c6ffb947-a172-42e5-b8b4-e5300b0f2881', '73ab667f-75d7-4b02-a42e-47bae05ae065', '19585656-b415-510e-8739-401bb2dd6a09', 1, '1.49', '0.99', '0.25', '2026-09-28', '2026-10-04', '#', null, '2026-10-03'),
-  ('17a57e0d-509a-4da6-81f7-c254a5f13f87', 'dbcfcbdf-05e9-4bd5-ba24-5362d09612d9', '2b4e352e-9b52-4fab-b1d8-ea79c5a7ea48', 1, '1.35', '0.95', '0.25', '2026-10-02', '2026-10-15', '#', null, '2026-10-03'),
-  ('651ab0a1-9972-4001-adee-75554c71da72', '1e86d7b4-fecc-4e2a-a930-a7e92f0067da', '50ff519a-4266-46a1-9f92-90d6fa370c87', 1, '1.99', '1.39', '0.25', '2026-09-30', '2026-10-13', '#', null, '2026-10-03'),
-  ('212d7448-4b90-492e-aad5-b90efd8775e5', '7dfb0a5d-354b-4845-af7e-8c2e9120020b', '512e4c21-5183-4576-9673-b8d9ba9bf409', 1, '1.79', '1.29', '0.25', '2026-10-03', '2026-10-16', '#', null, '2026-10-03'),
-  ('fd2ca12a-f416-434a-9f5c-09bc11f1c652', '67e34e31-a36f-48c3-bd29-fedfb4288732', '19585656-b415-510e-8739-401bb2dd6a09', 1, '1.99', '1.49', '0.25', '2026-10-04', '2026-10-17', '#', null, '2026-10-04'),
-  ('95dc220e-ee8e-4f0a-b9e2-65fd4f01eb72', 'd6a55d57-3b1b-4a2b-aff1-edeb0eb48399', '50ff519a-4266-46a1-9f92-90d6fa370c87', 1, null, null, '0.25', '2026-10-12', '2026-10-17', '#', null, '2026-10-04'),
-  ('e3dca914-7df8-489b-9cbf-3cc71574fe6c', '82319af1-c3ef-4e85-8835-b64a76e76410', '2b4e352e-9b52-4fab-b1d8-ea79c5a7ea48', 1, '1.99', '1.49', '0.25', '2026-10-04', '2026-10-17', '#', null, '2026-10-04')
+  ('c6ffb947-a172-42e5-b8b4-e5300b0f2881', '73ab667f-75d7-4b02-a42e-47bae05ae065', 'c7b6cfeb-6b85-4d8b-af54-c68c67cf9e8d', 1, '1.49', '0.99', '0.25', '2026-09-28', '2026-10-04', '#', null, '2026-10-03'),
+  ('17a57e0d-509a-4da6-81f7-c254a5f13f87', 'dbcfcbdf-05e9-4bd5-ba24-5362d09612d9', '80819443-0e18-484b-9e24-d6c4a0ec8c4e', 1, '1.35', '0.95', '0.25', '2026-10-02', '2026-10-15', '#', null, '2026-10-03'),
+  ('651ab0a1-9972-4001-adee-75554c71da72', '1e86d7b4-fecc-4e2a-a930-a7e92f0067da', '0bf4d585-f43a-412e-a0bf-d34032745b00', 1, '1.99', '1.39', '0.25', '2026-09-30', '2026-10-13', '#', null, '2026-10-03'),
+  ('212d7448-4b90-492e-aad5-b90efd8775e5', '7dfb0a5d-354b-4845-af7e-8c2e9120020b', '3be385fc-8877-49ad-a551-3c62746d2d9f', 1, '1.79', '1.29', '0.25', '2026-10-03', '2026-10-16', '#', null, '2026-10-03'),
+  ('fd2ca12a-f416-434a-9f5c-09bc11f1c652', '67e34e31-a36f-48c3-bd29-fedfb4288732', 'c7b6cfeb-6b85-4d8b-af54-c68c67cf9e8d', 1, '1.99', '1.49', '0.25', '2026-10-04', '2026-10-17', '#', null, '2026-10-04'),
+  ('95dc220e-ee8e-4f0a-b9e2-65fd4f01eb72', 'd6a55d57-3b1b-4a2b-aff1-edeb0eb48399', '0bf4d585-f43a-412e-a0bf-d34032745b00', 1, null, null, '0.25', '2026-10-12', '2026-10-17', '#', null, '2026-10-04'),
+  ('e3dca914-7df8-489b-9cbf-3cc71574fe6c', '82319af1-c3ef-4e85-8835-b64a76e76410', '80819443-0e18-484b-9e24-d6c4a0ec8c4e', 1, '1.99', '1.49', '0.25', '2026-10-04', '2026-10-17', '#', null, '2026-10-04')
 on conflict (id) do update set
   product_id = excluded.product_id,
   branch_id = excluded.branch_id,
@@ -409,12 +409,12 @@ on conflict (id) do update set
 
 -- regular_prices (6) — Normalpreise ohne Aktion, übernommen aus offers.regular_price
 insert into public.regular_prices (id, product_id, branch_id, units, price, deposit, last_checked_at) values
-  ('24e25299-1361-4175-ae2b-8aaf17eb7b57', '7dfb0a5d-354b-4845-af7e-8c2e9120020b', '512e4c21-5183-4576-9673-b8d9ba9bf409', 1, '1.79', '0.25', '2026-10-03'),
-  ('522b94d7-7017-4135-b75e-85ddfcc2f7ba', '67e34e31-a36f-48c3-bd29-fedfb4288732', '19585656-b415-510e-8739-401bb2dd6a09', 1, '1.99', '0.25', '2026-10-04'),
-  ('dd6fff99-5563-4673-a083-c36e814e1215', '1e86d7b4-fecc-4e2a-a930-a7e92f0067da', '50ff519a-4266-46a1-9f92-90d6fa370c87', 1, '1.99', '0.25', '2026-10-03'),
-  ('0a2103d7-c8df-4694-b1ba-ee5dc8eee3ca', '73ab667f-75d7-4b02-a42e-47bae05ae065', '19585656-b415-510e-8739-401bb2dd6a09', 1, '1.49', '0.25', '2026-10-03'),
-  ('7141976d-d5fc-4ad9-904d-fb86bb23f68c', '82319af1-c3ef-4e85-8835-b64a76e76410', '2b4e352e-9b52-4fab-b1d8-ea79c5a7ea48', 1, '1.99', '0.25', '2026-10-04'),
-  ('e1eadffb-7559-4ce5-a523-6ede34ed1900', 'dbcfcbdf-05e9-4bd5-ba24-5362d09612d9', '2b4e352e-9b52-4fab-b1d8-ea79c5a7ea48', 1, '1.35', '0.25', '2026-10-03')
+  ('24e25299-1361-4175-ae2b-8aaf17eb7b57', '7dfb0a5d-354b-4845-af7e-8c2e9120020b', '3be385fc-8877-49ad-a551-3c62746d2d9f', 1, '1.79', '0.25', '2026-10-03'),
+  ('522b94d7-7017-4135-b75e-85ddfcc2f7ba', '67e34e31-a36f-48c3-bd29-fedfb4288732', 'c7b6cfeb-6b85-4d8b-af54-c68c67cf9e8d', 1, '1.99', '0.25', '2026-10-04'),
+  ('dd6fff99-5563-4673-a083-c36e814e1215', '1e86d7b4-fecc-4e2a-a930-a7e92f0067da', '0bf4d585-f43a-412e-a0bf-d34032745b00', 1, '1.99', '0.25', '2026-10-03'),
+  ('0a2103d7-c8df-4694-b1ba-ee5dc8eee3ca', '73ab667f-75d7-4b02-a42e-47bae05ae065', 'c7b6cfeb-6b85-4d8b-af54-c68c67cf9e8d', 1, '1.49', '0.25', '2026-10-03'),
+  ('7141976d-d5fc-4ad9-904d-fb86bb23f68c', '82319af1-c3ef-4e85-8835-b64a76e76410', '80819443-0e18-484b-9e24-d6c4a0ec8c4e', 1, '1.99', '0.25', '2026-10-04'),
+  ('e1eadffb-7559-4ce5-a523-6ede34ed1900', 'dbcfcbdf-05e9-4bd5-ba24-5362d09612d9', '80819443-0e18-484b-9e24-d6c4a0ec8c4e', 1, '1.35', '0.25', '2026-10-03')
 on conflict (id) do update set
   product_id = excluded.product_id,
   branch_id = excluded.branch_id,
@@ -525,7 +525,7 @@ insert into public.product_retailers (product_id, retailer_id, source) values
 on conflict (product_id, retailer_id) do update set
   source = excluded.source;
 
--- product_avg_prices (7) — Ø-Normalpreis aus Open Prices (ohne Aktion, Deutschland, letzte 12 Monate), ODbL 1.0
+-- product_avg_prices (11) — Ø-Normalpreis aus Open Prices (ohne Aktion, Deutschland), ODbL 1.0
 insert into public.product_avg_prices (product_id, avg_regular_price, report_count, source) values
   ('2b1fdf4b-8d58-5813-a4d3-ef6079224214', '1.49', 1, 'open_prices'),
   ('384d8bad-3062-5daa-acb5-20bef96ff657', '1.49', 1, 'open_prices'),
@@ -533,7 +533,11 @@ insert into public.product_avg_prices (product_id, avg_regular_price, report_cou
   ('7f1a0915-479a-546d-a45b-39200567ce19', '1.49', 1, 'open_prices'),
   ('a136dbf5-773a-5a7e-b51a-754c47e9c2dc', '1.09', 1, 'open_prices'),
   ('ad15f3b7-f645-51a8-a7ee-8cb2b7717c62', '1.49', 1, 'open_prices'),
-  ('d4efabe2-2974-5cbe-a448-df4d50096fc2', '1.49', 1, 'open_prices')
+  ('d4efabe2-2974-5cbe-a448-df4d50096fc2', '1.49', 1, 'open_prices'),
+  ('1191be29-2b12-5d3f-8078-7c27bae12c92', '0.39', 1, 'open_prices'),
+  ('3359af5e-6876-53ee-b6b1-209d8c3a7275', '1.49', 1, 'open_prices'),
+  ('1af72b33-8894-5ceb-855c-4d4addf0473d', '1.89', 1, 'open_prices'),
+  ('25bbbcc2-bd4d-5a2f-aca3-e9861dc57b63', '0.88', 1, 'open_prices')
 on conflict (product_id) do update set
   avg_regular_price = excluded.avg_regular_price,
   report_count = excluded.report_count,
@@ -542,7 +546,7 @@ on conflict (product_id) do update set
 -- app_settings (1) — genau eine Zeile, id = 1
 insert into public.app_settings (id, default_location_label, default_latitude, default_longitude, default_radius_km, demo_notice, app_version, ios_rating_url, android_rating_url) values
   (1, '59821 Arnsberg', 51.4013, 8.0658, 10,
-   'Demo: Alle Preise und Angebote sind Beispieldaten und keine echten Angebote der genannten Händler.',
+   'CanSpot befindet sich im Aufbau. Einzelne Angebote und Preise sind derzeit noch Beispieldaten.',
    'CanSpot Prototyp · Version 1.0.0', null, null)
 on conflict (id) do update set
   default_location_label = excluded.default_location_label,

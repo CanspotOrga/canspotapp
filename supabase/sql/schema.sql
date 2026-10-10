@@ -261,7 +261,7 @@ create table public.product_avg_prices (
   source            text not null check (source in ('open_prices', 'eigene_erfassung')),
   updated_at        timestamptz not null default now()
 );
-comment on table public.product_avg_prices is 'Ø-Normalpreis je Produkt aus Preismeldungen ohne Aktion (nur Deutschland, letzte 12 Monate). source open_prices = Open Prices (ODbL 1.0, Namensnennung in der App). App zeigt ihn nur bei Produkten ohne Händlerpreis.';
+comment on table public.product_avg_prices is 'Ø-Normalpreis je Produkt aus Preismeldungen ohne Aktion (nur Deutschland). source open_prices = Open Prices (ODbL 1.0, Namensnennung in der App). App zeigt ihn nur bei Produkten ohne Händlerpreis.';
 
 
 -- App-weite Einstellungen, die die App beim Start liest (statt sie fest in

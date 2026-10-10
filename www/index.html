@@ -8364,8 +8364,13 @@ const productsViewEl = document.getElementById("productsView");
 /* Start/Neuheiten/Favoriten wechseln immer zurück in die Listenansicht -
    sonst blieb nach "Karte" viewMode auf "map" und render() zeigte weiter
    die Karte, der Tab-Wechsel wirkte dadurch wirkungslos. */
+/* Hinweis "im Aufbau" (app_settings.demo_notice) nur auf der Startseite. */
+function setDemoBannerOnStart(onStart){
+  document.getElementById("demoBanner").style.display = onStart ? "" : "none";
+}
 function showDealsView(){
   viewMode = "list";
+  setDemoBannerOnStart(true);
   tabsNav.style.display = "flex";
   controlsEl.style.display = "flex";
   alertsView.style.display = "none";
@@ -8375,6 +8380,7 @@ function showDealsView(){
 }
 
 function showAlertsView(){
+  setDemoBannerOnStart(false);
   tabsNav.style.display = "none";
   controlsEl.style.display = "none";
   dealsContainer.style.display = "none";
@@ -8386,6 +8392,7 @@ function showAlertsView(){
 }
 
 function showNewView(){
+  setDemoBannerOnStart(false);
   tabsNav.style.display = "none";
   controlsEl.style.display = "none";
   dealsContainer.style.display = "none";
@@ -8397,6 +8404,7 @@ function showNewView(){
 }
 
 function showProductsView(){
+  setDemoBannerOnStart(false);
   tabsNav.style.display = "none";
   controlsEl.style.display = "none";
   dealsContainer.style.display = "none";
@@ -9568,7 +9576,7 @@ function getProductStoreRows(productId){
    ausdrücklich als Beispieldaten. */
 function regularPriceNote(rows){
   if(!rows.some(r=>r.kind==="regular")) return "";
-  if(appDemoMode) return `<div class="np-note">Normalpreis: Beispieldaten, keine von uns erfassten Preise.</div>`;
+  if(appDemoMode) return `<div class="np-note">Normalpreis: Regalpreis ohne Aktion im jeweiligen Markt. Ohne Gewähr, kann je nach Markt und Region abweichen; maßgeblich ist der Preis im Markt.</div>`;
   return `<div class="np-note">Normalpreis: zuletzt von uns erfasster Regalpreis ohne Aktion im jeweiligen Markt. Ohne Gewähr, kann je nach Markt und Region abweichen; maßgeblich ist der Preis im Markt.</div>`;
 }
 
@@ -9596,6 +9604,10 @@ function apRefBlock(p){
     </div>
     ${shops ? `<div class="np-note">${escapeHtml(shops)}</div>` : ""}
     ${ref ? `<div class="np-note">${escapeHtml(avgPriceNote(ref))}</div>` : ""}`;
+}
+/* Gemeldete Märkte (product_retailers) ohne Filiale/Preis, für die Händler-Zeile. */
+function reportedShops(productId){
+  return PRODUCT_RETAILERS[productId] || [];
 }
 
 function apStoreRow(r){
@@ -12104,10 +12116,8 @@ function renderProductRef(product, deal){
   const priceEl = document.getElementById("pdRefPrice");
   priceEl.textContent = ref ? `${euro(ref.price)} €` : "Preis folgt";
   priceEl.classList.toggle("pd-price-none", !ref);
-  const shops = retailerLine(product.id);
-  const shopsEl = document.getElementById("pdRefShops");
-  shopsEl.textContent = shops;
-  shopsEl.hidden = !shops;
+  // Gemeldete Märkte stehen in der Händler-Zeile (renderProductStoreOnly()).
+  document.getElementById("pdRefShops").hidden = true;
   const noteEl = document.getElementById("pdRefNote");
   noteEl.textContent = ref ? avgPriceNote(ref) : "";
   noteEl.hidden = !ref;
@@ -12164,10 +12174,13 @@ function renderProductStoreOnly(product){
   histRow.previousElementSibling.style.display = "none";
   const row = getProductStoreRows(product.id)[0];
   if(!row){
-    logo.src = STORE_FALLBACK_IMG;
+    const shops = reportedShops(product.id);
+    logo.src = shops.length === 1 ? (storeLogos[shops[0]] || STORE_FALLBACK_IMG) : STORE_FALLBACK_IMG;
     logo.alt = "";
-    document.getElementById("pdStoreName").textContent = "Noch kein Händler erfasst";
-    document.getElementById("pdStoreSub").textContent = "Sobald ein Markt eingetragen ist, steht er hier.";
+    document.getElementById("pdStoreName").textContent = shops.length ? shops.join(", ") : "Noch kein Händler erfasst";
+    const subEl = document.getElementById("pdStoreSub");
+    subEl.textContent = shops.length ? "Laut Meldungen erhältlich, ohne Gewähr" : "";
+    subEl.hidden = !shops.length;
     storeRow.onclick = null;
     storeRow.querySelector(".pd-row-arrow").style.visibility = "hidden";
     renderMoreStores(null);
@@ -12181,6 +12194,7 @@ function renderProductStoreOnly(product){
   logo.alt = entry.store;
   logo.onerror = function(){ this.src = STORE_FALLBACK_IMG; };
   document.getElementById("pdStoreName").textContent = `${entry.store}${kmSuffix(entry.distanceKm)}`;
+  document.getElementById("pdStoreSub").hidden = false;
   document.getElementById("pdStoreSub").innerHTML =
     (hasDistance(entry) ? `${routeMinutes(entry.distanceKm)} Min. Route` : "Route") +
     (openNow===null ? "" : ` · <span class="open-dot ${openNow?"open":""}"></span>${openNow?"Jetzt geöffnet":"Geschlossen"}`);
@@ -12230,6 +12244,7 @@ function renderProductOffer(deal){
   logo.alt = deal.store;
   logo.onerror = function(){ this.src = STORE_FALLBACK_IMG; };
   document.getElementById("pdStoreName").textContent = `${deal.store}${kmSuffix(deal.distanceKm)}`;
+  document.getElementById("pdStoreSub").hidden = false;
   document.getElementById("pdStoreSub").innerHTML =
     (hasDistance(deal) ? `${routeMinutes(deal.distanceKm)} Min. Route` : "Route") +
     (openNow===null ? "" : ` · <span class="open-dot ${openNow?"open":""}"></span>${openNow?"Jetzt geöffnet":"Geschlossen"}`);
@@ -12298,7 +12313,7 @@ function nutritionQualifiers(productId, per100, packagingAssumed){
   const parts = [];
   if(!NUTRITION_BY_PRODUCT[productId]) parts.push("Richtwerte der Marke, keine Angaben zu diesem Produkt");
   if(packagingAssumed) parts.push("Verpackung nicht bestätigt");
-  if(NUTRITION_KEYS.some(k => typeof per100[k] !== "number")) parts.push(`${NA_LABEL} = keine Angabe in der Datenquelle`);
+  if(NUTRITION_KEYS.some(k => typeof per100[k] !== "number")) parts.push(`${NA_LABEL} = keine Angabe`);
   return parts;
 }
 
@@ -12328,10 +12343,10 @@ function openSourceSheet(product){
   if(!product) return;
   const per100 = getNutritionPer100ml(product);
   const kind = nutritionSourceKind(product, per100);
-  const disclaimer = `<div class="source-block"><b>Keine Gewähr</b>Die Angaben können Fehler enthalten und sind nicht für medizinische Zwecke bestimmt. Maßgeblich sind die Angaben auf der Verpackung.</div>`;
+  const disclaimer = `<div class="source-block"><b>Ohne Gewähr</b>Alle Angaben ohne Gewähr. Sie können Fehler enthalten und sind nicht für medizinische Zwecke bestimmt; maßgeblich sind Verpackung und Preis im Markt.</div>`;
   const notes = [];
   if(product.packagingAssumed) notes.push("Die Verpackungsart ist nicht bestätigt (aus der Füllmenge angenommen).");
-  if(per100 && NUTRITION_KEYS.some(k => typeof per100[k] !== "number")) notes.push(`Fehlende Werte stehen als „${NA_LABEL}“ (keine Angabe in der Datenquelle).`);
+  if(per100 && NUTRITION_KEYS.some(k => typeof per100[k] !== "number")) notes.push(`„${NA_LABEL}“ = keine Angabe.`);
   const notesHtml = notes.length ? `<div class="source-block"><b>Hinweise</b>${notes.join(" ")}</div>` : "";
   const ref = PRODUCT_AVG_PRICES[product.id];
   const code = per100 && /^\d{8,14}$/.test(String(per100.sourceRef || "")) ? per100.sourceRef : null;
