@@ -6446,6 +6446,9 @@ let allOffers = [];
 /* Normalpreise (public.regular_prices): je Produkt, Händler und Gebinde der
    Regalpreis ohne Aktion - nur für "Alle Produkte". */
 let regularPrices = [];
+/* true, solange app_settings.demo_notice gesetzt ist: Preise sind dann
+   Beispieldaten und werden nicht als von uns erfasst bezeichnet. */
+let appDemoMode = false;
 /* Alle Marken aus public.brands (Anzeigenamen), auch ohne Produkte - nur für
    die Marken-Auswahl in "Alle Produkte". */
 let allBrandNames = [];
@@ -9401,7 +9404,7 @@ function getProductStoreRows(productId){
       pfand: typeof ref.pfand==="number" ? ref.pfand : (g.regular ? g.regular.pfand : null)
     };
     if(active) return {...base, kind:"offer", offer:active, price:active.offerPrice};
-    if(g.regular) return {...base, kind:"regular", offer:null, price:g.regular.price};
+    if(g.regular) return {...base, kind:"regular", offer:null, price:g.regular.price, checkedAt:g.regular.lastCheckedAt || null};
     return {...base, kind:"none", offer:null, price:null};
   });
   const rank = {offer:0, regular:1, none:2};
@@ -9409,6 +9412,25 @@ function getProductStoreRows(productId){
     rank[a.kind]-rank[b.kind] ||
     ((a.price ?? 0)/a.units - (b.price ?? 0)/b.units) ||
     a.store.localeCompare(b.store, "de"));
+}
+
+/* Hinweis unter einer Produktkarte, sobald ein Normalpreis (kein laufendes
+   Angebot) angezeigt wird: was der Preis ist, wie aktuell (Erfassungsdatum,
+   fehlt es, wird das gesagt) und dass er abweichen kann. Im Demo-Betrieb
+   (app_settings.demo_notice) ausdrücklich als Beispieldaten. */
+function regularPriceNote(rows){
+  const regs = rows.filter(r=>r.kind==="regular");
+  if(!regs.length) return "";
+  if(appDemoMode) return `<div class="np-note">Normalpreis: Beispieldaten, keine von uns erfassten Preise.</div>`;
+  const dates = regs.map(r=>r.checkedAt ? String(r.checkedAt).slice(0,10) : null);
+  let stand;
+  if(dates.some(d=>!d)) stand = "Erfassungsdatum teils unbekannt";
+  else {
+    const sorted = [...new Set(dates)].sort();
+    stand = sorted.length === 1 ? `Stand ${formatSingleDate(sorted[0])}`
+      : `Stand ${formatSingleDate(sorted[0])} bis ${formatSingleDate(sorted[sorted.length-1])}`;
+  }
+  return `<div class="np-note">Normalpreis: zuletzt von uns erfasster Regalpreis ohne Aktion im jeweiligen Markt (${stand}). Ohne Gewähr, kann je nach Markt und Region abweichen; maßgeblich ist der Preis im Markt.</div>`;
 }
 
 function apStoreRow(r){
@@ -9503,7 +9525,7 @@ function renderProductsView(){
         ${priced.length>1 ? `<div class="ap-from"><span>ab</span><b>${euro(from)} €</b></div>` : ""}
       </div>
       ${rows.length
-        ? `<div class="np-stores">${rows.map(apStoreRow).join("")}</div>${withPfand ? `<div class="np-note">Preise zzgl. ${euro(withPfand.pfand)} € Pfand pro Dose</div>` : ""}`
+        ? `<div class="np-stores">${rows.map(apStoreRow).join("")}</div>${withPfand ? `<div class="np-note">Preise zzgl. ${euro(withPfand.pfand)} € Pfand pro Dose</div>` : ""}${regularPriceNote(rows)}`
         : `<div class="np-note">Aktuell bei keinem Händler mit Preis gelistet.</div>`}
     </article>`;
   }).join("");
@@ -13091,6 +13113,7 @@ function applyAppSettings(row){
   const banner = document.getElementById("demoBanner");
   banner.textContent = (row && row.demo_notice) || "";
   banner.hidden = !(row && row.demo_notice);
+  appDemoMode = !!(row && row.demo_notice);
 
   document.querySelectorAll("[data-app-version]").forEach(el=>{
     el.textContent = (row && row.app_version) || "";
