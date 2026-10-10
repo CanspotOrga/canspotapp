@@ -2952,21 +2952,17 @@ font-size:12.5px
 .nutrition-full-row span{color:var(--text-muted)}
 .nutrition-full-row span.nutrition-full-sub{padding-left:10px}
 .nutrition-full-row b{color:var(--text-primary);font-weight:700;white-space:nowrap}
-/* Quellenangabe unter den Nährwerten und am Ende von "Alle Produkte". */
-.pd-source,.ap-source{margin-top:12px;font-size:11.5px;line-height:1.5;color:var(--text-muted)}
-.pd-source[hidden],.ap-source[hidden]{display:none}
-.pd-source a,.ap-source a{color:var(--brand-primary-blue);text-decoration:underline;text-underline-offset:2px}
-:root[data-theme="dark"] .pd-source a,:root[data-theme="dark"] .ap-source a{color:var(--brand-primary-light)}
-.ap-source{margin:18px 2px 4px}
-/* "Beispielbild": Bild zeigt nicht das tatsächliche Produkt (products.image_is_example). */
-.img-ex{position:absolute;left:6px;bottom:6px;z-index:3;padding:2px 6px;border-radius:var(--radius-xs);background:rgba(15,18,28,.62);color:#fff;font-size:9.5px;font-weight:700;line-height:1.3;letter-spacing:.02em;pointer-events:none;white-space:nowrap}
-.img-ex[hidden]{display:none}
-.thumb-frame .img-ex{position:static;font-size:8.5px;padding:1px 5px;background:var(--bg-surface-strong);color:var(--text-muted)}
-.weekly-best-img,.similar-card,.news-detail-img-wrap{position:relative}
-.weekly-best-img .img-ex{left:3px;bottom:3px;font-size:8px;padding:1px 4px}
-.similar-card .img-ex{left:12px;top:12px;bottom:auto;font-size:8px;padding:1px 4px}
-.news-detail-img-wrap .img-ex{left:50%;transform:translateX(-50%)}
-.ap-tag-ex{display:inline-flex;align-items:center;padding:3px 7px;border-radius:var(--radius-xs);background:var(--bg-surface-strong);color:var(--text-muted);font-size:10px;font-weight:700}
+/* Quellenangabe: Zeile "Quelle und Lizenz der Angaben" über "Ähnliche Produkte"
+   (öffnet #sourceOverlay) und Hinweis am Ende von "Alle Produkte". */
+.pd-source-row{margin-top:16px}
+.ap-source{margin:18px 2px 4px;font-size:11.5px;line-height:1.5;color:var(--text-muted)}
+.ap-source a,.source-block a{color:var(--brand-primary-blue);text-decoration:underline;text-underline-offset:2px}
+:root[data-theme="dark"] .ap-source a,:root[data-theme="dark"] .source-block a{color:var(--brand-primary-light)}
+.source-body{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.source-block{padding:12px 14px;background:var(--bg-surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);font-size:13px;line-height:1.5;color:var(--text-secondary, var(--text-primary))}
+.source-block b{display:block;margin-bottom:3px;font-size:12px;letter-spacing:.02em;text-transform:uppercase;color:var(--text-muted)}
+.source-body .sheet-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:0;color:#fff;text-decoration:none}
+
 
 /* Bewertung (Daumen + optionale erweiterte Kriterien) - bewusst NUR mobil
    (siehe Anfrage "ausschließlich mobile Version"), daher analog zum
@@ -5746,7 +5742,6 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="detail-hero">
 <button class="sheet-close sheet-close-back" data-close="productDetailOverlay" aria-label="Zurück"><svg class="icon icon-md"><use href="#i-arrow-left"/></svg></button>
 <img class="detail-img" id="pdImg" src="" alt="">
-<span class="img-ex" id="pdImgEx" hidden>Beispielbild</span>
 <div class="detail-hero-actions">
 <button class="btn" id="pdShareBtn" aria-label="Angebot teilen"><svg class="icon icon-md"><use href="#i-share"/></svg></button>
 </div>
@@ -5882,8 +5877,15 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <span>Alle Nährwerte anzeigen</span>
 </button>
 <div class="nutrition-full" id="pdNutritionFull"></div>
-<!-- Quellenangabe und Lizenzhinweis zu den Produktdaten (renderNutritionSource) -->
-<div class="pd-source" id="pdSource" hidden></div>
+<!-- Quelle und Lizenz der Produktangaben (renderSourceRow / openSourceSheet) -->
+<button type="button" class="pd-store-row pd-source-row" id="pdSourceRow">
+<span class="pd-hist-icon"><svg class="icon icon-lg"><use href="#i-info"/></svg></span>
+<span class="pd-store-txt">
+<b>Quelle und Lizenz der Angaben</b>
+<span id="pdSourceSub">–</span>
+</span>
+<svg class="icon icon-md pd-row-arrow"><use href="#i-chevron-down"/></svg>
+</button>
 
 <div class="field-label" style="margin-top:24px">Ähnliche Produkte</div>
 <div class="similar-scroll" id="pdSimilar"></div>
@@ -5976,6 +5978,18 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
      öffnen — dafür ein rotierender Chevron statt des "›"-Pfeils, als klares
      visuelles Signal "klappt auf" vs. "navigiert weg". Zeilen nutzen weiterhin
      die bestehenden .profile-row/-icon/-txt-Klassen aus "Mein Bereich" wieder. -->
+<div class="overlay" id="sourceOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="sourceOverlay" aria-label="Schließen"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2>Quelle und Lizenz</h2>
+<div class="desc" id="sourceProduct">–</div>
+<div class="source-body" id="sourceBody"></div>
+</div>
+</div>
+</div>
+
 <div class="overlay" id="menuOverlay">
 <div class="sheet">
 <div class="sheet-inner">
@@ -6448,7 +6462,6 @@ function buildDeals(offers){
       brand: product.brand,
       sizeMl: product.sizeMl,
       img: (typeof d.bundleImg === "string" && d.bundleImg) ? d.bundleImg : product.img,
-      imgExample: (typeof d.bundleImg === "string" && d.bundleImg) ? false : !!product.imgExample,
       pfand: typeof d.pfand === "number" ? d.pfand : PFAND_FALLBACK,
       packaging: d.packaging || PACKAGING_FALLBACK,
       packagingAssumed: !!product.packagingAssumed,
@@ -7293,7 +7306,7 @@ function buildWeeklyBestEl(deal, literPrice){
       <span class="weekly-best-price"><span class="price">${euro(deal.offerPrice)} €</span><span class="saving-percent">−${savingPct} %</span></span>
       <span class="weekly-best-meta">${euro(literPrice)} €/L · ${escapeHtml(deal.store)} · bis ${formatSingleDate(deal.validUntil)}</span>
     </span>
-    <span class="weekly-best-img"><img src="${escapeHtml(deal.img)}" alt="" referrerpolicy="no-referrer">${exampleBadge(deal)}</span>
+    <span class="weekly-best-img"><img src="${escapeHtml(deal.img)}" alt="" referrerpolicy="no-referrer"></span>
   `;
   el.querySelector("img").addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
   return el;
@@ -7334,7 +7347,6 @@ function buildDealCardEl(deal, isBest, favLiterMin){
       <div class="thumb-frame">
         <img class="thumb" src="${escapeHtml(deal.img)}" alt="${escapeHtml(deal.product)}" loading="lazy" referrerpolicy="no-referrer">
         ${deal.isNew ? `<span class="new-pill">Neu</span>` : ""}
-        ${exampleBadge(deal)}
       </div>
       <div class="card-info">
         <div class="product">${escapeHtml(deal.product)}</div>
@@ -7488,7 +7500,7 @@ function renderSearchSuggestions(){
       <img src="${escapeHtml(p.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="search-suggestion-text">
         <div class="search-suggestion-name">${highlightMatch(p.name, q)}</div>
-        <div class="search-suggestion-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml${exampleMeta(p)}</div>
+        <div class="search-suggestion-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
       </div>
     </button>
   `).join("")}</div>`;
@@ -8522,7 +8534,7 @@ function newsCardHtml(item){
           <img class="thumb" data-product-detail="${p.id}" src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
           <div class="news-card-text">
             <div class="news-card-name" data-product-detail="${p.id}">${escapeHtml(p.name)}</div>
-            <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml${exampleMeta(p)}</div>
+            <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
           </div>
         </div>
       </article>
@@ -8540,7 +8552,7 @@ function newsCardHtml(item){
           <img class="thumb" data-product-detail="${p.id}" data-deal-id="${d.id}" src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
           <div class="news-card-text">
             <div class="news-card-name" data-product-detail="${p.id}" data-deal-id="${d.id}">${escapeHtml(p.name)}</div>
-            <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml${exampleMeta(p)}</div>
+            <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
           </div>
         </div>
         <div class="news-card-price-row">
@@ -8568,7 +8580,7 @@ function newsCardHtml(item){
         <img class="thumb" data-product-detail="${p.id}" data-deal-id="${d.id}" src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
         <div class="news-card-text">
           <div class="news-card-name" data-product-detail="${p.id}" data-deal-id="${d.id}">${escapeHtml(p.name)}</div>
-          <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml${exampleMeta(p)}</div>
+          <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
         </div>
       </div>
       <div class="news-card-price-row">
@@ -8630,7 +8642,7 @@ function renderAlertsView(){
             <img class="thumb" data-product-detail="${e.product.id}" src="${escapeHtml(e.product.img)}" alt="${escapeHtml(e.product.name)}" loading="lazy" referrerpolicy="no-referrer">
             <div>
               <div class="product" data-product-detail="${e.product.id}">${escapeHtml(e.product.name)}</div>
-              <div class="brandtxt">${escapeHtml(e.product.brand)} · ${e.product.sizeMl} ml${exampleMeta(e.product)}</div>
+              <div class="brandtxt">${escapeHtml(e.product.brand)} · ${e.product.sizeMl} ml</div>
             </div>
           </div>
           <label class="switch">
@@ -9158,7 +9170,6 @@ function renderNewPane(){
         <button class="np-fav${fav ? " active" : ""}" data-np-fav="${escapeHtml(key)}" data-np-name="${escapeHtml(p.name)}" aria-label="${fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}"><svg class="icon"><use href="#i-heart"/></svg></button>
         ${p.img ? `<canvas class="np-media-bg" width="16" height="16" aria-hidden="true"></canvas>` : ""}
         <img src="${escapeHtml(p.img || FALLBACK_IMG)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
-        ${exampleBadge(p)}
       </div>
       <div class="np-body">
         <div class="np-head" ${openAttrs}>
@@ -9219,7 +9230,6 @@ function renderSoonPane(){
             <button class="np-fav${fav ? " active" : ""}" data-np-fav="${escapeHtml(key)}" data-np-name="${escapeHtml(d.product)}" aria-label="${fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}"><svg class="icon"><use href="#i-heart"/></svg></button>
             ${d.img ? `<canvas class="np-media-bg" width="16" height="16" aria-hidden="true"></canvas>` : ""}
             <img src="${escapeHtml(d.img || FALLBACK_IMG)}" alt="${escapeHtml(d.product)}" loading="lazy" referrerpolicy="no-referrer">
-            ${exampleBadge(d)}
           </div>
           <div class="np-body">
             <div class="np-head" data-np-open="${escapeHtml(d.productId)}" data-np-deal="${escapeHtml(d.id)}">
@@ -9556,7 +9566,7 @@ function renderProductsView(){
         <div class="ap-head-txt">
           <div class="np-brand">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
           <div class="ap-name">${escapeHtml(p.name)}</div>
-          <div class="ap-tags">${onOffer ? `<span class="info-badge green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> Im Angebot</span>` : ""}${p.isNew ? `<span class="ap-tag-new">Neu</span>` : ""}${p.imgExample ? `<span class="ap-tag-ex">Beispielbild</span>` : ""}</div>
+          <div class="ap-tags">${onOffer ? `<span class="info-badge green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> Im Angebot</span>` : ""}${p.isNew ? `<span class="ap-tag-new">Neu</span>` : ""}</div>
         </div>
         ${priced.length>1 ? `<div class="ap-from"><span>ab</span><b>${euro(from)} €</b></div>` : ""}
       </div>
@@ -9714,7 +9724,7 @@ function renderRecentList(){
       <img class="fav-emoji" src="${escapeHtml(product.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="fav-txt">
         <b>${escapeHtml(product.name)}</b>
-        <span>${escapeHtml(product.brand)} · ${product.sizeMl} ml${exampleMeta(product)}</span>
+        <span>${escapeHtml(product.brand)} · ${product.sizeMl} ml</span>
       </div>
       <div class="recent-meta">
         ${bestPrice!==null ? `<b>ab ${euro(bestPrice)} €</b>` : ""}
@@ -11386,7 +11396,7 @@ function renderNewsDetail(n){
   if(!deal){
     container.innerHTML = `
       <h2 style="margin-top:18px">${escapeHtml(product.name)}</h2>
-      <div class="news-detail-img-wrap"><img class="news-detail-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" loading="lazy" referrerpolicy="no-referrer">${exampleBadge(product)}</div>
+      <div class="news-detail-img-wrap"><img class="news-detail-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" loading="lazy" referrerpolicy="no-referrer"></div>
       <div class="desc">${escapeHtml(n.text)}</div>
     `;
     return;
@@ -11916,8 +11926,7 @@ function openProductDetail(productId, dealId){
   const pdImg = document.getElementById("pdImg");
   pdImg.src = heroImg;
   pdImg.alt = product.name;
-  pdImg.onerror = function(){ this.src = FALLBACK_IMG; document.getElementById("pdImgEx").hidden = true; };
-  document.getElementById("pdImgEx").hidden = !((shownDeal && shownDeal.img) ? shownDeal.imgExample : product.imgExample);
+  pdImg.onerror = function(){ this.src = FALLBACK_IMG; };
 
   document.getElementById("pdTitle").textContent = product.name;
   document.getElementById("pdSub").textContent = `${product.brand} · ${product.sizeMl} ml`;
@@ -12062,16 +12071,9 @@ function offProductUrl(code){
 }
 function isOffNutrition(n){ return !!n && n.source === "open_food_facts"; }
 
-/* Unbekannte bzw. nicht produktgenaue Angaben immer kennzeichnen:
-   Beispielbilder (Bild zeigt nicht dieses Produkt) als Etikett auf dem Bild
-   bzw. als Zusatz in der Textzeile kleiner Vorschaubilder. */
-const EXAMPLE_IMG_LABEL = "Beispielbild";
-function exampleBadge(item){ return item && item.imgExample ? `<span class="img-ex">${EXAMPLE_IMG_LABEL}</span>` : ""; }
-function exampleMeta(item){ return item && item.imgExample ? ` · ${EXAMPLE_IMG_LABEL}` : ""; }
-
 /* Nährwerte: fehlende Werte als "k. A.", Marken-Richtwerte (kein eigener
    Datensatz für das Produkt) und nur angenommene Verpackung werden genannt. */
-const NA_LABEL = "k. A.";
+const NA_LABEL = "k.\u00a0A."; // geschütztes Leerzeichen, bricht nicht um
 const NUTRITION_KEYS = ["kcal","carbsG","sugarG","fatG","satFatG","proteinG","saltG","caffeineMg","taurineMg"];
 function packagingWord(item){ return item && item.packaging === "Flasche" ? "Flasche" : "Dose"; }
 function nutritionQualifiers(productId, per100, packagingAssumed){
@@ -12082,16 +12084,56 @@ function nutritionQualifiers(productId, per100, packagingAssumed){
   return parts;
 }
 
-function renderNutritionSource(per100){
-  const el = document.getElementById("pdSource");
-  if(!per100){ el.hidden = true; el.innerHTML = ""; return; }
-  const disclaimer = "Angaben ohne Gewähr, maßgeblich sind die Angaben auf der Verpackung.";
-  el.innerHTML = isOffNutrition(per100)
-    ? `Quelle der Produkt- und Nährwertdaten: ${extLink(offProductUrl(per100.sourceRef), "Open Food Facts")}. `
-      + `Enthält Daten von Open Food Facts, verfügbar unter der ${extLink(ODBL_URL, "Open Database License (ODbL) 1.0")}; `
-      + `einzelne Inhalte unter der ${extLink(DBCL_URL, "Database Contents License (DbCL) 1.0")}. ${disclaimer}`
-    : disclaimer;
-  el.hidden = false;
+/* Zeile "Quelle und Lizenz der Angaben" über "Ähnliche Produkte"; der Untertitel
+   nennt die Herkunft, das Fenster (#sourceOverlay) Quelle, Link auf den Eintrag
+   und Lizenzen, wie es Open Food Facts verlangt. */
+let sourceSheetProduct = null;
+function nutritionSourceKind(product, per100){
+  if(!per100) return "none";
+  if(!NUTRITION_BY_PRODUCT[product.id]) return "brand";
+  if(isOffNutrition(per100)) return "off";
+  return per100.source === "eigene_erfassung" ? "own" : "unknown";
+}
+function renderSourceRow(product, per100){
+  const sub = {
+    off: "Open Food Facts · Lizenz ODbL 1.0",
+    brand: "Richtwerte der Marke · eigene Angaben",
+    own: "Eigene Erfassung",
+    unknown: "Herkunft nicht erfasst",
+    none: "Keine Nährwertangaben vorhanden"
+  }[nutritionSourceKind(product, per100)];
+  document.getElementById("pdSourceSub").textContent = sub;
+  sourceSheetProduct = product;
+  document.getElementById("pdSourceRow").onclick = ()=> openSourceSheet(sourceSheetProduct);
+}
+function openSourceSheet(product){
+  if(!product) return;
+  const per100 = getNutritionPer100ml(product);
+  const kind = nutritionSourceKind(product, per100);
+  const disclaimer = `<div class="source-block"><b>Keine Gewähr</b>Die Angaben können Fehler enthalten und sind nicht für medizinische Zwecke bestimmt. Maßgeblich sind die Angaben auf der Verpackung.</div>`;
+  const notes = [];
+  if(product.packagingAssumed) notes.push("Die Verpackungsart ist nicht bestätigt (aus der Füllmenge angenommen).");
+  if(per100 && NUTRITION_KEYS.some(k => typeof per100[k] !== "number")) notes.push(`Fehlende Werte stehen als „${NA_LABEL}“ (keine Angabe in der Datenquelle).`);
+  const notesHtml = notes.length ? `<div class="source-block"><b>Hinweise</b>${notes.join(" ")}</div>` : "";
+  let html;
+  if(kind === "off"){
+    html = `
+      <div class="source-block"><b>Quelle</b>Produktname, Füllmenge und Nährwerte stammen von ${extLink(OFF_HOME_URL, "Open Food Facts")}, einer freien Lebensmitteldatenbank, an der viele Freiwillige mitwirken. Den Produktnamen haben wir vereinheitlicht.</div>
+      <a class="sheet-btn" href="${offProductUrl(per100.sourceRef)}" target="_blank" rel="noopener noreferrer">Eintrag bei Open Food Facts ansehen <svg class="icon icon-md"><use href="#i-external"/></svg></a>
+      <div class="source-block"><b>Lizenz</b>Enthält Daten von Open Food Facts, verfügbar unter der ${extLink(ODBL_URL, "Open Database License (ODbL) 1.0")}. Einzelne Inhalte stehen unter der ${extLink(DBCL_URL, "Database Contents License (DbCL) 1.0")}. Unsere bearbeitete Fassung steht ebenfalls unter der ODbL 1.0.</div>`;
+  } else if(kind === "brand"){
+    html = `<div class="source-block"><b>Quelle</b>Für dieses Produkt liegen keine eigenen Nährwerte vor. Angezeigt werden Richtwerte der Marke (eigene Angaben).</div>`;
+  } else if(kind === "own"){
+    html = `<div class="source-block"><b>Quelle</b>Die Angaben haben wir selbst erfasst.</div>`;
+  } else if(kind === "unknown"){
+    html = `<div class="source-block"><b>Quelle</b>Die Herkunft dieser Angaben ist nicht erfasst.</div>`;
+  } else {
+    html = `<div class="source-block"><b>Quelle</b>Für dieses Produkt liegen keine Nährwertangaben vor.</div>`;
+  }
+  document.getElementById("sourceProduct").textContent = `${product.name} · ${product.sizeMl} ml`;
+  document.getElementById("sourceBody").innerHTML = html + notesHtml + (kind === "none" ? "" : disclaimer)
+    + `<div class="source-block"><b>Alle Datenquellen</b><a href="impressum.html#datenquellen">Datenquellen und Lizenzen im Impressum</a></div>`;
+  openSheet("sourceOverlay");
 }
 
 function renderNutrition(product){
@@ -12103,7 +12145,7 @@ function renderNutrition(product){
     document.getElementById("pdNutritionFull").innerHTML = "";
     document.getElementById("pdNutritionFull").classList.remove("open");
     toggleBtnEl.style.display = "none";
-    renderNutritionSource(null);
+    renderSourceRow(product, null);
     return;
   }
   toggleBtnEl.style.display = "";
@@ -12146,7 +12188,7 @@ function renderNutrition(product){
     <div class="nutrition-full-row"><span>Koffein</span><b>${mg(caffeineMg)}</b></div>
     <div class="nutrition-full-row"><span>Taurin</span><b>${mg(taurineMg)}</b></div>
   `;
-  renderNutritionSource(per100);
+  renderSourceRow(product, per100);
 
   const toggleBtn = document.getElementById("pdNutritionToggle");
   const fullEl = document.getElementById("pdNutritionFull");
@@ -12369,7 +12411,7 @@ function renderSimilarProducts(product){
       .sort((a,b)=>a.offerPrice-b.offerPrice)[0];
     return `
     <button class="similar-card" data-similar="${p.id}">
-      <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">${exampleBadge(p)}
+      <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
       <div class="similar-name">${escapeHtml(p.name)}</div>
       <div class="similar-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
       ${cheapest
@@ -13138,7 +13180,7 @@ async function loadFromSupabase(){
   if(!supabaseClient) throw new Error("Supabase-Client nicht initialisiert");
 
   const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes, settingsRes, regularPricesRes, brandsRes] = await Promise.all([
-      supabaseClient.from("products").select("id,name,size_ml,packaging,packaging_assumed,image_url,image_is_example,is_new,brand:brands(name)"),
+      supabaseClient.from("products").select("id,name,size_ml,packaging,packaging_assumed,image_url,is_new,brand:brands(name)"),
       supabaseClient.from("product_nutrition").select("*"),
       supabaseClient.from("brand_nutrition_defaults").select("*,brand:brands(name)"),
       supabaseClient.from("branches").select("id,street,postal_code,city,latitude,longitude,opens_at,closes_at,closed_sunday,retailer:retailers(name,logo_url)"),
@@ -13195,11 +13237,9 @@ async function loadFromSupabase(){
       brand: brandDisplayName(p.brand.name),
       sizeMl: p.size_ml,
       img: p.image_url || FALLBACK_IMG,
-      // Beispielbild (zeigt nicht dieses Produkt) bzw. Verpackung nur angenommen:
-      // beides wird in der App gekennzeichnet.
-      imgExample: !!(p.image_url && p.image_is_example),
       isNew: !!p.is_new,
       packaging: p.packaging || PACKAGING_FALLBACK,
+      // Verpackung nur angenommen (products.packaging_assumed): wird gekennzeichnet.
       packagingAssumed: !!p.packaging_assumed
     }));
 
