@@ -2838,56 +2838,6 @@ font-family:inherit
 }
 .alert-active button:hover{color:var(--text-muted)}
 
-/* Preisfeedback in der Händler-Detailansicht (#storeDetailOverlay, siehe
-   openStoreDetail()/renderPriceFeedback()): zwei gleichwertige, kompakte
-   Auswahl-Pillen statt der einzelnen runden .rating-thumb-Buttons, da hier -
-   anders als beim Daumen-Icon der Community-Bewertung - auch ein Textlabel
-   ("Preis stimmt"/"Preis abweichend") sichtbar sein soll. Farblogik (Grün/Rot
-   bei aktiver Auswahl) ist bewusst 1:1 von .rating-thumb.active übernommen,
-   damit Erfolg/Abweichung app-weit gleich aussieht. Bewusst kleiner/unauffälliger
-   als .sheet-btn (Route starten bleibt der optisch wichtigste CTA). */
-.price-feedback-choices{
-display:flex;
-gap:8px;
-margin-top:8px
-}
-.price-feedback-choice{
-flex:1;
-display:flex;
-align-items:center;
-justify-content:center;
-gap:6px;
-padding:10px 8px;
-border:1px solid var(--border-subtle);
-background:var(--bg-surface-sunken);
-color:var(--text-secondary);
-border-radius:var(--radius-md);
-font-size:12.5px;
-font-weight:700;
-cursor:pointer;
-font-family:inherit;
-transition:color .15s,border-color .15s,background-color .15s
-}
-.price-feedback-choice:active{transform:scale(.97)}
-.price-feedback-choice .icon{width:15px;height:15px;flex-shrink:0}
-.price-feedback-choice.active[data-price-vote="up"]{
-color:var(--status-success-text);
-border-color:var(--status-success-border);
-background:var(--status-success-bg)
-}
-.price-feedback-choice.active[data-price-vote="down"]{
-color:var(--status-error-text);
-border-color:var(--status-error-border);
-background:var(--status-error-bg)
-}
-.price-feedback-choice.active .icon{fill:currentColor;stroke:none}
-.price-feedback-note{
-margin-top:10px;
-font-size:12px;
-color:var(--status-success-text)
-}
-.price-feedback-note b{font-weight:700}
-
 /* ---------- PRODUKTDETAILANSICHT (Nährwerte / ähnliche Produkte) ---------- */
 
 .nutrition-note{
@@ -3526,6 +3476,10 @@ border:1px solid var(--border-subtle);
 border-radius:var(--radius-lg);
 padding:12px 14px
 }
+.store-detail-price-box > div:first-child{min-width:0}
+.store-detail-price-box .product{font-size:15px;line-height:1.3}
+.store-detail-price-box .brandtxt{font-size:12px}
+.store-detail-price-box .price{flex-shrink:0;font-size:18px;font-weight:800;white-space:nowrap}
 
 /* ---------- SKELETON LOADING ---------- */
 
@@ -5934,30 +5888,6 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="price" id="storeDetailPrice">–</div>
 </div>
 
-<!-- Preisfeedback: bewusst DIREKT unter der Angebotskarte (ohne Scrollen
-     sichtbar), aber optisch weiterhin dezent gehalten (kleine Pillen statt
-     .sheet-btn-Größe) - "Route starten" bleibt dank .sheet-btn-Stil und
-     größerer Fläche trotzdem klar der visuell dominante Call-to-Action,
-     siehe renderPriceFeedback()/submitPriceFeedback() im Script. -->
-<div class="field-label" style="margin-top:16px">Preis noch aktuell?</div>
-<div class="price-feedback-choices">
-<button type="button" class="price-feedback-choice" id="priceFeedbackUpBtn" data-price-vote="up" aria-pressed="false">
-<svg class="icon"><use href="#i-thumb-up"/></svg> Preis stimmt
-</button>
-<button type="button" class="price-feedback-choice" id="priceFeedbackDownBtn" data-price-vote="down" aria-pressed="false">
-<svg class="icon"><use href="#i-thumb-down"/></svg> Preis abweichend
-</button>
-</div>
-<div class="price-feedback-note" id="priceFeedbackNote" style="display:none"></div>
-<div class="alert-box" id="priceFeedbackReportBox" style="display:none">
-<div class="desc" style="margin-bottom:0">Welchen Preis hast du gesehen?</div>
-<div class="alert-input-row">
-<input type="text" inputmode="decimal" id="priceFeedbackInput" placeholder="Preis">
-<span>€</span>
-<button class="btn primary" id="priceFeedbackSubmitBtn">Preis melden</button>
-</div>
-</div>
-
 <a class="sheet-btn" id="storeDetailRouteBtn" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;margin-top:18px">
 <svg class="icon icon-md"><use href="#i-pin"/></svg> Route starten
 </a>
@@ -6541,7 +6471,7 @@ let selectedBrand = "Alle";
    werden nach der Anmeldung aus Supabase geladen (loadUserData()). Ohne
    Anmeldung sind sie leer, auf dem Gerät wird nichts davon gespeichert. */
 let favorites = new Set();
-["canspot-favorites","canspot-alerts","canspot-ratings"].forEach(k=>{
+["canspot-favorites","canspot-alerts","canspot-ratings","canspot-price-feedback"].forEach(k=>{
   try{ localStorage.removeItem(k); }catch(e){}
 });
 
@@ -6663,33 +6593,6 @@ let priceAlerts = {};
    (productRatingSummaries). */
 let productRatings = {};
 
-/* Preisfeedback ("Preis noch aktuell?" in der Händler-Detailansicht, siehe
-   renderPriceFeedback()/submitPriceFeedback() weiter unten): jede Meldung
-   wird als eigener Log-Eintrag angehängt (nicht als einzelner Wert pro
-   Produkt wie productRatings überschrieben), da hier - anders als bei einer
-   Bewertung - jede einzelne Meldung mit Zeitpunkt und Kontext für eine
-   spätere echte Datenauswertung erhalten bleiben soll. Nur lokal persistiert
-   (kein Backend im Prototyp), aber bereits mit allen Feldern, die eine echte
-   Preisprüfung braucht: Produkt, Händler/Filiale, Angebot, angezeigter vs.
-   gemeldeter Preis, Zeitpunkt. */
-let priceFeedbackReports = [];
-try{ priceFeedbackReports = JSON.parse(localStorage.getItem("canspot-price-feedback") || "[]"); }catch(e){ priceFeedbackReports = []; }
-function savePriceFeedbackReports(){ localStorage.setItem("canspot-price-feedback", JSON.stringify(priceFeedbackReports)); }
-function submitPriceFeedback(deal, vote, reportedPrice){
-  const branch = storeBranches[deal.store];
-  priceFeedbackReports.push({
-    dealId: deal.id,
-    productId: deal.productId,
-    product: deal.product,
-    store: deal.store,
-    branchAddress: branch ? branch.address : null,
-    displayedPrice: deal.offerPrice,
-    reportedPrice: vote === "down" ? reportedPrice : null,
-    vote,
-    reportedAt: new Date().toISOString()
-  });
-  savePriceFeedbackReports();
-}
 const RATING_CRITERIA = [
   {key:"taste", label:"Geschmack"},
   {key:"sweetness", label:"Süße"},
@@ -12625,69 +12528,7 @@ function openStoreDetail(dealId){
   onlineBtn.href = hasRealLink(deal.link) ? deal.link : "#";
   onlineBtn.style.display = hasRealLink(deal.link) ? "flex" : "none";
 
-  renderPriceFeedback(deal);
-
   openSheet("storeDetailOverlay");
-}
-
-/* "Preis noch aktuell?"-Feedback in der Händler-Detailansicht (siehe Markup
-   direkt nach den beiden CTA-Buttons in #storeDetailOverlay). Startet bei
-   jedem Öffnen des Sheets bewusst zurückgesetzt (keine gespeicherte Auswahl
-   wie beim Daumen-Toggle der Community-Bewertung) - hier wird jede Meldung
-   als eigenständiges, zeitgestempeltes Ereignis erfasst (siehe
-   submitPriceFeedback()), nicht ein einzelner "Gefällt mir"-Zustand pro
-   Produkt, der beim erneuten Öffnen weiter angezeigt werden müsste. */
-function renderPriceFeedback(deal){
-  const upBtn = document.getElementById("priceFeedbackUpBtn");
-  const downBtn = document.getElementById("priceFeedbackDownBtn");
-  const note = document.getElementById("priceFeedbackNote");
-  const reportBox = document.getElementById("priceFeedbackReportBox");
-  const input = document.getElementById("priceFeedbackInput");
-  const submitBtn = document.getElementById("priceFeedbackSubmitBtn");
-
-  attachGermanPriceInput(input);
-  input.placeholder = euro(deal.offerPrice);
-
-  function reset(){
-    upBtn.classList.remove("active");
-    upBtn.setAttribute("aria-pressed", "false");
-    downBtn.classList.remove("active");
-    downBtn.setAttribute("aria-pressed", "false");
-    note.style.display = "none";
-    note.textContent = "";
-    reportBox.style.display = "none";
-    input.value = "";
-  }
-  reset();
-
-  upBtn.onclick = () => {
-    upBtn.classList.add("active");
-    upBtn.setAttribute("aria-pressed", "true");
-    downBtn.classList.remove("active");
-    downBtn.setAttribute("aria-pressed", "false");
-    reportBox.style.display = "none";
-    note.innerHTML = "<b>Danke!</b> Deine Bestätigung hilft uns, die Preise aktuell zu halten.";
-    note.style.display = "block";
-    submitPriceFeedback(deal, "up", null);
-  };
-
-  downBtn.onclick = () => {
-    downBtn.classList.add("active");
-    downBtn.setAttribute("aria-pressed", "true");
-    upBtn.classList.remove("active");
-    upBtn.setAttribute("aria-pressed", "false");
-    note.style.display = "none";
-    reportBox.style.display = "block";
-  };
-
-  submitBtn.onclick = () => {
-    const val = parseGermanPrice(input.value);
-    if(!val || val<=0) return;
-    submitPriceFeedback(deal, "down", val);
-    reportBox.style.display = "none";
-    note.innerHTML = "<b>Danke für deine Meldung!</b><br>Dein Feedback hilft uns, die Angebotsdaten aktuell zu halten.";
-    note.style.display = "block";
-  };
 }
 
 function updateAlertActiveMsg(productId){
