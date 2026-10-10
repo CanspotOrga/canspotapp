@@ -2917,11 +2917,11 @@ font-size:12.5px
 /* Ø-Normalpreis bzw. "Preis folgt" ohne Angebot (Alle Produkte, Detailansicht). */
 .ap-ref{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-subtle)}
 .ap-ref-label{font-size:12px;font-weight:600;color:var(--text-muted)}
-.ap-shops{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
-.ap-shops-list{display:flex;flex-wrap:wrap;gap:6px 12px;min-width:0}
+.ap-shops{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
+.ap-shops-list{display:flex;flex-wrap:wrap;gap:6px 12px;flex:0 0 auto;max-width:60%}
 .ap-shop{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--text-primary)}
 .ap-shop .icon{color:var(--text-muted)}
-.ap-shops-note{flex:none;font-size:10.5px;color:var(--text-disabled);text-align:right}
+.ap-shops-note{flex:0 1 auto;min-width:0;font-size:10.5px;color:var(--text-disabled);text-align:right}
 .ap-ref-price{font-size:16px;font-weight:800;color:var(--text-primary);white-space:nowrap}
 .ap-ref-price.ap-price-none{font-size:13px;font-weight:700;color:var(--text-muted)}
 .pd-ref-label{font-size:13px;font-weight:700;color:var(--text-muted);margin-right:auto}
@@ -9586,15 +9586,6 @@ function getProductStoreRows(productId){
     a.store.localeCompare(b.store, "de"));
 }
 
-/* Hinweis unter einer Produktkarte, sobald ein Normalpreis (kein laufendes
-   Angebot) angezeigt wird: was der Preis ist und dass er abweichen kann (ein
-   Datum steht nur bei Angeboten). Im Demo-Betrieb (app_settings.demo_notice)
-   ausdrücklich als Beispieldaten. */
-function regularPriceNote(rows){
-  if(!rows.some(r=>r.kind==="regular")) return "";
-  if(appDemoMode) return `<div class="np-note">Normalpreis: Regalpreis ohne Aktion im jeweiligen Markt. Ohne Gewähr, kann je nach Markt und Region abweichen; maßgeblich ist der Preis im Markt.</div>`;
-  return `<div class="np-note">Normalpreis: zuletzt von uns erfasster Regalpreis ohne Aktion im jeweiligen Markt. Ohne Gewähr, kann je nach Markt und Region abweichen; maßgeblich ist der Preis im Markt.</div>`;
-}
 
 /* Ø-Normalpreis (Open Prices) bzw. "Preis folgt" und gemeldete Märkte für
    Produkte ohne Händlerpreis; ohne gemeldete Märkte bleibt die Zeile weg. */
@@ -9618,8 +9609,7 @@ function apRefBlock(p){
       <span class="ap-ref-label">${avgPriceLabel(ref)}</span>
       ${ref ? `<b class="ap-ref-price">${euro(ref.price)} €</b>` : `<b class="ap-ref-price ap-price-none">Preis folgt</b>`}
     </div>
-    ${shops.length ? `<div class="ap-shops"><span class="ap-shops-list">${shops.map(n=>`<span class="ap-shop"><svg class="icon icon-xs"><use href="#i-pin"/></svg>${escapeHtml(n)}</span>`).join("")}</span><span class="ap-shops-note">Alle Angaben ohne Gewähr, können abweichen</span></div>` : ""}
-    ${ref ? `<div class="np-note">${escapeHtml(avgPriceNote(ref))}</div>` : ""}`;
+    ${shops.length ? `<div class="ap-shops"><span class="ap-shops-list">${shops.map(n=>`<span class="ap-shop"><svg class="icon icon-xs"><use href="#i-pin"/></svg>${escapeHtml(n)}</span>`).join("")}</span><span class="ap-shops-note">Alle Angaben ohne Gewähr, können abweichen</span></div>` : ""}`;
 }
 /* Händler-Zeile mit gemeldeten Märkten: nächste OSM-Filiale dieser Ketten
    suchen (branches_in_area, wie im Menü "Händler"); Tipp öffnet die Route. */
@@ -9765,7 +9755,7 @@ function renderProductsView(){
         ${priced.length>1 ? `<div class="ap-from"><span>ab</span><b>${euro(from)} €</b></div>` : ""}
       </div>
       ${rows.length
-        ? `<div class="np-stores">${rows.map(apStoreRow).join("")}</div>${withPfand ? `<div class="np-note">Preise zzgl. ${euro(withPfand.pfand)} € Pfand pro Dose</div>` : ""}${regularPriceNote(rows)}`
+        ? `<div class="np-stores">${rows.map(apStoreRow).join("")}</div>${withPfand ? `<div class="np-note">Preise zzgl. ${euro(withPfand.pfand)} € Pfand pro Dose</div>` : ""}`
         : apRefBlock(p)}
     </article>`;
   }).join("");
