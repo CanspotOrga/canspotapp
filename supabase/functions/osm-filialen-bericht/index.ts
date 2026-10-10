@@ -1,5 +1,5 @@
 // Schickt nach jeder Übernahme der OpenStreetMap-Filialen (alle 4 Monate,
-// sql-osm-monatlich.sql) eine Info von noreply@canspot.de an hallo@canspot.de:
+// sql-osm-aktualisierung.sql) eine Info von noreply@canspot.de an hallo@canspot.de:
 // Ergebnis des letzten Laufs aus public.osm_import_runs, bei Abbruch durch die
 // Sicherheitsschranke (neue Datei unter 90 %) oder Fehler mit Hinweis.
 // Ausgelöst von osm_branches_import_latest() per pg_net.
