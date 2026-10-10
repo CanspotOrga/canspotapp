@@ -2911,6 +2911,23 @@ font-size:12.5px
 .source-body{margin-top:14px;display:flex;flex-direction:column;gap:10px}
 .source-block{padding:12px 14px;background:var(--bg-surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);font-size:13px;line-height:1.5;color:var(--text-secondary, var(--text-primary))}
 .source-block b{display:block;margin-bottom:3px;font-size:12px;letter-spacing:.02em;text-transform:uppercase;color:var(--text-muted)}
+/* Impressum/Datenschutz im Fenster (#legalOverlay): Inhalt der eigenen Seiten,
+   Kopfzeile mit Schließen-Knopf bleibt beim Scrollen stehen. */
+#legalOverlay .sheet{padding-top:0}
+.legal-head{position:sticky;top:0;z-index:3;margin:0 -20px;padding:10px 20px 6px;background:var(--bg-surface-elevated)}
+.legal-head .handle{margin:6px auto 8px}
+.legal-head .sheet-close{top:12px}
+.legal-body{padding-bottom:8px}
+.legal-body h1{font-size:22px;margin:6px 0 14px}
+.legal-body h2{font-size:16px;margin:24px 0 8px;scroll-margin-top:64px}
+.legal-body h3{font-size:14.5px;margin:16px 0 6px}
+.legal-body p,.legal-body li{font-size:14px;line-height:1.55;color:var(--text-primary)}
+.legal-body ul{padding-left:20px}
+.legal-body li{margin-bottom:6px}
+.legal-body a{color:var(--brand-primary-blue)}
+:root[data-theme="dark"] .legal-body a{color:var(--brand-primary-light)}
+.legal-body .box{background:var(--bg-surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:12px 14px}
+.legal-body .hint{background:var(--brand-primary-subtle);color:var(--text-primary);border-radius:var(--radius-md);padding:10px 12px;font-size:13px;line-height:1.5}
 .source-body .sheet-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:0;color:#fff;text-decoration:none}
 
 
@@ -5920,6 +5937,18 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 </div>
 
+<!-- Impressum / Datenschutz als Fenster in der App (openLegalSheet), damit man
+     beim Schließen dort bleibt, wo man war (z. B. in den Produktdetails). -->
+<div class="overlay" id="legalOverlay">
+<div class="sheet">
+<div class="legal-head">
+<div class="handle"></div>
+<button class="sheet-close" data-close="legalOverlay" aria-label="Schließen"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+</div>
+<div class="legal-body" id="legalBody"></div>
+</div>
+</div>
+
 <div class="overlay" id="menuOverlay">
 <div class="sheet">
 <div class="sheet-inner">
@@ -8779,7 +8808,7 @@ function initSwipeToClose(overlayId){
    ohnehin nie, daher betrifft dies ausschließlich die mobile Nutzung. */
 /* menuOverlay bewusst NICHT hier: Wisch-nach-unten-zum-Schließen passt
    nicht zu einem Ausklappmenü, das oben am Menü-Button hängt. */
-["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","recentOverlay","accountManageOverlay","authOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","recentOverlay","accountManageOverlay","authOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay","sourceOverlay","legalOverlay"].forEach(initSwipeToClose);
 
 /* Zusätzlich zu Pfeil/X und (bei Detail-/Preisverlauf-Fenster) der
    Wischgeste: Tippen auf den Handle-Balken oben mittig schließt das Sheet —
@@ -12038,6 +12067,65 @@ function openSourceSheet(product){
     + `<div class="source-block"><b>Alle Datenquellen</b><a href="impressum.html#datenquellen">Datenquellen und Lizenzen im Impressum</a></div>`;
   openSheet("sourceOverlay");
 }
+
+/* Impressum und Datenschutz öffnen in der App als Fenster: der Inhalt (<main>)
+   der eigenen Seite wird geladen und eingesetzt (eigene statische Dateien, im
+   Offline-Speicher), Abschnitts-IDs bekommen das Präfix "legal-". Schließen führt
+   zurück an dieselbe Stelle, z. B. in die Produktdetails. Klappt das Laden
+   nicht, öffnet wie bisher die normale Seite. */
+const legalPageCache = {};
+function legalLinkTarget(href){
+  const m = /^(impressum|datenschutz)\.html(?:#([\w-]+))?$/.exec(href || "");
+  return m ? {page: `${m[1]}.html`, anchor: m[2] || null} : null;
+}
+function scrollLegalTo(anchor){
+  const sheet = document.querySelector("#legalOverlay .sheet");
+  const target = anchor ? document.getElementById(`legal-${anchor}`) : null;
+  if(!target){ sheet.scrollTop = 0; return; }
+  const head = sheet.querySelector(".legal-head");
+  sheet.scrollTop += target.getBoundingClientRect().top - sheet.getBoundingClientRect().top - (head ? head.offsetHeight : 0) - 8;
+}
+async function loadLegalPage(page){
+  if(legalPageCache[page]) return legalPageCache[page];
+  const res = await fetch(page);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+  const main = doc.querySelector("main");
+  if(!main) throw new Error("kein Inhalt");
+  main.querySelectorAll(".back, script").forEach(el => el.remove());
+  main.querySelectorAll("[id]").forEach(el => { el.id = `legal-${el.id}`; });
+  legalPageCache[page] = main.innerHTML;
+  return legalPageCache[page];
+}
+/* Beide Texte nach dem Start im Hintergrund vorladen, damit das Fenster sofort öffnet. */
+setTimeout(() => { ["impressum.html", "datenschutz.html"].forEach(p => loadLegalPage(p).catch(() => {})); }, 2500);
+async function openLegalSheet(page, anchor){
+  try{
+    await loadLegalPage(page);
+  }catch(err){
+    window.location.href = anchor ? `${page}#${anchor}` : page;
+    return;
+  }
+  document.getElementById("legalBody").innerHTML = legalPageCache[page];
+  openSheet("legalOverlay");
+  requestAnimationFrame(() => scrollLegalTo(anchor));
+}
+/* Alle Links auf Impressum/Datenschutz (Menü, Mein Bereich, Anmeldung, Quelle
+   und Lizenz, Alle Produkte, Links innerhalb der Rechtstexte) abfangen. */
+document.addEventListener("click", (e) => {
+  const a = e.target.closest("a[href]");
+  if(!a) return;
+  const href = a.getAttribute("href");
+  if(a.closest("#legalBody") && href.startsWith("#")){
+    e.preventDefault();
+    scrollLegalTo(href.slice(1));
+    return;
+  }
+  const target = legalLinkTarget(href);
+  if(!target) return;
+  e.preventDefault();
+  openLegalSheet(target.page, target.anchor);
+}, true);
 
 function renderNutrition(product){
   const per100 = getNutritionPer100ml(product);
