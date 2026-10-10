@@ -2915,6 +2915,11 @@ font-size:12.5px
 /* Ø-Normalpreis bzw. "Preis folgt" ohne Angebot (Alle Produkte, Detailansicht). */
 .ap-ref{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-subtle)}
 .ap-ref-label{font-size:12px;font-weight:600;color:var(--text-muted)}
+.ap-shops{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+.ap-shops-list{display:flex;flex-wrap:wrap;gap:6px 12px;min-width:0}
+.ap-shop{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--text-primary)}
+.ap-shop .icon{color:var(--text-muted)}
+.ap-shops-note{flex:none;font-size:10.5px;color:var(--text-disabled);text-align:right}
 .ap-ref-price{font-size:16px;font-weight:800;color:var(--text-primary);white-space:nowrap}
 .ap-ref-price.ap-price-none{font-size:13px;font-weight:700;color:var(--text-muted)}
 .pd-ref-label{font-size:13px;font-weight:700;color:var(--text-muted);margin-right:auto}
@@ -9598,13 +9603,13 @@ function retailerLine(productId){
 }
 function apRefBlock(p){
   const ref = PRODUCT_AVG_PRICES[p.id];
-  const shops = retailerLine(p.id);
+  const shops = reportedShops(p.id);
   return `
     <div class="ap-ref">
       <span class="ap-ref-label">${avgPriceLabel(ref)}</span>
       ${ref ? `<b class="ap-ref-price">${euro(ref.price)} €</b>` : `<b class="ap-ref-price ap-price-none">Preis folgt</b>`}
     </div>
-    ${shops ? `<div class="np-note">${escapeHtml(shops)}</div>` : ""}
+    ${shops.length ? `<div class="ap-shops"><span class="ap-shops-list">${shops.map(n=>`<span class="ap-shop"><svg class="icon icon-xs"><use href="#i-pin"/></svg>${escapeHtml(n)}</span>`).join("")}</span><span class="ap-shops-note">Ohne Gewähr, kann abweichen</span></div>` : ""}
     ${ref ? `<div class="np-note">${escapeHtml(avgPriceNote(ref))}</div>` : ""}`;
 }
 /* Gemeldete Märkte (product_retailers) ohne Filiale/Preis, für die Händler-Zeile. */
