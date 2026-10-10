@@ -2796,6 +2796,8 @@ flex-shrink:0;
 transition:background .15s
 }
 .store-row-link:hover{background:var(--brand-primary-hover)}
+.store-row-tap{cursor:pointer}
+.store-row-tap:active{opacity:.75}
 
 .alert-box{
 background:var(--bg-surface-sunken);
@@ -9115,7 +9117,7 @@ function storeListRowHtml(name, logo, branch, km){
   const openNow = branch ? isStoreOpenNow(branch) : null;
   const statusLabel = openNow===null ? "Öffnungszeiten unbekannt" : (openNow ? "Jetzt geöffnet" : "Aktuell geschlossen");
   return `
-    <div class="store-row" style="align-items:flex-start">
+    <div class="store-row${branch ? " store-row-tap" : ""}" style="align-items:flex-start"${branch ? ` data-store-route="${escapeHtml(branch.geo)}" role="button" tabindex="0" aria-label="Route zu ${escapeHtml(name)}"` : ""}>
       <img class="store-row-logo" src="${escapeHtml(logo || STORE_FALLBACK_IMG)}" alt="${escapeHtml(name)}" loading="lazy" referrerpolicy="no-referrer">
       <div class="store-row-txt">
         <b>${escapeHtml(name)}${typeof km === "number" ? kmSuffix(Math.round(km * 10) / 10) : ""}</b>
@@ -9123,7 +9125,7 @@ function storeListRowHtml(name, logo, branch, km){
         <span class="store-row-line">${branch && branch.address ? escapeHtml(branch.address) : "Adresse nicht erfasst"}</span>
         <span class="store-row-line">${branch ? escapeHtml(formatHours(branch)) : ""}</span>
       </div>
-      ${branch ? `<button class="store-row-link" data-store-route="${escapeHtml(branch.geo)}">Route</button>` : ""}
+      ${branch ? `<span class="store-row-link">Route</span>` : ""}
     </div>`;
 }
 
@@ -9165,9 +9167,11 @@ function renderStoreListSheet(){
   container.querySelectorAll(".store-row-logo").forEach(img=>{
     img.addEventListener("error", function(){ this.src = STORE_FALLBACK_IMG; }, {once:true});
   });
-  container.querySelectorAll("[data-store-route]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      openStoreRoute(btn.dataset.storeRoute);
+  // Ganze Filialkarte öffnet die Route (nicht nur der Knopf).
+  container.querySelectorAll("[data-store-route]").forEach(row=>{
+    row.addEventListener("click", ()=> openStoreRoute(row.dataset.storeRoute));
+    row.addEventListener("keydown", e=>{
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openStoreRoute(row.dataset.storeRoute); }
     });
   });
 }
