@@ -6,7 +6,7 @@
 -- Voraussetzung: schema.sql wurde ausgeführt.
 --
 -- Inhalt: 35 Marken (18 davon mit Produkten), 119 Produkte, 116 Nährwert-Zeilen
--- (davon 114 aus Open Food Facts, ODbL 1.0), 4 Filialen in Arnsberg, 7 Angebote, 6 Normalpreise
+-- (davon 114 aus Open Food Facts, ODbL 1.0), 7 Angebote, 6 Normalpreise
 -- (regular_prices), 16 Händlerketten, 97 Markt-Zuordnungen und 11 Ø-Normalpreise
 -- (Open Food Facts / Open Prices, ODbL 1.0), dazu app_settings (Startstandort Arnsberg, Demo-Hinweis,
 -- Version).
@@ -104,24 +104,8 @@ on conflict (brand_id) do update set
   caffeine_mg = excluded.caffeine_mg,
   taurine_mg = excluded.taurine_mg;
 
--- branches (4)
--- branches: nur die Demo-Filialen (source eigene_erfassung). Die Filialen aus
--- OpenStreetMap stehen in supabase/data/branches-osm.json.
-insert into public.branches (id, retailer_id, street, postal_code, city, latitude, longitude, opens_at, closes_at, closed_sunday) values
-  ('19585656-b415-510e-8739-401bb2dd6a09', 'bc883dfe-8c5b-5c5d-8db2-94fcec111527', 'Ruhrstraße 22', '59821', 'Arnsberg', '51.401300', '8.065800', '07:00', '22:00', true),
-  ('50ff519a-4266-46a1-9f92-90d6fa370c87', '7f36d52e-be9b-4065-b08b-02cf4e97ed63', 'Bahnhofstraße 10', '59821', 'Arnsberg', '51.402200', '8.071400', '07:30', '20:00', true),
-  ('2b4e352e-9b52-4fab-b1d8-ea79c5a7ea48', '4a0685d2-e243-4b2e-b9b7-100a501e2917', 'Clemens-August-Straße 8', '59821', 'Arnsberg', '51.400100', '8.065500', '07:00', '21:00', true),
-  ('512e4c21-5183-4576-9673-b8d9ba9bf409', 'ec88c807-734f-483d-90ab-f64b70eb6824', 'Alter Marktplatz 3', '59821', 'Arnsberg', '51.398200', '8.069900', '08:00', '20:00', true)
-on conflict (id) do update set
-  retailer_id = excluded.retailer_id,
-  street = excluded.street,
-  postal_code = excluded.postal_code,
-  city = excluded.city,
-  latitude = excluded.latitude,
-  longitude = excluded.longitude,
-  opens_at = excluded.opens_at,
-  closes_at = excluded.closes_at,
-  closed_sunday = excluded.closed_sunday;
+-- branches: keine eigenen Filialen mehr. Angebote und Normalpreise verweisen auf
+-- OpenStreetMap-Filialen, vorher sql-osm-filialen.sql (Import) ausführen.
 
 -- products (119) — packaging_assumed/image_is_example: in der App als nicht bestätigt bzw. Beispielbild gekennzeichnet
 insert into public.products (id, brand_id, name, size_ml, packaging, packaging_assumed, image_url, image_is_example, is_new) values
