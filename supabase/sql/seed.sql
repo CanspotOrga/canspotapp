@@ -5,8 +5,8 @@
 -- vorhandene (gleiche id) auf die Werte unten. Löscht nichts.
 -- Voraussetzung: schema.sql wurde ausgeführt.
 --
--- Inhalt: 36 Marken (19 davon mit Produkten), 120 Produkte, 117 Nährwert-Zeilen
--- (davon 115 aus Open Food Facts, ODbL 1.0), 4 Filialen in Arnsberg, 7 Angebote, 6 Normalpreise
+-- Inhalt: 35 Marken (18 davon mit Produkten), 119 Produkte, 116 Nährwert-Zeilen
+-- (davon 114 aus Open Food Facts, ODbL 1.0), 4 Filialen in Arnsberg, 7 Angebote, 6 Normalpreise
 -- (regular_prices), dazu app_settings (Startstandort Arnsberg, Demo-Hinweis,
 -- Version).
 -- Je ein Beispiel für Neuheiten (is_new = true, laufendes Angebot) und
@@ -29,13 +29,12 @@ on conflict (id) do update set
   name = excluded.name,
   logo_url = excluded.logo_url;
 
--- brands (36)
+-- brands (35)
 insert into public.brands (id, name) values
   ('11111111-1111-4111-8111-111111111111', 'Red Bull'),
   ('040702a6-617f-49b7-ab82-bc82bb860a9c', 'Monster Energy'),
   ('caad03ca-26e6-425c-b75c-710c48fa6137', 'Gönrgy'),
   ('0fcad57d-2f69-4d91-80d9-c357e77a6e8d', '28 Black'),
-  ('0eced198-c182-4289-af43-9c1057145863', '4BRO'),
   ('0969fae8-ff2f-49da-955a-ed6a5e69d302', 'Action'),
   ('5d447373-f9d5-437e-9fd3-d06b172fe983', 'Bang'),
   ('56c718b9-91c9-4b80-9470-2d7852239ef4', 'Black Cat'),
@@ -102,7 +101,7 @@ on conflict (id) do update set
   closes_at = excluded.closes_at,
   closed_sunday = excluded.closed_sunday;
 
--- products (120) — packaging_assumed/image_is_example: in der App als nicht bestätigt bzw. Beispielbild gekennzeichnet
+-- products (119) — packaging_assumed/image_is_example: in der App als nicht bestätigt bzw. Beispielbild gekennzeichnet
 insert into public.products (id, brand_id, name, size_ml, packaging, packaging_assumed, image_url, image_is_example, is_new) values
   ('73ab667f-75d7-4b02-a42e-47bae05ae065', '11111111-1111-4111-8111-111111111111', 'Red Bull Energy Drink', 250, 'Dose', false, 'https://canspot.de/wp-content/Produktbilder/Red-Bull-White-Peach-Edition-450x600.webp', true, false),
   ('dbcfcbdf-05e9-4bd5-ba24-5362d09612d9', '11111111-1111-4111-8111-111111111111', 'Red Bull Sugarfree', 250, 'Dose', false, 'https://canspot.de/wp-content/Produktbilder/Red-Bull-White-Peach-Edition-450x600.webp', true, false),
@@ -115,7 +114,6 @@ insert into public.products (id, brand_id, name, size_ml, packaging, packaging_a
   ('af361529-34db-55e6-a196-798accffb780', '0fcad57d-2f69-4d91-80d9-c357e77a6e8d', '28 Black Açaí Zero', 250, 'Dose', false, null, false, false),
   ('3ff1e502-608b-5292-a461-fdc76e9ac63a', '0fcad57d-2f69-4d91-80d9-c357e77a6e8d', '28 Black Limette-Minze', 250, 'Dose', true, null, false, false),
   ('1a13d1d3-4e08-55ca-8c0b-7fa6d10ab88b', '0fcad57d-2f69-4d91-80d9-c357e77a6e8d', '28 Black Sour Mango-Kiwi', 250, 'Dose', false, null, false, false),
-  ('23535730-1b2b-5ae1-938f-5c3ef294d928', '0eced198-c182-4289-af43-9c1057145863', '4BRO Energy', 250, 'Dose', true, null, false, false),
   ('b8a9ceb9-9078-5245-9da7-ceea442d515a', '0969fae8-ff2f-49da-955a-ed6a5e69d302', 'Action Energy Green Apple', 250, 'Dose', false, null, false, false),
   ('f2b5e8aa-da01-5578-b48f-078ae6b5b32a', '5d447373-f9d5-437e-9fd3-d06b172fe983', 'Bang Peach Mango', 500, 'Dose', false, null, false, false),
   ('8ffbbb7b-7362-509b-9def-a5f95e93b828', 'cce355b6-7b30-41c1-b069-a083fbcec156', 'Booster Absolute Zero', 330, 'Dose', false, null, false, false),
@@ -234,7 +232,7 @@ on conflict (id) do update set
   image_is_example = excluded.image_is_example,
   is_new = excluded.is_new;
 
--- product_nutrition (117) — source = open_food_facts: ODbL 1.0 / DbCL 1.0, siehe supabase/data/QUELLEN-UND-LIZENZEN.txt
+-- product_nutrition (116) — source = open_food_facts: ODbL 1.0 / DbCL 1.0, siehe supabase/data/QUELLEN-UND-LIZENZEN.txt
 insert into public.product_nutrition (product_id, kcal, carbs_g, sugar_g, fat_g, sat_fat_g, protein_g, salt_g, caffeine_mg, taurine_mg, source, source_ref) values
   ('dbcfcbdf-05e9-4bd5-ba24-5362d09612d9', 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 31.0, 390.0, null, null),
   ('1e86d7b4-fecc-4e2a-a930-a7e92f0067da', 2.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.2, 30.0, 430.0, null, null),
@@ -242,7 +240,6 @@ insert into public.product_nutrition (product_id, kcal, carbs_g, sugar_g, fat_g,
   ('af361529-34db-55e6-a196-798accffb780', 2, 0, 0, 0, 0, 0, 0.03, 32, null, 'open_food_facts', '4260160952014'),
   ('3ff1e502-608b-5292-a461-fdc76e9ac63a', 46, 11, 11, 0, 0, 0, 0, null, null, 'open_food_facts', '4260160952281'),
   ('1a13d1d3-4e08-55ca-8c0b-7fa6d10ab88b', 43, 10, 10, 0, 0, 0, 0, 32, null, 'open_food_facts', '4260160951666'),
-  ('23535730-1b2b-5ae1-938f-5c3ef294d928', 47, 11, 11, 0.5, 0.1, 0.5, 0.12, null, null, 'open_food_facts', '4260667060007'),
   ('b8a9ceb9-9078-5245-9da7-ceea442d515a', 48, 11, 11, 0.5, 0.1, 0.5, 0.15, null, null, 'open_food_facts', '4021155160179'),
   ('f2b5e8aa-da01-5578-b48f-078ae6b5b32a', 3, 0, 0, 0, 0, 0.5, 0, null, null, 'open_food_facts', '8720211190049'),
   ('8ffbbb7b-7362-509b-9def-a5f95e93b828', 2, 0.01, 0, 0, 0, 0.02, 0.17, 32, null, 'open_food_facts', '4311596490202'),

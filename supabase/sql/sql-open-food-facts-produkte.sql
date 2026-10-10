@@ -9,7 +9,8 @@
 -- Verpackungsangabe, ist bei 250/330/500 ml „Dose“ eingetragen und als nicht
 -- bestätigt markiert (packaging_assumed). Beispielbilder sind markiert
 -- (image_is_example); die App kennzeichnet beides, fehlende Werte als „k. A.“.
--- 113 neue Produkte, 115 Nährwert-Zeilen (davon 2 für vorhandene Produkte).
+-- 112 neue Produkte, 114 Nährwert-Zeilen (davon 2 für vorhandene Produkte); 4BRO auf Wunsch
+-- entfernt (siehe sql-4bro-entfernen.sql).
 -- Beispielbilder: Red-Bull-Produkte das Red-Bull-Bild, Monster-Produkte das Monster-Bild, alle
 -- anderen ohne Bild (die App zeigt dann ihren neutralen Platzhalter).
 -- Keine Fotos von Open Food Facts.
@@ -47,7 +48,6 @@ insert into public.products (id, brand_id, name, size_ml, packaging, packaging_a
   ('af361529-34db-55e6-a196-798accffb780', '0fcad57d-2f69-4d91-80d9-c357e77a6e8d', '28 Black Açaí Zero', 250, 'Dose', false, null, false, false),
   ('3ff1e502-608b-5292-a461-fdc76e9ac63a', '0fcad57d-2f69-4d91-80d9-c357e77a6e8d', '28 Black Limette-Minze', 250, 'Dose', true, null, false, false),
   ('1a13d1d3-4e08-55ca-8c0b-7fa6d10ab88b', '0fcad57d-2f69-4d91-80d9-c357e77a6e8d', '28 Black Sour Mango-Kiwi', 250, 'Dose', false, null, false, false),
-  ('23535730-1b2b-5ae1-938f-5c3ef294d928', '0eced198-c182-4289-af43-9c1057145863', '4BRO Energy', 250, 'Dose', true, null, false, false),
   ('b8a9ceb9-9078-5245-9da7-ceea442d515a', '0969fae8-ff2f-49da-955a-ed6a5e69d302', 'Action Energy Green Apple', 250, 'Dose', false, null, false, false),
   ('f2b5e8aa-da01-5578-b48f-078ae6b5b32a', '5d447373-f9d5-437e-9fd3-d06b172fe983', 'Bang Peach Mango', 500, 'Dose', false, null, false, false),
   ('8ffbbb7b-7362-509b-9def-a5f95e93b828', 'cce355b6-7b30-41c1-b069-a083fbcec156', 'Booster Absolute Zero', 330, 'Dose', false, null, false, false),
@@ -180,7 +180,6 @@ insert into public.product_nutrition (product_id, kcal, carbs_g, sugar_g, fat_g,
   ('af361529-34db-55e6-a196-798accffb780', 2, 0, 0, 0, 0, 0, 0.03, 32, null, 'open_food_facts', '4260160952014'),
   ('3ff1e502-608b-5292-a461-fdc76e9ac63a', 46, 11, 11, 0, 0, 0, 0, null, null, 'open_food_facts', '4260160952281'),
   ('1a13d1d3-4e08-55ca-8c0b-7fa6d10ab88b', 43, 10, 10, 0, 0, 0, 0, 32, null, 'open_food_facts', '4260160951666'),
-  ('23535730-1b2b-5ae1-938f-5c3ef294d928', 47, 11, 11, 0.5, 0.1, 0.5, 0.12, null, null, 'open_food_facts', '4260667060007'),
   ('b8a9ceb9-9078-5245-9da7-ceea442d515a', 48, 11, 11, 0.5, 0.1, 0.5, 0.15, null, null, 'open_food_facts', '4021155160179'),
   ('f2b5e8aa-da01-5578-b48f-078ae6b5b32a', 3, 0, 0, 0, 0, 0.5, 0, null, null, 'open_food_facts', '8720211190049'),
   ('8ffbbb7b-7362-509b-9def-a5f95e93b828', 2, 0.01, 0, 0, 0, 0.02, 0.17, 32, null, 'open_food_facts', '4311596490202'),
