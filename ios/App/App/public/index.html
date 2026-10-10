@@ -12918,11 +12918,15 @@ function delay(ms){
    dem dauerhaft im DOM bleibenden "Alle"-Chip bei mehrfachem Aufruf Listener
    anhaeufen (gleiches Muster wie z.B. bei routeBtn.onclick). */
 function renderDynamicFilters(){
-  // Marken-Chips (nav.tabs) - Reihenfolge = erstes Vorkommen in products[].
+  // Marken-Chips (nav.tabs) - nur Marken mit einem heute laufenden Angebot,
+  // Reihenfolge = erstes Vorkommen in products[].
   const brandNav = document.querySelector("nav.tabs");
   brandNav.querySelectorAll('.chip[data-brand]:not([data-brand="Alle"])').forEach(el=>el.remove());
+  const activeBrands = new Set(deals
+    .filter(d=>d.offerPrice !== null && daysUntil(d.validFrom) <= 0 && daysUntil(d.validUntil) >= 0)
+    .map(d=>d.brand));
   const brands = [];
-  products.forEach(p=>{ if(p.brand && !brands.includes(p.brand)) brands.push(p.brand); });
+  products.forEach(p=>{ if(p.brand && activeBrands.has(p.brand) && !brands.includes(p.brand)) brands.push(p.brand); });
   brands.forEach(brand=>{
     const btn = document.createElement("button");
     btn.className = "chip";
