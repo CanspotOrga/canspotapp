@@ -4870,6 +4870,16 @@ cursor:pointer;
 transition:border-color .15s
 }
 .pd-store-row:hover{border-color:var(--border-default)}
+/* Weitere Märkte unter der Händler-Zeile (renderMoreStores()), Zeilen wie in
+   "Alle Produkte" (apStoreRow()). */
+.pd-more-stores{margin-top:8px;background:var(--bg-surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:0 14px}
+.pd-more-stores[hidden]{display:none}
+.pd-more-toggle{width:100%;display:flex;align-items:center;gap:8px;padding:11px 0;background:transparent;border:0;font-family:inherit;font-size:13px;font-weight:700;color:var(--text-secondary);cursor:pointer;text-align:left}
+.pd-more-count{min-width:20px;padding:1px 7px;border-radius:999px;background:var(--bg-surface-strong);font-size:11px;font-weight:700;color:var(--text-muted);text-align:center}
+.pd-more-chev{width:16px;height:16px;margin-left:auto;color:var(--text-disabled);transition:transform .2s}
+.pd-more-toggle[aria-expanded="true"] .pd-more-chev{transform:rotate(180deg)}
+.pd-more-list{border-top:1px solid var(--border-subtle);padding-bottom:10px}
+.pd-more-list[hidden]{display:none}
 .pd-store-logo{width:40px;height:40px;object-fit:contain;background:#fff;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
 .pd-hist-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);background:var(--brand-primary-subtle);color:var(--brand-primary-blue);flex-shrink:0}
 .pd-store-txt{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -5856,6 +5866,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </span>
 <svg class="icon icon-md pd-row-arrow"><use href="#i-chevron-down"/></svg>
 </button>
+<div class="pd-more-stores" id="pdMoreStores" hidden></div>
 
 <div class="field-label" style="margin-top:20px">Preisverlauf</div>
 <button type="button" class="pd-store-row" id="pdHistRow">
@@ -12118,6 +12129,32 @@ function productStoreEntry(product, row){
     priceLabel: row.kind === "regular" ? "Normalpreis" : "Preis", link: ""
   };
 }
+/* Alle übrigen Märkte des Produkts (ohne den oben gezeigten), gleiche
+   Reihenfolge wie in "Alle Produkte"; Tipp öffnet die Händler-Ansicht. */
+function renderMoreStores(productId, shownStore, shownUnits){
+  const box = document.getElementById("pdMoreStores");
+  const product = products.find(p=>p.id===productId);
+  const rows = product ? getProductStoreRows(productId).filter(r=>!(r.store===shownStore && r.units===shownUnits)) : [];
+  if(!rows.length){ box.hidden = true; box.innerHTML = ""; return; }
+  box.innerHTML = `
+    <button type="button" class="pd-more-toggle" aria-expanded="false">
+      <span>Weitere Märkte</span><span class="pd-more-count">${rows.length}</span>
+      <svg class="icon pd-more-chev"><use href="#i-chevron-down"/></svg>
+    </button>
+    <div class="pd-more-list" hidden>${rows.map(apStoreRow).join("")}</div>`;
+  const toggle = box.querySelector(".pd-more-toggle");
+  const list = box.querySelector(".pd-more-list");
+  toggle.onclick = ()=>{
+    const open = list.hidden;
+    list.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+  };
+  box.querySelectorAll(".np-store").forEach((btn, i)=>{
+    const r = rows[i];
+    btn.onclick = ()=> r.kind === "offer" ? openStoreDetail(r.offer.id) : openStoreDetail(productStoreEntry(product, r));
+  });
+  box.hidden = false;
+}
 function renderProductStoreOnly(product){
   const storeEl = document.getElementById("pdOfferStore");
   const storeRow = document.getElementById("pdStoreRow");
@@ -12133,6 +12170,7 @@ function renderProductStoreOnly(product){
     document.getElementById("pdStoreSub").textContent = "Sobald ein Markt eingetragen ist, steht er hier.";
     storeRow.onclick = null;
     storeRow.querySelector(".pd-row-arrow").style.visibility = "hidden";
+    renderMoreStores(null);
     storeEl.style.display = "";
     return;
   }
@@ -12148,6 +12186,7 @@ function renderProductStoreOnly(product){
     (openNow===null ? "" : ` · <span class="open-dot ${openNow?"open":""}"></span>${openNow?"Jetzt geöffnet":"Geschlossen"}`);
   storeRow.onclick = ()=> openStoreDetail(entry);
   storeRow.querySelector(".pd-row-arrow").style.visibility = "";
+  renderMoreStores(product.id, row.store, row.units);
   storeEl.style.display = "";
 }
 
@@ -12198,6 +12237,7 @@ function renderProductOffer(deal){
   const storeRow = document.getElementById("pdStoreRow");
   storeRow.onclick = isSoon ? null : ()=> openStoreDetail(deal.id);
   storeRow.querySelector(".pd-row-arrow").style.visibility = isSoon ? "hidden" : "";
+  renderMoreStores(deal.productId, deal.store, deal.units);
 
   const hist = deal.history;
   document.getElementById("pdHistSub").textContent = hist.length
