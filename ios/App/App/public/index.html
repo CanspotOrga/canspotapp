@@ -2952,6 +2952,21 @@ font-size:12.5px
 .nutrition-full-row span{color:var(--text-muted)}
 .nutrition-full-row span.nutrition-full-sub{padding-left:10px}
 .nutrition-full-row b{color:var(--text-primary);font-weight:700;white-space:nowrap}
+/* Quellenangabe unter den Nährwerten und am Ende von "Alle Produkte". */
+.pd-source,.ap-source{margin-top:12px;font-size:11.5px;line-height:1.5;color:var(--text-muted)}
+.pd-source[hidden],.ap-source[hidden]{display:none}
+.pd-source a,.ap-source a{color:var(--brand-primary-blue);text-decoration:underline;text-underline-offset:2px}
+:root[data-theme="dark"] .pd-source a,:root[data-theme="dark"] .ap-source a{color:var(--brand-primary-light)}
+.ap-source{margin:18px 2px 4px}
+/* "Beispielbild": Bild zeigt nicht das tatsächliche Produkt (products.image_is_example). */
+.img-ex{position:absolute;left:6px;bottom:6px;z-index:3;padding:2px 6px;border-radius:var(--radius-xs);background:rgba(15,18,28,.62);color:#fff;font-size:9.5px;font-weight:700;line-height:1.3;letter-spacing:.02em;pointer-events:none;white-space:nowrap}
+.img-ex[hidden]{display:none}
+.thumb-frame .img-ex{position:static;font-size:8.5px;padding:1px 5px;background:var(--bg-surface-strong);color:var(--text-muted)}
+.weekly-best-img,.similar-card,.news-detail-img-wrap{position:relative}
+.weekly-best-img .img-ex{left:3px;bottom:3px;font-size:8px;padding:1px 4px}
+.similar-card .img-ex{left:12px;top:12px;bottom:auto;font-size:8px;padding:1px 4px}
+.news-detail-img-wrap .img-ex{left:50%;transform:translateX(-50%)}
+.ap-tag-ex{display:inline-flex;align-items:center;padding:3px 7px;border-radius:var(--radius-xs);background:var(--bg-surface-strong);color:var(--text-muted);font-size:10px;font-weight:700}
 
 /* Bewertung (Daumen + optionale erweiterte Kriterien) - bewusst NUR mobil
    (siehe Anfrage "ausschließlich mobile Version"), daher analog zum
@@ -5410,6 +5425,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <a href="impressum.html">Impressum</a>
 <a href="datenschutz.html">Datenschutz</a>
 <a href="impressum.html#nutzung">Nutzungsbedingungen</a>
+<a href="impressum.html#datenquellen">Datenquellen</a>
 </div>
 
 <div class="profile-version" data-app-version></div>
@@ -5730,6 +5746,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="detail-hero">
 <button class="sheet-close sheet-close-back" data-close="productDetailOverlay" aria-label="Zurück"><svg class="icon icon-md"><use href="#i-arrow-left"/></svg></button>
 <img class="detail-img" id="pdImg" src="" alt="">
+<span class="img-ex" id="pdImgEx" hidden>Beispielbild</span>
 <div class="detail-hero-actions">
 <button class="btn" id="pdShareBtn" aria-label="Angebot teilen"><svg class="icon icon-md"><use href="#i-share"/></svg></button>
 </div>
@@ -5865,6 +5882,8 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <span>Alle Nährwerte anzeigen</span>
 </button>
 <div class="nutrition-full" id="pdNutritionFull"></div>
+<!-- Quellenangabe und Lizenzhinweis zu den Produktdaten (renderNutritionSource) -->
+<div class="pd-source" id="pdSource" hidden></div>
 
 <div class="field-label" style="margin-top:24px">Ähnliche Produkte</div>
 <div class="similar-scroll" id="pdSimilar"></div>
@@ -6078,6 +6097,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <a href="impressum.html">Impressum</a>
 <a href="datenschutz.html">Datenschutz</a>
 <a href="impressum.html#nutzung">Nutzungsbedingungen</a>
+<a href="impressum.html#datenquellen">Datenquellen</a>
 </div>
 <div class="profile-legal">
 <a href="impressum.html#kontakt">Kontakt</a>
@@ -6428,8 +6448,10 @@ function buildDeals(offers){
       brand: product.brand,
       sizeMl: product.sizeMl,
       img: (typeof d.bundleImg === "string" && d.bundleImg) ? d.bundleImg : product.img,
+      imgExample: (typeof d.bundleImg === "string" && d.bundleImg) ? false : !!product.imgExample,
       pfand: typeof d.pfand === "number" ? d.pfand : PFAND_FALLBACK,
       packaging: d.packaging || PACKAGING_FALLBACK,
+      packagingAssumed: !!product.packagingAssumed,
       units: typeof d.units === "number" ? d.units : UNITS_FALLBACK,
       totalMl: (typeof d.units === "number" ? d.units : UNITS_FALLBACK) * product.sizeMl,
       priceHistoryPoints,
@@ -7271,7 +7293,7 @@ function buildWeeklyBestEl(deal, literPrice){
       <span class="weekly-best-price"><span class="price">${euro(deal.offerPrice)} €</span><span class="saving-percent">−${savingPct} %</span></span>
       <span class="weekly-best-meta">${euro(literPrice)} €/L · ${escapeHtml(deal.store)} · bis ${formatSingleDate(deal.validUntil)}</span>
     </span>
-    <span class="weekly-best-img"><img src="${escapeHtml(deal.img)}" alt="" referrerpolicy="no-referrer"></span>
+    <span class="weekly-best-img"><img src="${escapeHtml(deal.img)}" alt="" referrerpolicy="no-referrer">${exampleBadge(deal)}</span>
   `;
   el.querySelector("img").addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
   return el;
@@ -7312,6 +7334,7 @@ function buildDealCardEl(deal, isBest, favLiterMin){
       <div class="thumb-frame">
         <img class="thumb" src="${escapeHtml(deal.img)}" alt="${escapeHtml(deal.product)}" loading="lazy" referrerpolicy="no-referrer">
         ${deal.isNew ? `<span class="new-pill">Neu</span>` : ""}
+        ${exampleBadge(deal)}
       </div>
       <div class="card-info">
         <div class="product">${escapeHtml(deal.product)}</div>
@@ -7465,7 +7488,7 @@ function renderSearchSuggestions(){
       <img src="${escapeHtml(p.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="search-suggestion-text">
         <div class="search-suggestion-name">${highlightMatch(p.name, q)}</div>
-        <div class="search-suggestion-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
+        <div class="search-suggestion-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml${exampleMeta(p)}</div>
       </div>
     </button>
   `).join("")}</div>`;
@@ -8499,7 +8522,7 @@ function newsCardHtml(item){
           <img class="thumb" data-product-detail="${p.id}" src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
           <div class="news-card-text">
             <div class="news-card-name" data-product-detail="${p.id}">${escapeHtml(p.name)}</div>
-            <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
+            <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml${exampleMeta(p)}</div>
           </div>
         </div>
       </article>
@@ -8517,7 +8540,7 @@ function newsCardHtml(item){
           <img class="thumb" data-product-detail="${p.id}" data-deal-id="${d.id}" src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
           <div class="news-card-text">
             <div class="news-card-name" data-product-detail="${p.id}" data-deal-id="${d.id}">${escapeHtml(p.name)}</div>
-            <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
+            <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml${exampleMeta(p)}</div>
           </div>
         </div>
         <div class="news-card-price-row">
@@ -8545,7 +8568,7 @@ function newsCardHtml(item){
         <img class="thumb" data-product-detail="${p.id}" data-deal-id="${d.id}" src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
         <div class="news-card-text">
           <div class="news-card-name" data-product-detail="${p.id}" data-deal-id="${d.id}">${escapeHtml(p.name)}</div>
-          <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
+          <div class="news-card-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml${exampleMeta(p)}</div>
         </div>
       </div>
       <div class="news-card-price-row">
@@ -8607,7 +8630,7 @@ function renderAlertsView(){
             <img class="thumb" data-product-detail="${e.product.id}" src="${escapeHtml(e.product.img)}" alt="${escapeHtml(e.product.name)}" loading="lazy" referrerpolicy="no-referrer">
             <div>
               <div class="product" data-product-detail="${e.product.id}">${escapeHtml(e.product.name)}</div>
-              <div class="brandtxt">${escapeHtml(e.product.brand)} · ${e.product.sizeMl} ml</div>
+              <div class="brandtxt">${escapeHtml(e.product.brand)} · ${e.product.sizeMl} ml${exampleMeta(e.product)}</div>
             </div>
           </div>
           <label class="switch">
@@ -9078,17 +9101,24 @@ function npGrams(n){
   return n.toLocaleString("de-DE", {minimumFractionDigits:1, maximumFractionDigits:1}) + " g";
 }
 
-/* Nährwerte pro Dose aus den Werten pro 100 ml; ohne Daten null. */
+/* Nährwerte pro Dose aus den Werten pro 100 ml; ohne Daten null, einzelne
+   fehlende Werte als "k. A.". */
 function npNutritionPerCan(d){
   const per100 = getNutritionPer100ml({id:d.productId, brand:d.brand});
   if(!per100) return null;
   const f = d.sizeMl / 100;
-  const rows = [];
-  if(typeof per100.kcal==="number") rows.push([`${Math.round(per100.kcal*f)} kcal`, "Kalorien"]);
-  if(typeof per100.sugarG==="number") rows.push([npGrams(per100.sugarG*f), "Zucker"]);
-  if(typeof per100.caffeineMg==="number") rows.push([`${Math.round(per100.caffeineMg*f)} mg`, "Koffein"]);
-  if(typeof per100.carbsG==="number") rows.push([npGrams(per100.carbsG*f), "Kohlenhydr."]);
-  return rows.length ? rows : null;
+  const has = v => typeof v === "number";
+  return [
+    [has(per100.kcal) ? `${Math.round(per100.kcal*f)} kcal` : NA_LABEL, "Kalorien"],
+    [has(per100.sugarG) ? npGrams(per100.sugarG*f) : NA_LABEL, "Zucker"],
+    [has(per100.caffeineMg) ? `${Math.round(per100.caffeineMg*f)} mg` : NA_LABEL, "Koffein"],
+    [has(per100.carbsG) ? npGrams(per100.carbsG*f) : NA_LABEL, "Kohlenhydr."]
+  ];
+}
+function npNutritionNote(d){
+  const per100 = getNutritionPer100ml({id:d.productId, brand:d.brand});
+  const q = per100 ? nutritionQualifiers(d.productId, per100, d.packagingAssumed) : [];
+  return `Nährwerte pro ${packagingWord(d)}` + (q.length ? ` · ${q.join(" · ")}` : "");
 }
 
 function npStoreRow(d){
@@ -9128,6 +9158,7 @@ function renderNewPane(){
         <button class="np-fav${fav ? " active" : ""}" data-np-fav="${escapeHtml(key)}" data-np-name="${escapeHtml(p.name)}" aria-label="${fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}"><svg class="icon"><use href="#i-heart"/></svg></button>
         ${p.img ? `<canvas class="np-media-bg" width="16" height="16" aria-hidden="true"></canvas>` : ""}
         <img src="${escapeHtml(p.img || FALLBACK_IMG)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
+        ${exampleBadge(p)}
       </div>
       <div class="np-body">
         <div class="np-head" ${openAttrs}>
@@ -9188,6 +9219,7 @@ function renderSoonPane(){
             <button class="np-fav${fav ? " active" : ""}" data-np-fav="${escapeHtml(key)}" data-np-name="${escapeHtml(d.product)}" aria-label="${fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}"><svg class="icon"><use href="#i-heart"/></svg></button>
             ${d.img ? `<canvas class="np-media-bg" width="16" height="16" aria-hidden="true"></canvas>` : ""}
             <img src="${escapeHtml(d.img || FALLBACK_IMG)}" alt="${escapeHtml(d.product)}" loading="lazy" referrerpolicy="no-referrer">
+            ${exampleBadge(d)}
           </div>
           <div class="np-body">
             <div class="np-head" data-np-open="${escapeHtml(d.productId)}" data-np-deal="${escapeHtml(d.id)}">
@@ -9198,7 +9230,7 @@ function renderSoonPane(){
               <span class="np-tag"><svg class="icon"><use href="#i-calendar"/></svg>${npShortDate(d.validFrom)}</span>
             </div>
             <div class="np-stores">${npStoreRow(d)}</div>
-            ${nutri ? `<div class="np-nutri">${nutri.map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join("")}</div><div class="np-note">Nährwerte pro Dose</div>` : ""}
+            ${nutri ? `<div class="np-nutri">${nutri.map(([v,l])=>`<div><b>${v}</b><span>${l}</span></div>`).join("")}</div><div class="np-note">${escapeHtml(npNutritionNote(d))}</div>` : ""}
             <button class="np-cta" data-np-open="${escapeHtml(d.productId)}" data-np-deal="${escapeHtml(d.id)}">Produktdetails <svg class="icon"><use href="#i-chevron-down"/></svg></button>
           </div>
         </article>`;
@@ -9524,7 +9556,7 @@ function renderProductsView(){
         <div class="ap-head-txt">
           <div class="np-brand">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
           <div class="ap-name">${escapeHtml(p.name)}</div>
-          <div class="ap-tags">${onOffer ? `<span class="info-badge green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> Im Angebot</span>` : ""}${p.isNew ? `<span class="ap-tag-new">Neu</span>` : ""}</div>
+          <div class="ap-tags">${onOffer ? `<span class="info-badge green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> Im Angebot</span>` : ""}${p.isNew ? `<span class="ap-tag-new">Neu</span>` : ""}${p.imgExample ? `<span class="ap-tag-ex">Beispielbild</span>` : ""}</div>
         </div>
         ${priced.length>1 ? `<div class="ap-from"><span>ab</span><b>${euro(from)} €</b></div>` : ""}
       </div>
@@ -9541,7 +9573,10 @@ function renderProductsView(){
       <div class="np-lead">Alle Energy Drinks bei den Händlern – mit Angebotspreis, wenn gerade eins läuft, sonst mit Normalpreis.</div>
     </div>
     ${brands.length > 1 ? apBrandSelectHtml(brands) : ""}
-    ${shown.length ? `<div class="np-list">${cards}</div>` : `<div class="np-empty">${apBrand==="Alle" ? "Noch keine Produkte im Sortiment." : `Von ${escapeHtml(apBrand)} sind noch keine Produkte gelistet.<br>Sie erscheinen hier, sobald sie eingetragen sind.`}</div>`}`;
+    ${shown.length ? `<div class="np-list">${cards}</div>` : `<div class="np-empty">${apBrand==="Alle" ? "Noch keine Produkte im Sortiment." : `Von ${escapeHtml(apBrand)} sind noch keine Produkte gelistet.<br>Sie erscheinen hier, sobald sie eingetragen sind.`}</div>`}
+    ${shown.some(p=>isOffNutrition(NUTRITION_BY_PRODUCT[p.id]))
+      ? `<div class="ap-source">Produkt- und Nährwertdaten teilweise von ${extLink(OFF_HOME_URL, "Open Food Facts")}, verfügbar unter der ${extLink(ODBL_URL, "Open Database License (ODbL) 1.0")}. Angaben ohne Gewähr. <a href="impressum.html#datenquellen">Mehr zu den Datenquellen</a></div>`
+      : ""}`;
 
   productsViewEl.querySelectorAll(".thumb").forEach(img=>{
     img.addEventListener("error", function(){
@@ -9679,7 +9714,7 @@ function renderRecentList(){
       <img class="fav-emoji" src="${escapeHtml(product.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="fav-txt">
         <b>${escapeHtml(product.name)}</b>
-        <span>${escapeHtml(product.brand)} · ${product.sizeMl} ml</span>
+        <span>${escapeHtml(product.brand)} · ${product.sizeMl} ml${exampleMeta(product)}</span>
       </div>
       <div class="recent-meta">
         ${bestPrice!==null ? `<b>ab ${euro(bestPrice)} €</b>` : ""}
@@ -11351,7 +11386,7 @@ function renderNewsDetail(n){
   if(!deal){
     container.innerHTML = `
       <h2 style="margin-top:18px">${escapeHtml(product.name)}</h2>
-      <div class="news-detail-img-wrap"><img class="news-detail-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" loading="lazy" referrerpolicy="no-referrer"></div>
+      <div class="news-detail-img-wrap"><img class="news-detail-img" src="${escapeHtml(product.img)}" alt="${escapeHtml(product.name)}" loading="lazy" referrerpolicy="no-referrer">${exampleBadge(product)}</div>
       <div class="desc">${escapeHtml(n.text)}</div>
     `;
     return;
@@ -11881,7 +11916,8 @@ function openProductDetail(productId, dealId){
   const pdImg = document.getElementById("pdImg");
   pdImg.src = heroImg;
   pdImg.alt = product.name;
-  pdImg.onerror = function(){ this.src = FALLBACK_IMG; };
+  pdImg.onerror = function(){ this.src = FALLBACK_IMG; document.getElementById("pdImgEx").hidden = true; };
+  document.getElementById("pdImgEx").hidden = !((shownDeal && shownDeal.img) ? shownDeal.imgExample : product.imgExample);
 
   document.getElementById("pdTitle").textContent = product.name;
   document.getElementById("pdSub").textContent = `${product.brand} · ${product.sizeMl} ml`;
@@ -12013,6 +12049,51 @@ function renderProductOffer(deal){
    wird dort so ausgewiesen, nicht als bloße "0"). */
 function formatNutritionG(n){ return n.toFixed(1).replace(".", ","); }
 
+/* Produktdaten von Open Food Facts: Namensnennung mit Link auf den Eintrag
+   und Lizenzhinweis (ODbL 1.0 für die Datenbank, DbCL 1.0 für einzelne
+   Inhalte), wie es die Nutzungsbedingungen von Open Food Facts verlangen.
+   Der Link wird nur aus der Ziffernfolge des Barcodes gebaut. */
+const OFF_HOME_URL = "https://de.openfoodfacts.org/";
+const ODBL_URL = "https://opendatacommons.org/licenses/odbl/1-0/";
+const DBCL_URL = "https://opendatacommons.org/licenses/dbcl/1-0/";
+const extLink = (url, text) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+function offProductUrl(code){
+  return /^\d{8,14}$/.test(String(code || "")) ? `${OFF_HOME_URL}produkt/${code}` : OFF_HOME_URL;
+}
+function isOffNutrition(n){ return !!n && n.source === "open_food_facts"; }
+
+/* Unbekannte bzw. nicht produktgenaue Angaben immer kennzeichnen:
+   Beispielbilder (Bild zeigt nicht dieses Produkt) als Etikett auf dem Bild
+   bzw. als Zusatz in der Textzeile kleiner Vorschaubilder. */
+const EXAMPLE_IMG_LABEL = "Beispielbild";
+function exampleBadge(item){ return item && item.imgExample ? `<span class="img-ex">${EXAMPLE_IMG_LABEL}</span>` : ""; }
+function exampleMeta(item){ return item && item.imgExample ? ` · ${EXAMPLE_IMG_LABEL}` : ""; }
+
+/* Nährwerte: fehlende Werte als "k. A.", Marken-Richtwerte (kein eigener
+   Datensatz für das Produkt) und nur angenommene Verpackung werden genannt. */
+const NA_LABEL = "k. A.";
+const NUTRITION_KEYS = ["kcal","carbsG","sugarG","fatG","satFatG","proteinG","saltG","caffeineMg","taurineMg"];
+function packagingWord(item){ return item && item.packaging === "Flasche" ? "Flasche" : "Dose"; }
+function nutritionQualifiers(productId, per100, packagingAssumed){
+  const parts = [];
+  if(!NUTRITION_BY_PRODUCT[productId]) parts.push("Richtwerte der Marke, keine Angaben zu diesem Produkt");
+  if(packagingAssumed) parts.push("Verpackung nicht bestätigt");
+  if(NUTRITION_KEYS.some(k => typeof per100[k] !== "number")) parts.push(`${NA_LABEL} = keine Angabe in der Datenquelle`);
+  return parts;
+}
+
+function renderNutritionSource(per100){
+  const el = document.getElementById("pdSource");
+  if(!per100){ el.hidden = true; el.innerHTML = ""; return; }
+  const disclaimer = "Angaben ohne Gewähr, maßgeblich sind die Angaben auf der Verpackung.";
+  el.innerHTML = isOffNutrition(per100)
+    ? `Quelle der Produkt- und Nährwertdaten: ${extLink(offProductUrl(per100.sourceRef), "Open Food Facts")}. `
+      + `Enthält Daten von Open Food Facts, verfügbar unter der ${extLink(ODBL_URL, "Open Database License (ODbL) 1.0")}; `
+      + `einzelne Inhalte unter der ${extLink(DBCL_URL, "Database Contents License (DbCL) 1.0")}. ${disclaimer}`
+    : disclaimer;
+  el.hidden = false;
+}
+
 function renderNutrition(product){
   const per100 = getNutritionPer100ml(product);
   const toggleBtnEl = document.getElementById("pdNutritionToggle");
@@ -12022,14 +12103,19 @@ function renderNutrition(product){
     document.getElementById("pdNutritionFull").innerHTML = "";
     document.getElementById("pdNutritionFull").classList.remove("open");
     toggleBtnEl.style.display = "none";
+    renderNutritionSource(null);
     return;
   }
   toggleBtnEl.style.display = "";
   const factor = product.sizeMl / 100;
-  const per = (key, decimals) => decimals===0 ? Math.round(per100[key]*factor) : +(per100[key]*factor).toFixed(decimals);
+  /* Werte pro Dose; fehlt ein Wert, bleibt er null und erscheint als "k. A.". */
+  const per = (key, decimals) => typeof per100[key] !== "number" ? null
+    : decimals===0 ? Math.round(per100[key]*factor) : +(per100[key]*factor).toFixed(decimals);
+  const g = v => v === null ? NA_LABEL : `${formatNutritionG(v)} g`;
+  const mg = v => v === null ? NA_LABEL : `${v} mg`;
 
   const kcal = per("kcal", 0);
-  const kJ = Math.round(kcal * 4.184);
+  const kJ = kcal === null ? null : Math.round(kcal * 4.184);
   const carbsG = per("carbsG", 1);
   const sugarG = per("sugarG", 1);
   const fatG = per("fatG", 1);
@@ -12040,25 +12126,27 @@ function renderNutrition(product){
   const taurineMg = per("taurineMg", 0);
 
   document.getElementById("pdNutritionGrid").innerHTML = `
-    <div class="nbox"><b>${kcal} kcal</b><span>Kalorien</span></div>
-    <div class="nbox"><b>${formatNutritionG(sugarG)} g</b><span>Zucker</span></div>
-    <div class="nbox"><b>${caffeineMg} mg</b><span>Koffein</span></div>
-    <div class="nbox"><b>${formatNutritionG(carbsG)} g</b><span>Kohlenhydrate</span></div>
+    <div class="nbox"><b>${kcal === null ? NA_LABEL : `${kcal} kcal`}</b><span>Kalorien</span></div>
+    <div class="nbox"><b>${g(sugarG)}</b><span>Zucker</span></div>
+    <div class="nbox"><b>${mg(caffeineMg)}</b><span>Koffein</span></div>
+    <div class="nbox"><b>${g(carbsG)}</b><span>Kohlenhydrate</span></div>
   `;
+  const qualifiers = nutritionQualifiers(product.id, per100, product.packagingAssumed);
   document.getElementById("pdNutritionCaption").textContent =
-    `Angaben pro Dose (${product.sizeMl} ml)`;
+    `Angaben pro ${packagingWord(product)} (${product.sizeMl} ml)` + (qualifiers.length ? `. ${qualifiers.join(". ")}.` : "");
 
   document.getElementById("pdNutritionFull").innerHTML = `
-    <div class="nutrition-full-row"><span>Energie</span><b>${kJ} kJ / ${kcal} kcal</b></div>
-    <div class="nutrition-full-row"><span>Fett</span><b>${formatNutritionG(fatG)} g</b></div>
-    <div class="nutrition-full-row"><span class="nutrition-full-sub">davon gesättigte Fettsäuren</span><b>${formatNutritionG(satFatG)} g</b></div>
-    <div class="nutrition-full-row"><span>Kohlenhydrate</span><b>${formatNutritionG(carbsG)} g</b></div>
-    <div class="nutrition-full-row"><span class="nutrition-full-sub">davon Zucker</span><b>${formatNutritionG(sugarG)} g</b></div>
-    <div class="nutrition-full-row"><span>Eiweiß</span><b>${formatNutritionG(proteinG)} g</b></div>
-    <div class="nutrition-full-row"><span>Salz</span><b>${formatNutritionG(saltG)} g</b></div>
-    <div class="nutrition-full-row"><span>Koffein</span><b>${caffeineMg} mg</b></div>
-    <div class="nutrition-full-row"><span>Taurin</span><b>${taurineMg} mg</b></div>
+    <div class="nutrition-full-row"><span>Energie</span><b>${kcal === null ? NA_LABEL : `${kJ} kJ / ${kcal} kcal`}</b></div>
+    <div class="nutrition-full-row"><span>Fett</span><b>${g(fatG)}</b></div>
+    <div class="nutrition-full-row"><span class="nutrition-full-sub">davon gesättigte Fettsäuren</span><b>${g(satFatG)}</b></div>
+    <div class="nutrition-full-row"><span>Kohlenhydrate</span><b>${g(carbsG)}</b></div>
+    <div class="nutrition-full-row"><span class="nutrition-full-sub">davon Zucker</span><b>${g(sugarG)}</b></div>
+    <div class="nutrition-full-row"><span>Eiweiß</span><b>${g(proteinG)}</b></div>
+    <div class="nutrition-full-row"><span>Salz</span><b>${g(saltG)}</b></div>
+    <div class="nutrition-full-row"><span>Koffein</span><b>${mg(caffeineMg)}</b></div>
+    <div class="nutrition-full-row"><span>Taurin</span><b>${mg(taurineMg)}</b></div>
   `;
+  renderNutritionSource(per100);
 
   const toggleBtn = document.getElementById("pdNutritionToggle");
   const fullEl = document.getElementById("pdNutritionFull");
@@ -12281,7 +12369,7 @@ function renderSimilarProducts(product){
       .sort((a,b)=>a.offerPrice-b.offerPrice)[0];
     return `
     <button class="similar-card" data-similar="${p.id}">
-      <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">
+      <img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" loading="lazy" referrerpolicy="no-referrer">${exampleBadge(p)}
       <div class="similar-name">${escapeHtml(p.name)}</div>
       <div class="similar-meta">${escapeHtml(p.brand)} · ${p.sizeMl} ml</div>
       ${cheapest
@@ -12987,11 +13075,16 @@ function applyLoadedData(products_, stores, offers, regularPrices_, brandNames_)
 const BRAND_DISPLAY_NAMES = {"Monster": "Monster Energy", "Rockstar": "Rockstar Energy"};
 function brandDisplayName(name){ return BRAND_DISPLAY_NAMES[name] || name; }
 
+/* Fehlende Werte bleiben null (Anzeige "k. A."), nie 0. source/sourceRef nur bei
+   Produkt-Nährwerten: Herkunft (z. B. "open_food_facts") und Barcode des
+   Eintrags für den Quellenlink. */
 function mapNutritionRow(n){
+  const num = v => (v === null || v === undefined || v === "" || isNaN(Number(v))) ? null : Number(v);
   return {
-    kcal: n.kcal, carbsG: n.carbs_g, sugarG: n.sugar_g, fatG: n.fat_g,
-    satFatG: n.sat_fat_g, proteinG: n.protein_g, saltG: n.salt_g,
-    caffeineMg: n.caffeine_mg, taurineMg: n.taurine_mg
+    kcal: num(n.kcal), carbsG: num(n.carbs_g), sugarG: num(n.sugar_g), fatG: num(n.fat_g),
+    satFatG: num(n.sat_fat_g), proteinG: num(n.protein_g), saltG: num(n.salt_g),
+    caffeineMg: num(n.caffeine_mg), taurineMg: num(n.taurine_mg),
+    source: n.source || null, sourceRef: n.source_ref || null
   };
 }
 
@@ -13045,7 +13138,7 @@ async function loadFromSupabase(){
   if(!supabaseClient) throw new Error("Supabase-Client nicht initialisiert");
 
   const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes, settingsRes, regularPricesRes, brandsRes] = await Promise.all([
-      supabaseClient.from("products").select("id,name,size_ml,packaging,image_url,is_new,brand:brands(name)"),
+      supabaseClient.from("products").select("id,name,size_ml,packaging,packaging_assumed,image_url,image_is_example,is_new,brand:brands(name)"),
       supabaseClient.from("product_nutrition").select("*"),
       supabaseClient.from("brand_nutrition_defaults").select("*,brand:brands(name)"),
       supabaseClient.from("branches").select("id,street,postal_code,city,latitude,longitude,opens_at,closes_at,closed_sunday,retailer:retailers(name,logo_url)"),
@@ -13102,8 +13195,12 @@ async function loadFromSupabase(){
       brand: brandDisplayName(p.brand.name),
       sizeMl: p.size_ml,
       img: p.image_url || FALLBACK_IMG,
+      // Beispielbild (zeigt nicht dieses Produkt) bzw. Verpackung nur angenommen:
+      // beides wird in der App gekennzeichnet.
+      imgExample: !!(p.image_url && p.image_is_example),
       isNew: !!p.is_new,
-      packaging: p.packaging || PACKAGING_FALLBACK
+      packaging: p.packaging || PACKAGING_FALLBACK,
+      packagingAssumed: !!p.packaging_assumed
     }));
 
   // ---- stores{} (App-Form: {logo, branch:{address, geo, open, close,

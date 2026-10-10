@@ -75,12 +75,16 @@ create table public.products (
   name       text not null,
   size_ml    integer not null check (size_ml > 0),
   packaging  text not null check (packaging in ('Dose','Flasche')),
+  packaging_assumed boolean not null default false,
   image_url  text,
+  image_is_example  boolean not null default false,
   is_new     boolean not null default false,
   created_at timestamptz not null default now()
 );
 create index products_brand_id_idx on public.products(brand_id);
 comment on table public.products is 'Ein Produkt = eine konkrete Geschmacksrichtung/Groesse (z.B. "Red Bull Energy Drink 250ml, Dose"). Preis/Liter und Preis/Einheit werden NIE gespeichert, sondern immer aus offers.offer_price / (offers.units * size_ml/1000) berechnet.';
+comment on column public.products.packaging_assumed is 'true = Verpackung nicht aus der Quelle, sondern aus der Füllmenge angenommen; die App kennzeichnet sie als nicht bestätigt.';
+comment on column public.products.image_is_example is 'true = image_url ist ein Beispielbild und zeigt nicht dieses Produkt; die App kennzeichnet es als Beispielbild.';
 
 
 -- Nährwerte 1:1 zum Produkt, nullable je Feld - entspricht der heutigen
@@ -99,9 +103,13 @@ create table public.product_nutrition (
   protein_g    numeric,
   salt_g       numeric,
   caffeine_mg  numeric,
-  taurine_mg   numeric
+  taurine_mg   numeric,
+  source       text check (source in ('open_food_facts', 'eigene_erfassung')),
+  source_ref   text check (source_ref ~ '^[0-9]{8,14}$')
 );
-comment on table public.product_nutrition is 'Naehrwerte pro 100ml, 1:1 optional zu products. Entspricht NUTRITION_MOCK_BY_PRODUCT in index.html.';
+comment on table public.product_nutrition is 'Naehrwerte pro 100ml, 1:1 optional zu products. Fehlende Werte bleiben null (App zeigt "k. A."). Herkunft siehe source.';
+comment on column public.product_nutrition.source is 'Herkunft der Werte: open_food_facts (Lizenz ODbL 1.0, einzelne Inhalte DbCL 1.0; App nennt die Quelle mit Link) oder eigene_erfassung. Leer = Herkunft nicht erfasst.';
+comment on column public.product_nutrition.source_ref is 'Bei open_food_facts: Barcode des Eintrags, daraus baut die App den Link zur Produktseite.';
 
 
 -- Optionale Zwischenstufe der Fallback-Kette (entspricht
@@ -119,7 +127,7 @@ create table public.brand_nutrition_defaults (
   caffeine_mg  numeric,
   taurine_mg   numeric
 );
-comment on table public.brand_nutrition_defaults is 'Marken-Fallback-Naehrwerte, entspricht NUTRITION_MOCK_BY_BRAND in index.html - nur genutzt, wenn product_nutrition fuer ein Produkt fehlt.';
+comment on table public.brand_nutrition_defaults is 'Marken-Fallback-Naehrwerte, nur genutzt, wenn product_nutrition fuer ein Produkt fehlt.';
 
 
 create table public.retailers (

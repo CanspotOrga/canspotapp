@@ -1,0 +1,28 @@
+Quellen und Lizenzen der Inhaltsdaten
+=====================================
+
+Open Food Facts
+---------------
+Ein Teil der Produkt- und Nährwertdaten stammt von Open Food Facts
+(https://openfoodfacts.org). Betroffen sind:
+
+- products.csv: Produkte, deren Nährwerte in product_nutrition.csv die
+  Quelle open_food_facts tragen (Name, Füllmenge),
+- product_nutrition.csv: alle Zeilen mit source = open_food_facts; source_ref
+  ist der Barcode des Eintrags (https://de.openfoodfacts.org/produkt/<Barcode>).
+
+Enthält Daten von Open Food Facts, verfügbar unter der Open Database License
+(ODbL) 1.0: https://opendatacommons.org/licenses/odbl/1-0/
+Einzelne Inhalte stehen unter der Database Contents License (DbCL) 1.0:
+https://opendatacommons.org/licenses/dbcl/1-0/
+
+Bearbeitung: Auswahl der Einträge mit Land Deutschland und vollständigen
+Grundwerten, vereinheitlichte Produktnamen, entfernte Dubletten, bei fehlender
+Angabe Verpackung „Dose“ für 250/330/500 ml. Diese abgeleiteten Daten stehen
+ebenfalls unter der ODbL 1.0.
+
+Übrige Daten
+------------
+Händler, Filialen, Angebote, Preise und App-Einstellungen sind Demodaten bzw.
+eigene Daten und nicht Teil der oben genannten Datenbank.
+Kartendaten in der App: © OpenStreetMap-Mitwirkende (ODbL).
