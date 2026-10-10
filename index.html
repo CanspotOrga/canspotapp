@@ -5925,7 +5925,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="meta" id="storeDetailHours" style="font-size:13px">–</div>
 <div class="store-list-source" id="storeDetailBranchSource" hidden></div>
 
-<div class="field-label" style="margin-top:20px">Dieses Angebot</div>
+<div class="field-label" style="margin-top:20px" id="storeDetailOfferLabel">Dieses Angebot</div>
 <div class="store-detail-price-box">
 <div>
 <div class="product" id="storeDetailProduct">–</div>
@@ -12059,6 +12059,7 @@ function openProductDetail(productId, dealId){
   renderSimilarProducts(product);
   renderProductRatingLine(productId);
   renderProductOffer(dealToShare || soonDeal);
+  if(!(dealToShare || soonDeal)) renderProductStoreOnly(product);
   renderProductRef(product, dealToShare || soonDeal);
 
   openSheet("productDetailOverlay");
@@ -12100,6 +12101,54 @@ function renderProductRef(product, deal){
   noteEl.textContent = ref ? avgPriceNote(ref) : "";
   noteEl.hidden = !ref;
   el.style.display = "";
+}
+
+/* Händler-Zeile für Produkte ohne laufendes Angebot: erster Markt aus
+   getProductStoreRows() (Normalpreis aus regular_prices oder abgelaufenes
+   Angebot). Ohne erfassten Markt steht dort ein Hinweis. Preisverlauf und
+   "Route starten"-Leiste bleiben bei Angeboten. */
+function productStoreEntry(product, row){
+  const branch = storeBranches[row.store];
+  const geo = branch ? parseGeo(branch.geo) : null;
+  const distanceKm = (userLocation && geo) ? Math.round(haversineKm(userLocation, geo) * 10) / 10 : row.distanceKm;
+  return {
+    store: row.store, units: row.units, distanceKm,
+    product: product.name, brand: product.brand, sizeMl: product.sizeMl,
+    offerPrice: row.kind === "regular" ? row.price : null,
+    priceLabel: row.kind === "regular" ? "Normalpreis" : "Preis", link: ""
+  };
+}
+function renderProductStoreOnly(product){
+  const storeEl = document.getElementById("pdOfferStore");
+  const storeRow = document.getElementById("pdStoreRow");
+  const logo = document.getElementById("pdStoreLogo");
+  const histRow = document.getElementById("pdHistRow");
+  histRow.style.display = "none";
+  histRow.previousElementSibling.style.display = "none";
+  const row = getProductStoreRows(product.id)[0];
+  if(!row){
+    logo.src = STORE_FALLBACK_IMG;
+    logo.alt = "";
+    document.getElementById("pdStoreName").textContent = "Noch kein Händler erfasst";
+    document.getElementById("pdStoreSub").textContent = "Sobald ein Markt eingetragen ist, steht er hier.";
+    storeRow.onclick = null;
+    storeRow.querySelector(".pd-row-arrow").style.visibility = "hidden";
+    storeEl.style.display = "";
+    return;
+  }
+  const entry = productStoreEntry(product, row);
+  const branch = storeBranches[entry.store];
+  const openNow = branch ? isStoreOpenNow(branch) : null;
+  logo.src = storeLogos[entry.store] || STORE_FALLBACK_IMG;
+  logo.alt = entry.store;
+  logo.onerror = function(){ this.src = STORE_FALLBACK_IMG; };
+  document.getElementById("pdStoreName").textContent = `${entry.store}${kmSuffix(entry.distanceKm)}`;
+  document.getElementById("pdStoreSub").innerHTML =
+    (hasDistance(entry) ? `${routeMinutes(entry.distanceKm)} Min. Route` : "Route") +
+    (openNow===null ? "" : ` · <span class="open-dot ${openNow?"open":""}"></span>${openNow?"Jetzt geöffnet":"Geschlossen"}`);
+  storeRow.onclick = ()=> openStoreDetail(entry);
+  storeRow.querySelector(".pd-row-arrow").style.visibility = "";
+  storeEl.style.display = "";
 }
 
 function renderProductOffer(deal){
@@ -12774,8 +12823,10 @@ function renderStoreDetailMapMobile(deal){
   }
 }
 
-function openStoreDetail(dealId){
-  const deal = deals.find(d=>d.id===dealId);
+/* dealOrEntry: Angebots-id oder ein Eintrag ohne laufendes Angebot aus
+   productStoreEntry() (Normalpreis oder noch kein Preis). */
+function openStoreDetail(dealOrEntry){
+  const deal = typeof dealOrEntry === "object" ? dealOrEntry : deals.find(d=>d.id===dealOrEntry);
   if(!deal) return;
   const branch = storeBranches[deal.store];
 
@@ -12801,7 +12852,8 @@ function openStoreDetail(dealId){
 
   document.getElementById("storeDetailProduct").textContent = deal.product;
   document.getElementById("storeDetailProductMeta").textContent = `${deal.brand} · ${formatSize(deal)}${kmSuffix(deal.distanceKm, " entfernt")}`;
-  document.getElementById("storeDetailPrice").textContent = euro(deal.offerPrice) + " €";
+  document.getElementById("storeDetailOfferLabel").textContent = deal.priceLabel || "Dieses Angebot";
+  document.getElementById("storeDetailPrice").textContent = deal.offerPrice === null ? "Preis folgt" : euro(deal.offerPrice) + " €";
 
   const routeBtn = document.getElementById("storeDetailRouteBtn");
   routeBtn.href = branch
