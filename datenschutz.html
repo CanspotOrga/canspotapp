@@ -70,6 +70,7 @@ E-Mail: <a href="mailto:[E-Mail-Adresse]">[E-Mail-Adresse]</a></p>
 <ul>
 <li><b>Kartenkacheln:</b> Die Karte lädt Kacheln von OpenStreetMap (OpenStreetMap Foundation, UK). Dabei wird deine IP-Adresse an deren Server übertragen.</li>
 <li><b>Standort:</b> Nur wenn du es erlaubst, fragt die App deinen Standort über den Browser bzw. das Gerät ab. Damit werden Entfernungen auf deinem Gerät berechnet. Um den Ortsnamen anzuzeigen, werden die Koordinaten an Nominatim (OpenStreetMap Foundation) gesendet.</li>
+<li><b>Märkte in der Nähe:</b> Öffnest du im Menü die Händler-Liste, fragt die App in unserer Datenbank (Supabase, Frankfurt am Main, siehe oben) die Märkte in deiner Umgebung ab. Dafür sendet sie nicht deinen genauen Standort, sondern einen auf etwa 10 km gerundeten Punkt (deinen Standort, wenn du ihn freigegeben hast, sonst den Startstandort der App) und den gewählten Umkreis. Die genaue Entfernung berechnet die App auf deinem Gerät. Die Abfrage wird nicht in der Datenbank gespeichert; wie bei jedem Abruf wird dabei deine IP-Adresse an Supabase übertragen (Art. 6 Abs. 1 lit. f DSGVO). Die Marktdaten stammen aus OpenStreetMap und liegen in unserer Datenbank; an OpenStreetMap werden dabei keine Angaben über dich übertragen.</li>
 <li><b>Route starten:</b> Erst wenn du auf „Route starten“ tippst, wird eine Karten-App bzw. Google Maps mit der Filialadresse geöffnet. Dort gelten die Datenschutzbestimmungen des jeweiligen Anbieters.</li>
 </ul>
 

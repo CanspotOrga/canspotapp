@@ -2771,6 +2771,13 @@ padding:2px;
 flex-shrink:0
 }
 .store-row-txt{flex:1;min-width:0}
+/* Händler-Liste im Menü: Hinweis oben und Quellenangabe OpenStreetMap unten. */
+.store-list-intro{margin:2px 2px 8px;font-size:11.5px;color:var(--text-muted)}
+.store-row-txt .store-row-line{display:block}
+.store-list-source{margin:10px 2px 2px;font-size:11px;line-height:1.5;color:var(--text-muted)}
+.store-list-source[hidden]{display:none}
+.store-list-source a{color:var(--brand-primary-blue);text-decoration:underline;text-underline-offset:2px}
+:root[data-theme="dark"] .store-list-source a{color:var(--brand-primary-light)}
 .store-row-txt b{display:block;font-size:13px;color:var(--text-primary)}
 .store-row-txt span{font-size:11px;color:var(--text-muted)}
 .store-row-price{font-size:14px;font-weight:900;flex-shrink:0;color:var(--text-primary)}
@@ -5916,6 +5923,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 
 <div class="field-label" style="margin-top:20px">Öffnungszeiten</div>
 <div class="meta" id="storeDetailHours" style="font-size:13px">–</div>
+<div class="store-list-source" id="storeDetailBranchSource" hidden></div>
 
 <div class="field-label" style="margin-top:20px">Dieses Angebot</div>
 <div class="store-detail-price-box">
@@ -6213,21 +6221,51 @@ const STORE_FALLBACK_IMG = "data:image/svg+xml," + encodeURIComponent(
   '</g></svg>'
 );
 
-/* Filialdaten je Händler aus Supabase (branches); open/close/closedSun werden von
-   isStoreOpenNow() zur Laufzeit gegen die aktuelle Uhrzeit ausgewertet, damit
-   der Öffnungsstatus nie im Datensatz veraltet. */
+/* Filialdaten je Händler aus Supabase (branches); open/close/closedSun bzw. days
+   (Zeiten je Wochentag) werden von isStoreOpenNow() zur Laufzeit gegen die
+   aktuelle Uhrzeit ausgewertet, damit der Öffnungsstatus nie im Datensatz
+   veraltet. Ohne bekannte Zeiten liefert isStoreOpenNow() null. */
 let storeBranches = {};
+/* Filiale je Angebot/Normalpreis mitladen (Spalten mit *, damit ältere und
+   neuere Datenbankstände gleich funktionieren). */
+const BRANCH_EMBED = "branch:branches(*,retailer:retailers(name,logo_url))";
+
+const HOURS_DAY_KEYS = ["mo","tu","we","th","fr","sa","su"];
+const HOURS_DAY_LABELS = ["Mo","Di","Mi","Do","Fr","Sa","So"];
+
+function formatHourFloat(n){
+  const h = Math.floor(n), m = Math.round((n - h) * 60);
+  return `${h}:${String(m).padStart(2, "0")}`;
+}
 
 function formatHours(b){
-  const fmt = n => Number.isInteger(n) ? `${n}:00` : `${Math.floor(n)}:30`;
-  return `Mo–Sa ${fmt(b.open)}–${fmt(b.close)} Uhr${b.closedSun ? " · So geschlossen" : ""}`;
+  if(b.days){
+    const spans = HOURS_DAY_KEYS.map(k => (b.days[k] || []).map(([from, to]) => `${formatHourFloat(from)}–${formatHourFloat(to)}`).join(", "));
+    const parts = [];
+    for(let i = 0; i < 7; ){
+      let j = i;
+      while(j + 1 < 7 && spans[j + 1] === spans[i]) j++;
+      const days = i === j ? HOURS_DAY_LABELS[i] : `${HOURS_DAY_LABELS[i]}–${HOURS_DAY_LABELS[j]}`;
+      parts.push(spans[i] ? `${days} ${spans[i]} Uhr` : `${days} geschlossen`);
+      i = j + 1;
+    }
+    return parts.join(" · ");
+  }
+  if(b.open === null || b.close === null){
+    return b.rawHours ? `Laut OpenStreetMap: ${b.rawHours}` : "Öffnungszeiten nicht bekannt";
+  }
+  return `Mo–Sa ${formatHourFloat(b.open)}–${formatHourFloat(b.close)} Uhr${b.closedSun ? " · So geschlossen" : ""}`;
 }
 
 function isStoreOpenNow(b){
   const now = new Date();
-  const day = now.getDay();
   const hour = now.getHours() + now.getMinutes()/60;
-  if(day===0 && b.closedSun) return false;
+  if(b.days){
+    const today = b.days[HOURS_DAY_KEYS[(now.getDay() + 6) % 7]] || [];
+    return today.some(([from, to]) => hour >= from && hour < to);
+  }
+  if(b.open === null || b.close === null) return null;
+  if(now.getDay()===0 && b.closedSun) return false;
   return hour >= b.open && hour < b.close;
 }
 
@@ -7787,6 +7825,11 @@ async function requestUserLocation(){
     if(storeDetailCurrentDeal && document.getElementById("storeDetailOverlay").classList.contains("open") && isMobileMapViewport()){
       renderStoreDetailMapMobile(storeDetailCurrentDeal);
     }
+    /* Händler-Liste offen: Märkte um den neuen Standort laden. */
+    if(document.getElementById("menuStoresPanel").classList.contains("open")){
+      renderStoreListSheet();
+      loadNearbyBranches();
+    }
   }
 }
 
@@ -7979,7 +8022,7 @@ function showMapPopoverMobile(storeInfo){
       <img class="store-row-logo" src="${escapeHtml(storeLogos[storeInfo.store] || STORE_FALLBACK_IMG)}" alt="${escapeHtml(storeInfo.store)}" referrerpolicy="no-referrer">
       <div class="map-popover-txt">
         <b>${escapeHtml(storeInfo.store)}</b>
-        <span>${branch ? escapeHtml(branch.address) : "Adresse nicht verfügbar"}</span>
+        <span>${branch && branch.address ? escapeHtml(branch.address) : "Adresse nicht verfügbar"}</span>
         <span>${distText} · ${openNow===null?"Öffnungszeiten unbekannt":(openNow?"Jetzt geöffnet":"Aktuell geschlossen")}</span>
         <span>${storeInfo.count} Angebot${storeInfo.count===1?"":"e"} · ab ${euro(storeInfo.minPrice)} €</span>
       </div>
@@ -8929,6 +8972,7 @@ function toggleMenuAccordion(rowId, panelId){
 document.getElementById("menuStoresRow").addEventListener("click",()=>{
   renderStoreListSheet();
   toggleMenuAccordion("menuStoresRow","menuStoresPanel");
+  if(document.getElementById("menuStoresPanel").classList.contains("open")) loadNearbyBranches();
 });
 document.getElementById("menuSettingsRow").addEventListener("click",()=>{
   refreshMenuNotifSummary();
@@ -8998,33 +9042,99 @@ document.addEventListener("keydown",(e)=>{
   }
 });
 
-/* Listet alle Händler aus storeBranches/storeLogos (aus deals.json geladen) -
-   Öffnungsstatus/Adresse/Route nutzen dieselben Funktionen wie die
-   Händler-Detailansicht (isStoreOpenNow, formatHours), keine zweite
-   unabhängige Standort-/Öffnungslogik. */
-function renderStoreListSheet(){
-  const container = document.getElementById("storeListContainer");
-  const names = Object.keys(storeBranches).sort();
-  if(names.length===0){
-    container.innerHTML = `<div class="fav-empty">Keine Händlerdaten verfügbar.</div>`;
-    return;
+/* ---------------- MÄRKTE IM UMKREIS (OpenStreetMap) ----------------
+   Für die Händler-Liste im Menü: public.branches_in_area() liefert die
+   Filialen um einen Standort. Datenschutz: Abgefragt wird erst beim Öffnen
+   der Liste, und der Standort wird vorher auf 0,1 Grad (etwa 10 km) gerundet;
+   die genaue Entfernung rechnet die App selbst. Gezeigt werden nur Filialen
+   aus OpenStreetMap (keine Demo-Filialen), je Kette die nächste. */
+const NEARBY_MAX_KM = 50;
+let nearbyBranches = null;   // null = nicht geladen oder nicht verfügbar
+let nearbyQueryKey = "";
+let nearbyLoadFailed = false;
+
+function nearbyReferenceGeo(){ return userLocation || defaultLocationGeo; }
+function nearbyRadiusKm(){ return searchWide ? NEARBY_MAX_KM : Math.min(radiusKm, NEARBY_MAX_KM); }
+
+async function loadNearbyBranches(){
+  const geo = nearbyReferenceGeo();
+  if(!supabaseClient || !geo) return;
+  const lat = Math.round(geo.lat * 10) / 10, lon = Math.round(geo.lng * 10) / 10;
+  const radius = nearbyRadiusKm();
+  const key = `${lat},${lon},${radius}`;
+  if(key === nearbyQueryKey && nearbyBranches) return;
+  nearbyQueryKey = key;
+  // + 8 km, weil der gesendete Standort bis zu rund 7 km vom echten abweicht.
+  const {data, error} = await supabaseClient
+    .rpc("branches_in_area", {p_lat: lat, p_lon: lon, p_radius_km: radius + 8})
+    .select("id,street,postal_code,city,latitude,longitude,opens_at,closes_at,closed_sunday,hours,opening_hours,source,retailer:retailers(name,logo_url)");
+  if(key !== nearbyQueryKey) return; // inzwischen neuere Abfrage
+  if(error){
+    console.warn("CanSpot: Märkte im Umkreis nicht verfügbar.", error);
+    nearbyBranches = null;
+    nearbyLoadFailed = true;
+  } else {
+    nearbyBranches = (data || []).map(mapBranchRow).filter(b => b && b.osm);
+    nearbyLoadFailed = false;
   }
-  container.innerHTML = names.map(name=>{
-    const branch = storeBranches[name];
-    const openNow = branch ? isStoreOpenNow(branch) : null;
-    const statusLabel = openNow===null ? "Öffnungszeiten unbekannt" : (openNow ? "Jetzt geöffnet" : "Aktuell geschlossen");
-    return `
+  if(document.getElementById("menuStoresPanel").classList.contains("open")) renderStoreListSheet();
+}
+
+const OSM_COPYRIGHT_URL = "https://www.openstreetmap.org/copyright";
+function nearbySourceNote(){
+  return `<div class="store-list-source">Märkte und Öffnungszeiten: © <a href="${OSM_COPYRIGHT_URL}" target="_blank" rel="noopener noreferrer">OpenStreetMap-Mitwirkende</a>, Lizenz ODbL. Ohne Gewähr, Feiertage und Sonderöffnungszeiten nicht berücksichtigt. <a href="impressum.html#marktdaten">Mehr zur Quelle</a></div>`;
+}
+
+function storeListRowHtml(name, logo, branch, km){
+  const openNow = branch ? isStoreOpenNow(branch) : null;
+  const statusLabel = openNow===null ? "Öffnungszeiten unbekannt" : (openNow ? "Jetzt geöffnet" : "Aktuell geschlossen");
+  return `
     <div class="store-row" style="align-items:flex-start">
-      <img class="store-row-logo" src="${escapeHtml(storeLogos[name] || STORE_FALLBACK_IMG)}" alt="${escapeHtml(name)}" loading="lazy" referrerpolicy="no-referrer">
+      <img class="store-row-logo" src="${escapeHtml(logo || STORE_FALLBACK_IMG)}" alt="${escapeHtml(name)}" loading="lazy" referrerpolicy="no-referrer">
       <div class="store-row-txt">
-        <b>${escapeHtml(name)}</b>
+        <b>${escapeHtml(name)}${typeof km === "number" ? kmSuffix(Math.round(km * 10) / 10) : ""}</b>
         <span class="open-status" style="margin-top:2px"><span class="open-dot ${openNow?"open":""}"></span>${statusLabel}</span>
-        <span>${branch ? escapeHtml(branch.address) : ""}</span>
-        <span>${branch ? formatHours(branch) : ""}</span>
+        <span class="store-row-line">${branch && branch.address ? escapeHtml(branch.address) : "Adresse nicht erfasst"}</span>
+        <span class="store-row-line">${branch ? escapeHtml(formatHours(branch)) : ""}</span>
       </div>
       ${branch ? `<button class="store-row-link" data-store-route="${escapeHtml(branch.geo)}">Route</button>` : ""}
     </div>`;
-  }).join("");
+}
+
+/* Händler-Liste im Menü: je Kette der nächste Markt im Umkreis (OpenStreetMap).
+   Ohne Standort oder wenn die Abfrage scheitert: wie bisher die Händler mit
+   Angeboten (storeBranches). Öffnungsstatus/Adresse/Route nutzen dieselben
+   Funktionen wie die Händler-Detailansicht (isStoreOpenNow, formatHours). */
+function renderStoreListSheet(){
+  const container = document.getElementById("storeListContainer");
+  const geo = nearbyReferenceGeo();
+  if(geo && nearbyBranches){
+    const radius = nearbyRadiusKm();
+    const nearest = {};
+    nearbyBranches.forEach(b=>{
+      const km = haversineKm(geo, parseGeo(b.geo));
+      if(km > radius) return;
+      if(!nearest[b.retailer] || km < nearest[b.retailer].km) nearest[b.retailer] = {branch: b, km};
+    });
+    const rows = Object.values(nearest).sort((a,b)=>a.km - b.km);
+    const where = userLocation ? "deinem Standort" : escapeHtml((appSettings && appSettings.default_location_label) || "dem Startstandort");
+    container.innerHTML =
+      `<div class="store-list-intro">Nächster Markt je Kette, bis ${radius} km um ${where}</div>` +
+      (rows.length
+        ? rows.map(r => storeListRowHtml(r.branch.retailer, r.branch.logo, r.branch, r.km)).join("")
+        : `<div class="fav-empty">Keine Märkte im Umkreis von ${radius} km gefunden.</div>`) +
+      nearbySourceNote();
+  } else if(geo && !nearbyLoadFailed){
+    container.innerHTML = `<div class="fav-empty">Märkte in der Nähe werden geladen …</div>`;
+    return;
+  } else {
+    const names = Object.keys(storeBranches).sort();
+    if(names.length===0){
+      container.innerHTML = `<div class="fav-empty">Keine Händlerdaten verfügbar.</div>`;
+      return;
+    }
+    container.innerHTML = names.map(name => storeListRowHtml(name, storeLogos[name], storeBranches[name])).join("");
+  }
 
   container.querySelectorAll(".store-row-logo").forEach(img=>{
     img.addEventListener("error", function(){ this.src = STORE_FALLBACK_IMG; }, {once:true});
@@ -12681,8 +12791,13 @@ function openStoreDetail(dealId){
   document.getElementById("storeDetailOpenStatus").innerHTML =
     `<span class="open-dot ${openNow?"open":""}"></span>${openNow===null ? "Öffnungszeiten unbekannt" : (openNow ? "Jetzt geöffnet" : "Aktuell geschlossen")}`;
 
-  document.getElementById("storeDetailAddress").textContent = branch ? branch.address : "Adresse nicht verfügbar";
+  document.getElementById("storeDetailAddress").textContent = branch && branch.address ? branch.address : "Adresse nicht verfügbar";
   document.getElementById("storeDetailHours").textContent = branch ? formatHours(branch) : "–";
+  const branchSource = document.getElementById("storeDetailBranchSource");
+  branchSource.hidden = !(branch && branch.osm);
+  branchSource.innerHTML = branch && branch.osm
+    ? `Filialdaten: © <a href="${OSM_COPYRIGHT_URL}" target="_blank" rel="noopener noreferrer">OpenStreetMap-Mitwirkende</a> (ODbL), ohne Gewähr`
+    : "";
 
   document.getElementById("storeDetailProduct").textContent = deal.product;
   document.getElementById("storeDetailProductMeta").textContent = `${deal.brand} · ${formatSize(deal)}${kmSuffix(deal.distanceKm, " entfernt")}`;
@@ -13158,9 +13273,51 @@ function mapNutritionRow(n){
    ("07:30:00") zurück - formatHours()/isStoreOpenNow() erwarten das
    float-Stunden-Format (7.5 = 7:30). */
 function parseSqlTimeToHourFloat(t){
-  if(typeof t !== "string") return 0;
+  if(typeof t !== "string") return null;
   const [h, m] = t.split(":").map(Number);
+  if(!Number.isFinite(h)) return null;
   return h + (Number.isFinite(m) ? m : 0)/60;
+}
+
+/* branches.hours ({"mo":[["07:00","20:00"]], …, "su":[]}) -> Stunden als
+   Zahl je Wochentag; ungültig oder fehlend -> null (dann opens_at/closes_at). */
+function parseBranchDays(hours){
+  if(!hours || typeof hours !== "object") return null;
+  const days = {};
+  for(const key of HOURS_DAY_KEYS){
+    const list = hours[key];
+    if(!Array.isArray(list)) return null;
+    days[key] = [];
+    for(const span of list){
+      const from = Array.isArray(span) ? parseSqlTimeToHourFloat(span[0]) : null;
+      const to = Array.isArray(span) ? parseSqlTimeToHourFloat(span[1]) : null;
+      if(from === null || to === null || to <= from) return null;
+      days[key].push([from, to]);
+    }
+  }
+  return days;
+}
+
+/* Eine Zeile aus public.branches (mit retailer) in die App-Form. osm = Daten
+   aus OpenStreetMap (Namensnennung nötig, siehe renderStoreListSheet()). */
+function mapBranchRow(b){
+  const retailerName = b && b.retailer && b.retailer.name;
+  const lat = b ? Number(b.latitude) : NaN, lng = b ? Number(b.longitude) : NaN;
+  if(!retailerName || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const place = [b.postal_code, b.city].filter(Boolean).join(" ");
+  return {
+    id: b.id,
+    retailer: retailerName,
+    logo: b.retailer.logo_url || STORE_FALLBACK_IMG,
+    address: [b.street, place].filter(Boolean).join(", ") || null,
+    geo: `${lat},${lng}`,
+    open: parseSqlTimeToHourFloat(b.opens_at),
+    close: parseSqlTimeToHourFloat(b.closes_at),
+    closedSun: !!b.closed_sunday,
+    days: parseBranchDays(b.hours),
+    rawHours: b.opening_hours || null,
+    osm: b.source === "openstreetmap"
+  };
 }
 
 /* Übernimmt public.app_settings (eine Zeile oder null): Startstandort,
@@ -13204,28 +13361,26 @@ function applyAppSettings(row){
 async function loadFromSupabase(){
   if(!supabaseClient) throw new Error("Supabase-Client nicht initialisiert");
 
-  const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes, settingsRes, regularPricesRes, brandsRes, productRetailersRes, avgPricesRes] = await Promise.all([
+  const [productsRes, nutritionRes, brandNutritionRes, offersRes, priceHistoryRes, ratingsRes, settingsRes, regularPricesRes, brandsRes, productRetailersRes, avgPricesRes] = await Promise.all([
       supabaseClient.from("products").select("id,name,size_ml,packaging,packaging_assumed,image_url,is_new,brand:brands(name)"),
       supabaseClient.from("product_nutrition").select("*"),
       supabaseClient.from("brand_nutrition_defaults").select("*,brand:brands(name)"),
-      supabaseClient.from("branches").select("id,street,postal_code,city,latitude,longitude,opens_at,closes_at,closed_sunday,retailer:retailers(name,logo_url)"),
-      supabaseClient.from("offers").select("id,product_id,branch_id,units,regular_price,offer_price,deposit,valid_from,valid_until,link,bundle_image_url,last_checked_at"),
+      supabaseClient.from("offers").select(`id,product_id,branch_id,units,regular_price,offer_price,deposit,valid_from,valid_until,link,bundle_image_url,last_checked_at,${BRANCH_EMBED}`),
       supabaseClient.from("price_history").select("product_id,branch_id,units,price,deposit,recorded_at,available"),
       supabaseClient.rpc("get_all_product_rating_summaries"),
       supabaseClient.from("app_settings").select("*").eq("id", 1).maybeSingle(),
-      supabaseClient.from("regular_prices").select("product_id,branch_id,units,price,deposit,last_checked_at"),
+      supabaseClient.from("regular_prices").select(`product_id,branch_id,units,price,deposit,last_checked_at,${BRANCH_EMBED}`),
       supabaseClient.from("brands").select("name"),
       supabaseClient.from("product_retailers").select("product_id,retailer:retailers(name)"),
       supabaseClient.from("product_avg_prices").select("product_id,avg_regular_price,report_count,source")
     ]);
 
-  // products/branches/offers sind Pflicht; Nährwerte, Preisverlauf und
+  // products/offers (mit Filialen) sind Pflicht; Nährwerte, Preisverlauf und
   // Bewertungen sind ergänzend - ein Fehler dort blendet nur diese Angaben aus.
-  const coreError = productsRes.error || branchesRes.error || offersRes.error;
+  const coreError = productsRes.error || offersRes.error;
   if(coreError) throw coreError;
 
   const rawProducts = productsRes.data || [];
-  const rawBranches = branchesRes.data || [];
   const rawOffers = offersRes.data || [];
   const rawNutrition = nutritionRes.error ? [] : (nutritionRes.data || []);
   const rawBrandNutrition = brandNutritionRes.error ? [] : (brandNutritionRes.data || []);
@@ -13233,6 +13388,14 @@ async function loadFromSupabase(){
   const rawRatings = ratingsRes.error ? [] : (ratingsRes.data || []);
   // Normalpreise sind ergänzend: ein Fehler lässt sie in "Alle Produkte" nur weg.
   const rawRegularPrices = regularPricesRes.error ? [] : (regularPricesRes.data || []);
+  // Filialen nur, soweit Angebote oder Normalpreise daran hängen (nicht alle
+  // Filialen der Datenbank); Märkte im Umkreis lädt loadNearbyBranches().
+  const rawBranches = [];
+  const seenBranchIds = new Set();
+  [...rawOffers, ...rawRegularPrices].forEach(row=>{
+    const b = row && row.branch;
+    if(b && b.id && !seenBranchIds.has(b.id)){ seenBranchIds.add(b.id); rawBranches.push(b); }
+  });
   // Marken-Liste ist ergänzend: ohne sie zeigt die Auswahl nur Marken mit Produkten.
   const brandNames = brandsRes.error ? [] : (brandsRes.data || [])
     .filter(b => b && b.name)
@@ -13292,22 +13455,13 @@ async function loadFromSupabase(){
   const stores = {};
   const branchIdToStoreName = {};
   const branchIdToGeo = {};
-  rawBranches.forEach(b=>{
-    const retailerName = b && b.retailer && b.retailer.name;
-    if(!retailerName || !Number.isFinite(b.latitude) || !Number.isFinite(b.longitude)) return;
-    branchIdToStoreName[b.id] = retailerName;
-    branchIdToGeo[b.id] = `${b.latitude},${b.longitude}`;
-    if(stores[retailerName]) return; // erste Filiale je Name gewinnt, siehe Kommentar oben
-    stores[retailerName] = {
-      logo: b.retailer.logo_url || STORE_FALLBACK_IMG,
-      branch: {
-        address: `${b.street}, ${b.postal_code} ${b.city}`,
-        geo: `${b.latitude},${b.longitude}`,
-        open: parseSqlTimeToHourFloat(b.opens_at),
-        close: parseSqlTimeToHourFloat(b.closes_at),
-        closedSun: !!b.closed_sunday
-      }
-    };
+  rawBranches.forEach(row=>{
+    const b = mapBranchRow(row);
+    if(!b) return;
+    branchIdToStoreName[b.id] = b.retailer;
+    branchIdToGeo[b.id] = b.geo;
+    if(stores[b.retailer]) return; // erste Filiale je Name gewinnt, siehe Kommentar oben
+    stores[b.retailer] = {logo: b.logo, branch: b};
   });
 
   // ---- price_history[] gruppiert nach dem Angebotsschlüssel
