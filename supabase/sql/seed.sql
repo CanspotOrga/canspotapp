@@ -5,8 +5,8 @@
 -- vorhandene (gleiche id) auf die Werte unten. Löscht nichts.
 -- Voraussetzung: schema.sql wurde ausgeführt.
 --
--- Inhalt: 3 Marken (Red Bull 4 Produkte, Monster Energy 3, Gönrgy noch ohne
--- Produkte), 4 Filialen in Arnsberg, 7 Angebote, 6 Normalpreise
+-- Inhalt: 36 Marken (Red Bull 4 Produkte, Monster Energy 3, die übrigen noch
+-- ohne Produkte), 4 Filialen in Arnsberg, 7 Angebote, 6 Normalpreise
 -- (regular_prices), dazu app_settings (Startstandort Arnsberg, Demo-Hinweis,
 -- Version).
 -- Je ein Beispiel für Neuheiten (is_new = true, laufendes Angebot) und
@@ -29,11 +29,44 @@ on conflict (id) do update set
   name = excluded.name,
   logo_url = excluded.logo_url;
 
--- brands (3)
+-- brands (36)
 insert into public.brands (id, name) values
   ('11111111-1111-4111-8111-111111111111', 'Red Bull'),
   ('040702a6-617f-49b7-ab82-bc82bb860a9c', 'Monster Energy'),
-  ('caad03ca-26e6-425c-b75c-710c48fa6137', 'Gönrgy')
+  ('caad03ca-26e6-425c-b75c-710c48fa6137', 'Gönrgy'),
+  ('0fcad57d-2f69-4d91-80d9-c357e77a6e8d', '28 Black'),
+  ('0eced198-c182-4289-af43-9c1057145863', '4BRO'),
+  ('0969fae8-ff2f-49da-955a-ed6a5e69d302', 'Action'),
+  ('5d447373-f9d5-437e-9fd3-d06b172fe983', 'Bang'),
+  ('56c718b9-91c9-4b80-9470-2d7852239ef4', 'Black Cat'),
+  ('cce355b6-7b30-41c1-b069-a083fbcec156', 'Booster Energy'),
+  ('7bafac91-a3af-4f3f-8183-c2263cb1098b', 'Burn'),
+  ('b45620da-ec3c-4cf4-9599-c1d66370b5b0', 'C4 Energy'),
+  ('5e93a076-873d-403e-9d45-051534581438', 'Celsius'),
+  ('559d9c0f-7fdc-4d1c-97de-04fb7fc5d1dd', 'Crazy Wolf'),
+  ('ac5958e0-e609-43fb-acec-b5e0ffa369d1', 'Effect'),
+  ('fe3e9d14-775c-4c9c-a3b3-8829e315b984', 'Flying Power'),
+  ('8109f1a0-4d85-445e-976f-43e1a21acf6f', 'Ghost Energy'),
+  ('114f6c23-2dc3-4097-b41d-3d6efb291d5c', 'Golden Power'),
+  ('d8c53faf-e1ea-49b8-8335-1c925a240869', 'Grenade'),
+  ('05f8980a-93c8-470b-96fb-1d5780d01188', 'Hell Energy'),
+  ('4f4e9bfe-3d32-48a1-8f68-ce70e5db32b8', 'Jeden Tag'),
+  ('0e460d51-06d3-49ca-97cb-d84fb62243f7', 'Kong Strong'),
+  ('bc42ad20-3a3e-4185-ab7b-2c34d7cc73ed', 'LevlUp'),
+  ('21c98197-31e5-4b9f-99c6-2da39417250f', 'Mask'),
+  ('4f82560a-6013-4bfd-9576-56182b49c7ba', 'Maximal G'),
+  ('524ca3ed-7d57-4408-afaf-53bebe596e21', 'NOCCO'),
+  ('c259e126-49e8-49aa-bc81-ae8d1659ca73', 'Power Horse'),
+  ('1a49c086-90fe-41b4-a7ea-293aa8ad958e', 'Prime Energy'),
+  ('43c8d319-2f51-42ec-948f-d05d2005679b', 'Reign'),
+  ('3393c884-c275-4ed8-aeb1-a140c06c545a', 'Rhino''s'),
+  ('d54ed85c-67d6-49ec-aa4e-5626c2bc40a2', 'Rockstar Energy'),
+  ('6463b663-c76f-4559-b1e8-fe7c62a46242', 'Scenatic'),
+  ('6abbe965-823c-46d7-8770-9a6eb2dbc6bc', 'Take Off'),
+  ('88eb3403-fb07-4c20-850b-0de820194a22', 'Tantrum'),
+  ('11d18120-b681-4655-907c-b57e2124e993', 'Typhoon'),
+  ('12a11591-cb73-4983-96b7-c71f8b02ee7c', 'Vita Energy'),
+  ('111b399a-ff6f-4b7e-8755-c7e491a4a2bf', 'WellMix')
 on conflict (id) do update set
   name = excluded.name;
 
