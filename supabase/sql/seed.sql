@@ -21,7 +21,9 @@
 
 begin;
 
--- retailers (16) — 4 mit Filialen (Demo), übrige nur für „erhältlich bei“ (Open Food Facts / Open Prices)
+-- retailers (20) — 4 mit Demo-Filialen, 13 Ketten mit Filialen aus OpenStreetMap
+-- (Import über sql-osm-filialen.sql, nicht in dieser Datei), übrige nur für
+-- „erhältlich bei“ (Open Food Facts / Open Prices)
 insert into public.retailers (id, name, logo_url) values
   ('bc883dfe-8c5b-5c5d-8db2-94fcec111527', 'Kaufland', null),
   ('7f36d52e-be9b-4065-b08b-02cf4e97ed63', 'EDEKA', null),
@@ -38,7 +40,11 @@ insert into public.retailers (id, name, logo_url) values
   ('03de5778-bcfd-5c86-9702-d4a6d71038e4', 'Norma', null),
   ('a65d622e-7ad9-59b5-87a7-7b65f352c53e', 'Penny', null),
   ('a919debc-344d-5643-bc7a-6b4ebf7e0a94', 'Rossmann', null),
-  ('d3339699-4ecc-56b4-8ecb-10b761ed8473', 'trinkgut', null)
+  ('d3339699-4ecc-56b4-8ecb-10b761ed8473', 'trinkgut', null),
+  ('d8779a36-e14e-52e2-b502-814d060aeb7f', 'Globus', null),
+  ('c79ca964-8a24-5e5f-9d66-7124718e46db', 'Metro', null),
+  ('d02a756b-1574-55b3-9f62-52f67a4a3aad', 'EDEKA C+C', null),
+  ('d501dae4-d3fe-51b6-9d1c-64db0dff6294', 'Handelshof', null)
 on conflict (id) do update set
   name = excluded.name,
   logo_url = excluded.logo_url;
@@ -99,6 +105,8 @@ on conflict (brand_id) do update set
   taurine_mg = excluded.taurine_mg;
 
 -- branches (4)
+-- branches: nur die Demo-Filialen (source eigene_erfassung). Die Filialen aus
+-- OpenStreetMap stehen in supabase/data/branches-osm.json.
 insert into public.branches (id, retailer_id, street, postal_code, city, latitude, longitude, opens_at, closes_at, closed_sunday) values
   ('19585656-b415-510e-8739-401bb2dd6a09', 'bc883dfe-8c5b-5c5d-8db2-94fcec111527', 'Ruhrstraße 22', '59821', 'Arnsberg', '51.401300', '8.065800', '07:00', '22:00', true),
   ('50ff519a-4266-46a1-9f92-90d6fa370c87', '7f36d52e-be9b-4065-b08b-02cf4e97ed63', 'Bahnhofstraße 10', '59821', 'Arnsberg', '51.402200', '8.071400', '07:30', '20:00', true),

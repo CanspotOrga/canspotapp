@@ -31,8 +31,30 @@ open_food_facts) bzw. Ort einer Open-Prices-Meldung (source = open_prices),
 Schreibweisen vereinheitlicht. Beide stehen unter der Open Database License
 (ODbL) 1.0; die aufbereitete Fassung ebenfalls.
 
+OpenStreetMap
+-------------
+branches-osm.json und die Zeilen in branches mit source = openstreetmap:
+Filialen von EDEKA, REWE, Lidl, Kaufland, Aldi Süd, Netto Marken-Discount,
+Aldi Nord, Penny, Norma, Globus, Metro, EDEKA C+C und Handelshof in
+Deutschland aus OpenStreetMap (https://www.openstreetmap.org), Stand siehe
+osm_timestamp in der Datei. osm_type/osm_id verweisen auf das jeweilige
+OSM-Objekt (https://www.openstreetmap.org/<osm_type>/<osm_id>).
+
+© OpenStreetMap-Mitwirkende, verfügbar unter der Open Database License (ODbL)
+1.0: https://opendatacommons.org/licenses/odbl/1-0/
+Namensnennung: https://www.openstreetmap.org/copyright
+
+Bearbeitung: nur die genannten Ketten (Zuordnung über brand:wikidata bzw. den
+Markennamen), nur Kette, Adresse, Koordinaten und Öffnungszeiten (keine Namen
+von Betreibern, keine Kontaktdaten), Öffnungszeiten zusätzlich je Wochentag
+ausgelesen (hours; Feiertage und einzelne Sondertage nicht enthalten), doppelte
+Einträge derselben Filiale im Umkreis von 60 m zusammengefasst. Erzeugt mit
+supabase/import/osm-filialen.py. Diese abgeleiteten Daten stehen ebenfalls
+unter der ODbL 1.0.
+
 Übrige Daten
 ------------
-Händler, Filialen, Angebote, Preise und App-Einstellungen sind Demodaten bzw.
-eigene Daten und nicht Teil der oben genannten Datenbank.
+Die übrigen Händler, Filialen (source = eigene_erfassung), Angebote, Preise und
+App-Einstellungen sind Demodaten bzw. eigene Daten und nicht Teil der oben
+genannten Datenbanken.
 Kartendaten in der App: © OpenStreetMap-Mitwirkende (ODbL).

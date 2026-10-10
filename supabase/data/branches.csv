@@ -1,5 +1,5 @@
-id,retailer_id,street,postal_code,city,latitude,longitude,opens_at,closes_at,closed_sunday
-19585656-b415-510e-8739-401bb2dd6a09,bc883dfe-8c5b-5c5d-8db2-94fcec111527,Ruhrstraße 22,59821,Arnsberg,51.401300,8.065800,07:00,22:00,true
-50ff519a-4266-46a1-9f92-90d6fa370c87,7f36d52e-be9b-4065-b08b-02cf4e97ed63,Bahnhofstraße 10,59821,Arnsberg,51.402200,8.071400,07:30,20:00,true
-2b4e352e-9b52-4fab-b1d8-ea79c5a7ea48,4a0685d2-e243-4b2e-b9b7-100a501e2917,Clemens-August-Straße 8,59821,Arnsberg,51.400100,8.065500,07:00,21:00,true
-512e4c21-5183-4576-9673-b8d9ba9bf409,ec88c807-734f-483d-90ab-f64b70eb6824,Alter Marktplatz 3,59821,Arnsberg,51.398200,8.069900,08:00,20:00,true
+id,retailer_id,street,postal_code,city,latitude,longitude,opens_at,closes_at,closed_sunday,source,osm_type,osm_id,opening_hours,hours,last_seen_at
+19585656-b415-510e-8739-401bb2dd6a09,bc883dfe-8c5b-5c5d-8db2-94fcec111527,Ruhrstraße 22,59821,Arnsberg,51.401300,8.065800,07:00,22:00,true,eigene_erfassung,,,,,
+50ff519a-4266-46a1-9f92-90d6fa370c87,7f36d52e-be9b-4065-b08b-02cf4e97ed63,Bahnhofstraße 10,59821,Arnsberg,51.402200,8.071400,07:30,20:00,true,eigene_erfassung,,,,,
+2b4e352e-9b52-4fab-b1d8-ea79c5a7ea48,4a0685d2-e243-4b2e-b9b7-100a501e2917,Clemens-August-Straße 8,59821,Arnsberg,51.400100,8.065500,07:00,21:00,true,eigene_erfassung,,,,,
+512e4c21-5183-4576-9673-b8d9ba9bf409,ec88c807-734f-483d-90ab-f64b70eb6824,Alter Marktplatz 3,59821,Arnsberg,51.398200,8.069900,08:00,20:00,true,eigene_erfassung,,,,,
