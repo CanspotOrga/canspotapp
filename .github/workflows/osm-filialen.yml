@@ -1,0 +1,59 @@
+# Filialen aus OpenStreetMap monatlich aktualisieren.
+# Läuft am 1. jedes Monats um 03:00 UTC (oder von Hand über "Run workflow"):
+# fragt Overpass einmal ab (supabase/import/osm-filialen.py) und committet
+# supabase/data/branches-osm.json, wenn sich etwas geändert hat.
+# Die Datenbank übernimmt die Datei am selben Tag um 06:00/06:15 UTC per pg_cron
+# (supabase/sql/sql-osm-monatlich.sql).
+name: OSM-Filialen monatlich
+
+on:
+  schedule:
+    - cron: "0 3 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: osm-filialen
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Overpass abfragen
+        run: python3 supabase/import/osm-filialen.py --output /tmp/branches-osm.json
+
+      - name: Datei prüfen (nicht deutlich kleiner als bisher)
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          new = json.load(open("/tmp/branches-osm.json"))
+          old = json.load(open("supabase/data/branches-osm.json"))
+          n, o = new["count"], old["count"]
+          print(f"neu {n}, bisher {o}")
+          if n < 20000 or n < 0.9 * o:
+              sys.exit(f"Abbruch: nur {n} Filialen (bisher {o}), Datei wird nicht übernommen.")
+          EOF
+          cp /tmp/branches-osm.json supabase/data/branches-osm.json
+
+      - name: Committen, wenn geändert
+        run: |
+          if git diff --quiet -- supabase/data/branches-osm.json; then
+            echo "Keine Änderung."
+            exit 0
+          fi
+          git config user.name "CanSpot OSM-Import"
+          git config user.email "noreply@canspot.de"
+          git add supabase/data/branches-osm.json
+          git commit -m "Filialen aus OpenStreetMap aktualisiert ($(date -u +%Y-%m-%d))"
+          git pull --no-rebase origin main
+          git push origin HEAD:main
