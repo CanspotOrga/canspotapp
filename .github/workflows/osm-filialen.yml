@@ -1,14 +1,17 @@
-# Filialen aus OpenStreetMap monatlich aktualisieren.
-# Läuft am 1. jedes Monats um 03:00 UTC (oder von Hand über "Run workflow"):
+# Filialen aus OpenStreetMap alle 4 Monate aktualisieren.
+# Läuft am 1. Januar, 1. Mai und 1. September um 05:00 UTC (6/7 Uhr deutscher
+# Zeit) oder von Hand über "Run workflow":
 # fragt Overpass einmal ab (supabase/import/osm-filialen.py) und committet
 # supabase/data/branches-osm.json, wenn sich etwas geändert hat.
-# Die Datenbank übernimmt die Datei am selben Tag um 06:00/06:15 UTC per pg_cron
-# (supabase/sql/sql-osm-monatlich.sql).
-name: OSM-Filialen monatlich
+# Die Datenbank übernimmt die Datei am selben Tag um 10 Uhr deutscher Zeit per
+# pg_cron, prüft dabei die Sicherheitsschranke (unter 90 % der bisherigen
+# Filialen: Abbruch) und schickt eine Info an hallo@canspot.de
+# (supabase/sql/sql-osm-aktualisierung.sql).
+name: OSM-Filialen alle 4 Monate
 
 on:
   schedule:
-    - cron: "0 3 1 * *"
+    - cron: "0 5 1 1,5,9 *"
   workflow_dispatch:
 
 permissions:
@@ -32,16 +35,16 @@ jobs:
       - name: Overpass abfragen
         run: python3 supabase/import/osm-filialen.py --output /tmp/branches-osm.json
 
-      - name: Datei prüfen (nicht deutlich kleiner als bisher)
+      # Grobe Prüfung; die 90-%-Schranke mit Mail macht die Datenbank.
+      - name: Datei prüfen
         run: |
           python3 - <<'EOF'
           import json, sys
           new = json.load(open("/tmp/branches-osm.json"))
-          old = json.load(open("supabase/data/branches-osm.json"))
-          n, o = new["count"], old["count"]
-          print(f"neu {n}, bisher {o}")
-          if n < 20000 or n < 0.9 * o:
-              sys.exit(f"Abbruch: nur {n} Filialen (bisher {o}), Datei wird nicht übernommen.")
+          n = new["count"]
+          print(f"{n} Filialen")
+          if n < 1000 or len(new["branches"]) != n:
+              sys.exit(f"Abbruch: Datei unvollständig ({n} Filialen), wird nicht übernommen.")
           EOF
           cp /tmp/branches-osm.json supabase/data/branches-osm.json
 
