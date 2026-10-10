@@ -9613,9 +9613,31 @@ function apRefBlock(p){
       <span class="ap-ref-label">${avgPriceLabel(ref)}</span>
       ${ref ? `<b class="ap-ref-price">${euro(ref.price)} €</b>` : `<b class="ap-ref-price ap-price-none">Preis folgt</b>`}
     </div>
-    ${shops.length ? `<div class="ap-shops"><span class="ap-shops-list">${shops.map(n=>`<span class="ap-shop"><svg class="icon icon-xs"><use href="#i-pin"/></svg>${escapeHtml(n)}</span>`).join("")}</span><span class="ap-shops-note">Ohne Gewähr, kann abweichen</span></div>` : ""}
+    ${shops.length ? `<div class="ap-shops"><span class="ap-shops-list">${shops.map(n=>`<span class="ap-shop"><svg class="icon icon-xs"><use href="#i-pin"/></svg>${escapeHtml(n)}</span>`).join("")}</span><span class="ap-shops-note">Alle Angaben ohne Gewähr, können abweichen</span></div>` : ""}
     ${ref ? `<div class="np-note">${escapeHtml(avgPriceNote(ref))}</div>` : ""}`;
 }
+/* Händler-Zeile mit gemeldeten Märkten: nächste OSM-Filiale dieser Ketten
+   suchen (branches_in_area, wie im Menü "Händler"); Tipp öffnet die Route. */
+async function linkNearestReportedShop(productId, shops){
+  await loadNearbyBranches();
+  const geo = nearbyReferenceGeo();
+  if(!geo || !nearbyBranches || reportedShopsProductId !== productId) return;
+  let best = null;
+  nearbyBranches.forEach(b=>{
+    if(!shops.includes(b.retailer)) return;
+    const km = haversineKm(geo, parseGeo(b.geo));
+    if(!best || km < best.km) best = {branch: b, km};
+  });
+  if(!best || reportedShopsProductId !== productId) return;
+  const storeRow = document.getElementById("pdStoreRow");
+  document.getElementById("pdStoreName").textContent = `${best.branch.retailer}${kmSuffix(Math.round(best.km * 10) / 10)}`;
+  const subEl = document.getElementById("pdStoreSub");
+  subEl.textContent = best.branch.address ? `Nächster Markt: ${best.branch.address}` : "Nächster Markt";
+  subEl.hidden = false;
+  storeRow.onclick = ()=> openStoreRoute(best.branch.geo);
+  storeRow.querySelector(".pd-row-arrow").style.visibility = "";
+}
+let reportedShopsProductId = null;
 /* Gemeldete Märkte (product_retailers) ohne Filiale/Preis, für die Händler-Zeile. */
 function reportedShops(productId){
   return PRODUCT_RETAILERS[productId] || [];
@@ -12177,6 +12199,7 @@ function renderMoreStores(productId, shownStore, shownUnits){
   box.hidden = false;
 }
 function renderProductStoreOnly(product){
+  reportedShopsProductId = null;
   const storeEl = document.getElementById("pdOfferStore");
   const storeRow = document.getElementById("pdStoreRow");
   const logo = document.getElementById("pdStoreLogo");
@@ -12186,6 +12209,7 @@ function renderProductStoreOnly(product){
   const row = getProductStoreRows(product.id)[0];
   if(!row){
     const shops = reportedShops(product.id);
+    reportedShopsProductId = product.id;
     logo.src = shops.length === 1 ? (storeLogos[shops[0]] || STORE_FALLBACK_IMG) : STORE_FALLBACK_IMG;
     logo.alt = "";
     document.getElementById("pdStoreName").textContent = shops.length ? shops.join(", ") : "Noch kein Händler erfasst";
@@ -12196,6 +12220,7 @@ function renderProductStoreOnly(product){
     storeRow.querySelector(".pd-row-arrow").style.visibility = "hidden";
     renderMoreStores(null);
     storeEl.style.display = "";
+    if(shops.length) linkNearestReportedShop(product.id, shops);
     return;
   }
   const entry = productStoreEntry(product, row);
@@ -12216,6 +12241,7 @@ function renderProductStoreOnly(product){
 }
 
 function renderProductOffer(deal){
+  reportedShopsProductId = null;
   const offerEl = document.getElementById("pdOffer");
   const storeEl = document.getElementById("pdOfferStore");
   const footerEl = document.getElementById("pdFooter");
