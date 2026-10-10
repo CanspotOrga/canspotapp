@@ -9598,7 +9598,7 @@ function avgPriceNote(ref){
   return `${avgPriceLabel(ref)}: ${what} bei Open Prices. Ohne Gewähr, kann je nach Markt und Region abweichen; maßgeblich ist der Preis im Markt.`;
 }
 function retailerLine(productId){
-  const shops = PRODUCT_RETAILERS[productId] || [];
+  const shops = reportedShops(productId);
   return shops.length ? `Laut Meldungen erhältlich bei: ${shops.join(", ")}` : "";
 }
 function apRefBlock(p){
@@ -9660,7 +9660,9 @@ function renderReportedShops(list){
 let reportedShopsProductId = null;
 /* Gemeldete Märkte (product_retailers) ohne Filiale/Preis, für die Händler-Zeile. */
 function reportedShops(productId){
-  return PRODUCT_RETAILERS[productId] || [];
+  // Nur "Aldi" gemeldet: unklar ob Nord oder Süd, daher beide (die App zeigt die nähere Filiale zuerst).
+  const list = (PRODUCT_RETAILERS[productId] || []).flatMap(n => n === "Aldi" ? ["Aldi Nord", "Aldi Süd"] : [n]);
+  return [...new Set(list)].sort((a,b)=>a.localeCompare(b,"de"));
 }
 
 function apStoreRow(r){

@@ -48,6 +48,12 @@ RETAIL_BRAND = {
     "aldi süd": "Aldi Süd", "aldi nord": "Aldi Nord",
     "netto marken-discount": "Netto", "netto city": "Netto",
     "penny": "Penny", "norma": "Norma", "globus": "Globus",
+    "hit": "HIT", "marktkauf": "Marktkauf",
+}
+# Weitere Ladentypen (Drogerie, Getränkemarkt): (shop, brand klein) -> retailers.name
+OTHER_BRAND = {
+    ("chemist", "rossmann"): "Rossmann",
+    ("beverages", "trinkgut"): "trinkgut",
 }
 # shop=wholesale: brand:wikidata -> retailers.name
 WHOLESALE_WIKIDATA = {
@@ -68,6 +74,8 @@ area["ISO3166-1"="DE"][admin_level=2]->.de;
   nwr["shop"="supermarket"]["brand"~"^(%(retail_brand)s)$",i](area.de);
   nwr["shop"="wholesale"]["brand:wikidata"~"^(%(wholesale_wd)s)$"](area.de);
   nwr["shop"="wholesale"]["name"~"(metro|handelshof|edeka|union|mios)",i](area.de);
+  nwr["shop"="chemist"]["brand"~"^rossmann$",i](area.de);
+  nwr["shop"="beverages"]["brand"~"^trinkgut$",i](area.de);
 );
 out tags center qt;
 """ % {
@@ -175,10 +183,16 @@ def simple_times(hours):
 def retailer_for(tags):
     shop = tags.get("shop")
     wd = tags.get("brand:wikidata")
+    brand = (tags.get("brand") or "").strip().lower()
     if shop == "supermarket":
-        if wd:
-            return RETAIL_WIKIDATA.get(wd)
-        return RETAIL_BRAND.get((tags.get("brand") or "").strip().lower())
+        if wd and wd in RETAIL_WIKIDATA:
+            return RETAIL_WIKIDATA[wd]
+        # Ohne (oder mit unbekannter) Wikidata-Angabe nur Ketten, die allein über den Markennamen kommen
+        if wd and brand not in ("hit", "marktkauf"):
+            return None
+        return RETAIL_BRAND.get(brand)
+    if (shop, brand) in OTHER_BRAND:
+        return OTHER_BRAND[(shop, brand)]
     if shop == "wholesale":
         if wd:
             return WHOLESALE_WIKIDATA.get(wd)
