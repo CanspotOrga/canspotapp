@@ -2905,6 +2905,15 @@ font-size:12.5px
 /* Quellenangabe: Zeile "Quelle und Lizenz der Angaben" über "Ähnliche Produkte"
    (öffnet #sourceOverlay) und Hinweis am Ende von "Alle Produkte". */
 .pd-source-row{margin-top:16px}
+/* Ø-Normalpreis bzw. "Preis folgt" ohne Angebot (Alle Produkte, Detailansicht). */
+.ap-ref{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-subtle)}
+.ap-ref-label{font-size:12px;font-weight:600;color:var(--text-muted)}
+.ap-ref-price{font-size:16px;font-weight:800;color:var(--text-primary);white-space:nowrap}
+.ap-ref-price.ap-price-none{font-size:13px;font-weight:700;color:var(--text-muted)}
+.pd-ref-label{font-size:13px;font-weight:700;color:var(--text-muted);margin-right:auto}
+.pd-price.pd-price-none{font-size:20px;color:var(--text-muted)}
+.pd-ref-shops{margin-top:6px;font-size:12.5px;line-height:1.45;color:var(--text-secondary)}
+.pd-ref-shops[hidden],#pdRefNote[hidden]{display:none}
 .ap-source{margin:18px 2px 4px;font-size:11.5px;line-height:1.5;color:var(--text-muted)}
 .ap-source a,.source-block a{color:var(--brand-primary-blue);text-decoration:underline;text-underline-offset:2px}
 :root[data-theme="dark"] .ap-source a,:root[data-theme="dark"] .source-block a{color:var(--brand-primary-light)}
@@ -5776,6 +5785,18 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 <div class="pd-region-note">Angebote und Preise können je nach Region abweichen.</div>
 </div>
+<!-- Ohne Angebot: Ø-Normalpreis (Open Prices) bzw. "Preis folgt" und gemeldete
+     Märkte - siehe renderProductRef(). -->
+<div class="pd-offer" id="pdRef" style="display:none">
+<div class="pd-pricebox">
+<div class="pd-price-row">
+<span class="pd-ref-label" id="pdRefLabel">Normalpreis</span>
+<span class="pd-price" id="pdRefPrice">–</span>
+</div>
+<div class="pd-ref-shops" id="pdRefShops"></div>
+</div>
+<div class="pd-region-note" id="pdRefNote"></div>
+</div>
 
 <!-- Bewertung als eigener, ruhiger Abschnitt (wie bisher nur mobil, siehe
      .detail-rating). Inhalt/IDs unverändert, renderProductRating() greift
@@ -6449,6 +6470,12 @@ let regularPrices = [];
 /* true, solange app_settings.demo_notice gesetzt ist: Preise sind dann
    Beispieldaten und werden nicht als von uns erfasst bezeichnet. */
 let appDemoMode = false;
+/* Je Produkt: Märkte, bei denen es laut Meldungen (Open Food Facts/Open Prices)
+   erhältlich ist (public.product_retailers), und der Ø-Normalpreis aus
+   Preismeldungen ohne Aktion (public.product_avg_prices). Nur für Produkte ohne
+   Händlerpreis in der App angezeigt. */
+const PRODUCT_RETAILERS = {};
+const PRODUCT_AVG_PRICES = {};
 /* Alle Marken aus public.brands (Anzeigenamen), auch ohne Produkte - nur für
    die Marken-Auswahl in "Alle Produkte". */
 let allBrandNames = [];
@@ -9424,6 +9451,32 @@ function regularPriceNote(rows){
   return `<div class="np-note">Normalpreis: zuletzt von uns erfasster Regalpreis ohne Aktion im jeweiligen Markt. Ohne Gewähr, kann je nach Markt und Region abweichen; maßgeblich ist der Preis im Markt.</div>`;
 }
 
+/* Ø-Normalpreis (Open Prices) bzw. "Preis folgt" und gemeldete Märkte für
+   Produkte ohne Händlerpreis; ohne gemeldete Märkte bleibt die Zeile weg. */
+const OPEN_PRICES_URL = "https://prices.openfoodfacts.org/";
+function avgPriceLabel(ref){
+  return ref && ref.count > 1 ? "Ø Normalpreis" : "Normalpreis";
+}
+function avgPriceNote(ref){
+  const what = ref.count > 1 ? `Durchschnitt aus ${ref.count} Preismeldungen ohne Aktion` : "einzelne Preismeldung ohne Aktion";
+  return `${avgPriceLabel(ref)}: ${what} bei Open Prices. Ohne Gewähr, kann je nach Markt und Region abweichen; maßgeblich ist der Preis im Markt.`;
+}
+function retailerLine(productId){
+  const shops = PRODUCT_RETAILERS[productId] || [];
+  return shops.length ? `Laut Meldungen erhältlich bei: ${shops.join(", ")}` : "";
+}
+function apRefBlock(p){
+  const ref = PRODUCT_AVG_PRICES[p.id];
+  const shops = retailerLine(p.id);
+  return `
+    <div class="ap-ref">
+      <span class="ap-ref-label">${avgPriceLabel(ref)}</span>
+      ${ref ? `<b class="ap-ref-price">${euro(ref.price)} €</b>` : `<b class="ap-ref-price ap-price-none">Preis folgt</b>`}
+    </div>
+    ${shops ? `<div class="np-note">${escapeHtml(shops)}</div>` : ""}
+    ${ref ? `<div class="np-note">${escapeHtml(avgPriceNote(ref))}</div>` : ""}`;
+}
+
 function apStoreRow(r){
   const km = apDistanceKm(r);
   const openDeal = r.offer || r.upcoming;
@@ -9517,7 +9570,7 @@ function renderProductsView(){
       </div>
       ${rows.length
         ? `<div class="np-stores">${rows.map(apStoreRow).join("")}</div>${withPfand ? `<div class="np-note">Preise zzgl. ${euro(withPfand.pfand)} € Pfand pro Dose</div>` : ""}${regularPriceNote(rows)}`
-        : `<div class="np-note">Aktuell bei keinem Händler mit Preis gelistet.</div>`}
+        : apRefBlock(p)}
     </article>`;
   }).join("");
 
@@ -9529,8 +9582,8 @@ function renderProductsView(){
     </div>
     ${brands.length > 1 ? apBrandSelectHtml(brands) : ""}
     ${shown.length ? `<div class="np-list">${cards}</div>` : `<div class="np-empty">${apBrand==="Alle" ? "Noch keine Produkte im Sortiment." : `Von ${escapeHtml(apBrand)} sind noch keine Produkte gelistet.<br>Sie erscheinen hier, sobald sie eingetragen sind.`}</div>`}
-    ${shown.some(p=>isOffNutrition(NUTRITION_BY_PRODUCT[p.id]))
-      ? `<div class="ap-source">Produkt- und Nährwertdaten teilweise von ${extLink(OFF_HOME_URL, "Open Food Facts")}, verfügbar unter der ${extLink(ODBL_URL, "Open Database License (ODbL) 1.0")}. Angaben ohne Gewähr. <a href="impressum.html#datenquellen">Mehr zu den Datenquellen</a></div>`
+    ${shown.some(p=>isOffNutrition(NUTRITION_BY_PRODUCT[p.id]) || PRODUCT_AVG_PRICES[p.id] || PRODUCT_RETAILERS[p.id])
+      ? `<div class="ap-source">Produkt- und Nährwertdaten sowie gemeldete Märkte teilweise von ${extLink(OFF_HOME_URL, "Open Food Facts")}, Ø-Normalpreise von ${extLink(OPEN_PRICES_URL, "Open Prices")}, verfügbar unter der ${extLink(ODBL_URL, "Open Database License (ODbL) 1.0")}. Angaben ohne Gewähr. <a href="impressum.html#datenquellen">Mehr zu den Datenquellen</a></div>`
       : ""}`;
 
   productsViewEl.querySelectorAll(".thumb").forEach(img=>{
@@ -11896,6 +11949,7 @@ function openProductDetail(productId, dealId){
   renderSimilarProducts(product);
   renderProductRatingLine(productId);
   renderProductOffer(dealToShare || soonDeal);
+  renderProductRef(product, dealToShare || soonDeal);
 
   openSheet("productDetailOverlay");
   /* Sheet scrollt selbst (.sheet{overflow:auto}) - beim erneuten Öffnen
@@ -11919,6 +11973,25 @@ function renderProductRatingLine(productId){
    openHistory(), favorites) - keine eigene Angebotslogik. Ohne Angebot
    (z.B. Produkt aus "Ähnliche Produkte" ohne aktives Angebot) bleibt der
    gesamte Angebotsteil ausgeblendet. */
+function renderProductRef(product, deal){
+  const el = document.getElementById("pdRef");
+  // Wie in "Alle Produkte": nur bei Produkten ohne Angebot und ohne Marktpreis.
+  if(deal || getProductStoreRows(product.id).length){ el.style.display = "none"; return; }
+  const ref = PRODUCT_AVG_PRICES[product.id];
+  document.getElementById("pdRefLabel").textContent = avgPriceLabel(ref);
+  const priceEl = document.getElementById("pdRefPrice");
+  priceEl.textContent = ref ? `${euro(ref.price)} €` : "Preis folgt";
+  priceEl.classList.toggle("pd-price-none", !ref);
+  const shops = retailerLine(product.id);
+  const shopsEl = document.getElementById("pdRefShops");
+  shopsEl.textContent = shops;
+  shopsEl.hidden = !shops;
+  const noteEl = document.getElementById("pdRefNote");
+  noteEl.textContent = ref ? avgPriceNote(ref) : "";
+  noteEl.hidden = !ref;
+  el.style.display = "";
+}
+
 function renderProductOffer(deal){
   const offerEl = document.getElementById("pdOffer");
   const storeEl = document.getElementById("pdOfferStore");
@@ -12060,6 +12133,11 @@ function openSourceSheet(product){
   if(product.packagingAssumed) notes.push("Die Verpackungsart ist nicht bestätigt (aus der Füllmenge angenommen).");
   if(per100 && NUTRITION_KEYS.some(k => typeof per100[k] !== "number")) notes.push(`Fehlende Werte stehen als „${NA_LABEL}“ (keine Angabe in der Datenquelle).`);
   const notesHtml = notes.length ? `<div class="source-block"><b>Hinweise</b>${notes.join(" ")}</div>` : "";
+  const ref = PRODUCT_AVG_PRICES[product.id];
+  const code = per100 && /^\d{8,14}$/.test(String(per100.sourceRef || "")) ? per100.sourceRef : null;
+  const shops = retailerLine(product.id);
+  const priceHtml = ref ? `<div class="source-block"><b>Preis</b>${escapeHtml(avgPriceNote(ref))} Quelle: ${extLink(code ? `${OPEN_PRICES_URL}products/${code}` : OPEN_PRICES_URL, "Open Prices")} (Projekt von Open Food Facts), Daten unter der ${extLink(ODBL_URL, "Open Database License (ODbL) 1.0")}.</div>` : "";
+  const shopsHtml = shops ? `<div class="source-block"><b>Märkte</b>${escapeHtml(shops)}. Gemeldet von Nutzern bei Open Food Facts bzw. Open Prices; ob das Produkt dort aktuell geführt wird, ist nicht garantiert.</div>` : "";
   let html;
   if(kind === "off"){
     html = `
@@ -12076,7 +12154,7 @@ function openSourceSheet(product){
     html = `<div class="source-block"><b>Quelle</b>Für dieses Produkt liegen keine Nährwertangaben vor.</div>`;
   }
   document.getElementById("sourceProduct").textContent = `${product.name} · ${product.sizeMl} ml`;
-  document.getElementById("sourceBody").innerHTML = html + notesHtml + (kind === "none" ? "" : disclaimer)
+  document.getElementById("sourceBody").innerHTML = html + priceHtml + shopsHtml + notesHtml + (kind === "none" ? "" : disclaimer)
     + `<div class="source-block"><b>Alle Datenquellen</b><a href="impressum.html#datenquellen">Datenquellen und Lizenzen im Impressum</a></div>`;
   openSheet("sourceOverlay");
 }
@@ -13126,7 +13204,7 @@ function applyAppSettings(row){
 async function loadFromSupabase(){
   if(!supabaseClient) throw new Error("Supabase-Client nicht initialisiert");
 
-  const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes, settingsRes, regularPricesRes, brandsRes] = await Promise.all([
+  const [productsRes, nutritionRes, brandNutritionRes, branchesRes, offersRes, priceHistoryRes, ratingsRes, settingsRes, regularPricesRes, brandsRes, productRetailersRes, avgPricesRes] = await Promise.all([
       supabaseClient.from("products").select("id,name,size_ml,packaging,packaging_assumed,image_url,is_new,brand:brands(name)"),
       supabaseClient.from("product_nutrition").select("*"),
       supabaseClient.from("brand_nutrition_defaults").select("*,brand:brands(name)"),
@@ -13136,7 +13214,9 @@ async function loadFromSupabase(){
       supabaseClient.rpc("get_all_product_rating_summaries"),
       supabaseClient.from("app_settings").select("*").eq("id", 1).maybeSingle(),
       supabaseClient.from("regular_prices").select("product_id,branch_id,units,price,deposit,last_checked_at"),
-      supabaseClient.from("brands").select("name")
+      supabaseClient.from("brands").select("name"),
+      supabaseClient.from("product_retailers").select("product_id,retailer:retailers(name)"),
+      supabaseClient.from("product_avg_prices").select("product_id,avg_regular_price,report_count,source")
     ]);
 
   // products/branches/offers sind Pflicht; Nährwerte, Preisverlauf und
@@ -13157,6 +13237,20 @@ async function loadFromSupabase(){
   const brandNames = brandsRes.error ? [] : (brandsRes.data || [])
     .filter(b => b && b.name)
     .map(b => brandDisplayName(b.name));
+  // Gemeldete Märkte und Ø-Normalpreise je Produkt sind ergänzend (Fehler = leer).
+  for(const k in PRODUCT_RETAILERS) delete PRODUCT_RETAILERS[k];
+  for(const k in PRODUCT_AVG_PRICES) delete PRODUCT_AVG_PRICES[k];
+  (productRetailersRes.error ? [] : (productRetailersRes.data || [])).forEach(r=>{
+    const name = r && r.retailer && r.retailer.name;
+    if(!r || !r.product_id || !name) return;
+    (PRODUCT_RETAILERS[r.product_id] = PRODUCT_RETAILERS[r.product_id] || []).push(name);
+  });
+  Object.values(PRODUCT_RETAILERS).forEach(list => list.sort((a,b)=>a.localeCompare(b,"de")));
+  (avgPricesRes.error ? [] : (avgPricesRes.data || [])).forEach(r=>{
+    const price = Number(r && r.avg_regular_price);
+    if(!r || !r.product_id || !(price > 0)) return;
+    PRODUCT_AVG_PRICES[r.product_id] = {price, count: Number(r.report_count) || 0, source: r.source || null};
+  });
 
   // Einstellungen sind ergänzend: ein Fehler lässt nur Startstandort,
   // Hinweis, Version und Store-Links weg. Muss vor offers[] laufen, weil

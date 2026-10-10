@@ -223,6 +223,25 @@ create table public.regular_prices (
 create index regular_prices_branch_id_idx on public.regular_prices(branch_id);
 comment on table public.regular_prices is 'Aktueller Normalpreis (Regalpreis ohne Aktion) je Produkt, Filiale und Gebinde. Genau eine Zeile pro Kombination; Verlauf gehört in price_history.';
 
+create table public.product_retailers (
+  product_id  uuid not null references public.products(id) on delete cascade,
+  retailer_id uuid not null references public.retailers(id) on delete cascade,
+  source      text not null check (source in ('open_food_facts', 'open_prices', 'eigene_erfassung')),
+  created_at  timestamptz not null default now(),
+  primary key (product_id, retailer_id)
+);
+create index product_retailers_retailer_id_idx on public.product_retailers(retailer_id);
+comment on table public.product_retailers is 'Märkte, bei denen ein Produkt laut Meldungen erhältlich ist (ohne Filiale/Preis). source: open_food_facts (Feld stores) oder open_prices (Ort einer Preismeldung), beide ODbL 1.0.';
+
+create table public.product_avg_prices (
+  product_id        uuid primary key references public.products(id) on delete cascade,
+  avg_regular_price numeric(10,2) not null check (avg_regular_price > 0),
+  report_count      integer not null check (report_count > 0),
+  source            text not null check (source in ('open_prices', 'eigene_erfassung')),
+  updated_at        timestamptz not null default now()
+);
+comment on table public.product_avg_prices is 'Ø-Normalpreis je Produkt aus Preismeldungen ohne Aktion (nur Deutschland, letzte 12 Monate). source open_prices = Open Prices (ODbL 1.0, Namensnennung in der App). App zeigt ihn nur bei Produkten ohne Händlerpreis.';
+
 
 -- App-weite Einstellungen, die die App beim Start liest (statt sie fest in
 -- index.html zu halten): Startstandort, Standard-Umkreis, Beispieldaten-
@@ -696,6 +715,12 @@ create policy "price_history_public_read" on public.price_history
 alter table public.regular_prices enable row level security;
 create policy "regular_prices_public_read" on public.regular_prices
   for select to anon, authenticated using (true);
+alter table public.product_retailers enable row level security;
+create policy "product_retailers_public_read" on public.product_retailers
+  for select to anon, authenticated using (true);
+alter table public.product_avg_prices enable row level security;
+create policy "product_avg_prices_public_read" on public.product_avg_prices
+  for select to anon, authenticated using (true);
 
 alter table public.app_settings enable row level security;
 create policy "app_settings_public_read" on public.app_settings
@@ -824,6 +849,8 @@ grant select on public.branches                to anon, authenticated;
 grant select on public.offers                  to anon, authenticated;
 grant select on public.price_history           to anon, authenticated;
 grant select on public.regular_prices          to anon, authenticated;
+grant select on public.product_retailers       to anon, authenticated;
+grant select on public.product_avg_prices      to anon, authenticated;
 grant select on public.app_settings            to anon, authenticated;
 
 

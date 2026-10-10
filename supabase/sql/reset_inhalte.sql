@@ -1,7 +1,7 @@
 -- ============================================================================
 -- CanSpot — Inhalte leeren (zum Austauschen des Datenstands)
 -- ============================================================================
--- Löscht alle Inhaltstabellen: offers, price_history, product_nutrition,
+-- Löscht alle Inhaltstabellen: product_retailers, product_avg_prices, offers, price_history, product_nutrition,
 -- brand_nutrition_defaults, products, brands, branches, retailers.
 -- Schema, Funktionen, Policies und Nutzerkonten bleiben unverändert.
 --
@@ -27,6 +27,8 @@ begin
   end if;
 end $$;
 
+delete from public.product_retailers;
+delete from public.product_avg_prices;
 delete from public.offers;
 delete from public.regular_prices;
 delete from public.price_history;

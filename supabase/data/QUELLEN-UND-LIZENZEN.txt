@@ -21,6 +21,16 @@ Grundwerten, vereinheitlichte Produktnamen, entfernte Dubletten, bei fehlender
 Angabe Verpackung „Dose“ für 250/330/500 ml. Diese abgeleiteten Daten stehen
 ebenfalls unter der ODbL 1.0.
 
+Open Prices
+-----------
+product_avg_prices.csv (source = open_prices): Ø-Normalpreis je Produkt aus den
+bei Open Prices (https://prices.openfoodfacts.org, Projekt von Open Food Facts)
+gemeldeten Preisen ohne Aktion, nur Meldungen aus Deutschland, Stand 10.10.2026.
+product_retailers.csv: Märkte laut Open Food Facts (Feld „stores“, source =
+open_food_facts) bzw. Ort einer Open-Prices-Meldung (source = open_prices),
+Schreibweisen vereinheitlicht. Beide stehen unter der Open Database License
+(ODbL) 1.0; die aufbereitete Fassung ebenfalls.
+
 Übrige Daten
 ------------
 Händler, Filialen, Angebote, Preise und App-Einstellungen sind Demodaten bzw.
