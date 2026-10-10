@@ -4036,6 +4036,9 @@ cursor:pointer
 :root[data-theme="dark"] .ap-brand-opt.on{color:var(--brand-primary-light)}
 .ap-brand-opt .icon{width:16px;height:16px;flex-shrink:0}
 .ap-brand-sep{height:1px;margin:6px 8px;background:var(--border-subtle)}
+/* Im dunklen Modus ist --border-subtle fast so dunkel wie der Listen-
+   hintergrund (--bg-surface-elevated) - dort die normale Rahmenfarbe. */
+:root[data-theme="dark"] .ap-brand-sep{background:var(--border-default)}
 #productsView .np-list{padding:12px 0 0}
 #productsView .np-empty{margin:14px 0 0}
 
