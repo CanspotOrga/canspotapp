@@ -4887,6 +4887,11 @@ transition:border-color .15s
 .pd-more-chev{width:16px;height:16px;margin-left:auto;color:var(--text-disabled);transition:transform .2s}
 .pd-more-toggle[aria-expanded="true"] .pd-more-chev{transform:rotate(180deg)}
 .pd-more-list{border-top:1px solid var(--border-subtle);padding-bottom:10px}
+.pd-shop-list{display:flex;flex-direction:column}
+.pd-shop-row{display:flex;align-items:center;gap:10px;width:100%;padding:12px 0;background:none;border:0;border-top:1px solid var(--border-subtle);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.pd-shop-row:first-child{border-top:0}
+.pd-shop-row:disabled{cursor:default;opacity:1}
+.pd-shop-row .pd-store-txt{flex:1;min-width:0}
 .pd-more-list[hidden]{display:none}
 .pd-store-logo{width:40px;height:40px;object-fit:contain;background:#fff;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:3px;flex-shrink:0}
 .pd-hist-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);background:var(--brand-primary-subtle);color:var(--brand-primary-blue);flex-shrink:0}
@@ -9619,23 +9624,48 @@ function apRefBlock(p){
 /* Händler-Zeile mit gemeldeten Märkten: nächste OSM-Filiale dieser Ketten
    suchen (branches_in_area, wie im Menü "Händler"); Tipp öffnet die Route. */
 async function linkNearestReportedShop(productId, shops){
+  renderReportedShops(shops.map(name=>({name, branch:null, km:null})));
   await loadNearbyBranches();
   const geo = nearbyReferenceGeo();
   if(!geo || !nearbyBranches || reportedShopsProductId !== productId) return;
-  let best = null;
+  const nearest = {};
   nearbyBranches.forEach(b=>{
     if(!shops.includes(b.retailer)) return;
     const km = haversineKm(geo, parseGeo(b.geo));
-    if(!best || km < best.km) best = {branch: b, km};
+    if(!nearest[b.retailer] || km < nearest[b.retailer].km) nearest[b.retailer] = {branch: b, km};
   });
-  if(!best || reportedShopsProductId !== productId) return;
+  // Ketten mit Filiale im Umkreis zuerst (nächste oben), danach die übrigen A–Z.
+  const list = shops.map(name=>({name, branch: nearest[name]?.branch || null, km: nearest[name]?.km ?? null}))
+    .sort((a,b)=>(a.km ?? Infinity) - (b.km ?? Infinity) || a.name.localeCompare(b.name, "de"));
+  renderReportedShops(list);
+}
+/* Erster Markt in der Händler-Zeile, weitere untereinander darunter
+   (#pdMoreStores, ohne Aufklappen). Mit Filiale: Tipp öffnet die Route. */
+function reportedShopLine(s){
+  return s.branch ? `${s.name}${kmSuffix(Math.round(s.km * 10) / 10)}` : s.name;
+}
+function renderReportedShops(list){
   const storeRow = document.getElementById("pdStoreRow");
-  document.getElementById("pdStoreName").textContent = `${best.branch.retailer}${kmSuffix(Math.round(best.km * 10) / 10)}`;
+  const first = list[0];
+  document.getElementById("pdStoreName").textContent = reportedShopLine(first);
   const subEl = document.getElementById("pdStoreSub");
-  subEl.textContent = best.branch.address ? `Nächster Markt: ${best.branch.address}` : "Nächster Markt";
-  subEl.hidden = false;
-  storeRow.onclick = ()=> openStoreRoute(best.branch.geo);
-  storeRow.querySelector(".pd-row-arrow").style.visibility = "";
+  subEl.textContent = first.branch ? (first.branch.address ? `Nächster Markt: ${first.branch.address}` : "Nächster Markt") : "";
+  subEl.hidden = !first.branch;
+  storeRow.onclick = first.branch ? ()=> openStoreRoute(first.branch.geo) : null;
+  storeRow.querySelector(".pd-row-arrow").style.visibility = first.branch ? "" : "hidden";
+  const box = document.getElementById("pdMoreStores");
+  const rest = list.slice(1);
+  if(!rest.length){ box.hidden = true; box.innerHTML = ""; return; }
+  box.innerHTML = `<div class="pd-shop-list">${rest.map((s, i)=>`
+    <button type="button" class="pd-shop-row" data-i="${i}"${s.branch ? "" : " disabled"}>
+      <span class="pd-store-txt"><b>${escapeHtml(reportedShopLine(s))}</b>${s.branch && s.branch.address ? `<span>Nächster Markt: ${escapeHtml(s.branch.address)}</span>` : ""}</span>
+      ${s.branch ? `<svg class="icon icon-md pd-row-arrow"><use href="#i-chevron-down"/></svg>` : ""}
+    </button>`).join("")}</div>`;
+  box.querySelectorAll(".pd-shop-row").forEach(btn=>{
+    const s = rest[Number(btn.dataset.i)];
+    if(s.branch) btn.onclick = ()=> openStoreRoute(s.branch.geo);
+  });
+  box.hidden = false;
 }
 let reportedShopsProductId = null;
 /* Gemeldete Märkte (product_retailers) ohne Filiale/Preis, für die Händler-Zeile. */
